@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/QsoNew/index.js" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/CognitoPostConfirmation/index.js" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="SqsoLambda.iws" />
@@ -27,11 +25,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1326">
-              <caret line="221" column="44" selection-start-line="221" selection-start-column="44" selection-end-line="221" selection-end-column="44" />
+            <state relative-caret-position="1020">
+              <caret line="233" column="2" selection-start-line="233" selection-start-column="2" selection-end-line="233" selection-end-column="2" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/CognitoPostConfirmation/index.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="357">
+              <caret line="97" column="2" selection-start-line="97" selection-start-column="2" selection-end-line="97" selection-end-column="2" />
               <folding />
             </state>
           </provider>
@@ -45,8 +53,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/CognitoPostConfirmation/index.js" />
         <option value="$PROJECT_DIR$/QsoNew/index.js" />
+        <option value="$PROJECT_DIR$/CognitoPostConfirmation/index.js" />
       </list>
     </option>
   </component>
@@ -138,6 +146,9 @@
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\CognitoPostConfirmation" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoNew" />
     </key>
@@ -196,7 +207,7 @@
       <workItem from="1484163307143" duration="1381000" />
       <workItem from="1484186061614" duration="695000" />
       <workItem from="1484317892028" duration="1236000" />
-      <workItem from="1485745898924" duration="68000" />
+      <workItem from="1485745898924" duration="203000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -212,11 +223,18 @@
       <option name="project" value="LOCAL" />
       <updated>1481212456154</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Cognito QSO NEW funcionando.">
+      <created>1485745999492</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1485745999492</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10572000" />
+    <option name="totallyTimeSpent" value="10707000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1303" height="784" extended-state="6" />
@@ -253,7 +271,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Cognito Confirmation microservice" />
-    <option name="LAST_COMMIT_MESSAGE" value="Cognito Confirmation microservice" />
+    <MESSAGE value="Cognito QSO NEW funcionando." />
+    <option name="LAST_COMMIT_MESSAGE" value="Cognito QSO NEW funcionando." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -310,8 +329,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1326">
-          <caret line="221" column="44" selection-start-line="221" selection-start-column="44" selection-end-line="221" selection-end-column="44" />
+        <state relative-caret-position="1020">
+          <caret line="233" column="2" selection-start-line="233" selection-start-column="2" selection-end-line="233" selection-end-column="2" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CognitoPostConfirmation/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="97" column="2" selection-start-line="97" selection-start-column="2" selection-end-line="97" selection-end-column="2" />
           <folding />
         </state>
       </provider>
