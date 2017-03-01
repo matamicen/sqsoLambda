@@ -71,7 +71,7 @@ exports.handler = (event, context, callback) => {
             //  Name = qras[i];
             console.log("GET QRA", Name);
             //***********************************************************
-            conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name,   function(error,info) {  // querying the database
+            conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name.toUpperCase(),   function(error,info) {  // querying the database
                 //   console.log("info=",info);
                 if (error) {
                     console.log("Error When GET QRA");

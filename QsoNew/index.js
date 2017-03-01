@@ -29,7 +29,7 @@ exports.handler = (event, context, callback) => {
     if (process.env.TEST) {
         var test = {     "mode": "modetest1",
             "band": "bandtest1",
-            "qra_owner": "LU2ACH",
+            "qra_owner": "lu2ach",
             "gps": "gpstest1",
             "state": "statetest1",
             "qras":  [ "test_qra2",
@@ -39,7 +39,7 @@ exports.handler = (event, context, callback) => {
         mode = test.mode;
         band = test.band;
         gps = test.gps;
-        qra_owner = test.qra_owner;
+        qra_owner = test.qra_owner.toUpperCase();
         qras = test.qras;
     }
     else {
@@ -47,7 +47,7 @@ exports.handler = (event, context, callback) => {
         band = event.body.band;
         gps = event.body.gps;
         qras = event.body.qras;
-        qra_owner = event.body.qra_owner;
+        qra_owner = event.body.qra_owner.toUpperCase();
         console.log("QRAS",qras);
     }
 
