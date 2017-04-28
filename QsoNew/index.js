@@ -1,12 +1,18 @@
 var fs = require('fs');
 var mysql = require('mysql');
 
-/*{  "mode": "modetest",
- "band": "bandtest",
+/*{     "mode": "modetest1",
+ "band": "bandtest1",
  "qra_owner": "lu2ach",
- "gps": "gpstest",
- "state": "statetest",
- "qras":  [ "qratest1", "qratest2" ]
+ "longitude": "1",
+ "latitude": "1",
+ "datetime": "2016-04-28 14:12:00",
+ "state": "statetest1",
+ "type": "QSO",
+ "qras": ["LU1BJW",
+ "LU3QQQ",
+ "LU8AJ",
+ "LU9DO"],
  }
  */
 
@@ -25,28 +31,42 @@ exports.handler = (event, context, callback) => {
     var newqso;
     var mode;
     var band;
-    var gps;
+    var location;
+    var latitude;
+    var longitude;
+    var datetime;
+    var type;
     if (process.env.TEST) {
         var test = {     "mode": "modetest1",
             "band": "bandtest1",
             "qra_owner": "lu2ach",
-            "gps": "gpstest1",
+            "longitude": "1",
+            "latitude": "1",
+            "datetime": "2016-04-28 14:12:00",
             "state": "statetest1",
-            "qras":  [ "test_qra2",
-                "test_qra",
-                "test_qra3"]
+            "type": "QSO",
+            "qras": ["LU1BJW",
+                "LU3QQQ",
+                "LU8AJ",
+                "LU9DO"],
         };
         mode = test.mode;
         band = test.band;
-        gps = test.gps;
+        latitude = test.latitude;
+        longitude = test.longitude;
+        datetime = test.datetime;
         qra_owner = test.qra_owner.toUpperCase();
         qras = test.qras;
+        type = test.type;
     }
     else {
         mode = event.body.mode;
         band = event.body.band;
-        gps = event.body.gps;
+        latitude = event.body.latitude;
+        longitude = event.body.longitude;
+        datetime = event.body.datetime;
         qras = event.body.qras;
+        type = event.body.type;
         qra_owner = event.body.qra_owner.toUpperCase();
         console.log("QRAS",qras);
     }
@@ -76,15 +96,20 @@ exports.handler = (event, context, callback) => {
         json =  JSON.parse(qra);
         idqras = json[0].idqras;
 
-
+        location = "POINT(" + longitude + " " + latitude + ")";
+        console.log(location);
         post  = {"idqra_owner": idqras,
             "mode": mode,
             "band": band,
-            "gps": gps };
-
+            "location": location,
+            "datetime": datetime,
+            "type": type
+        };
+        console.log(post);
 
         //INSERT INTO QSO TABLE
-        conn.query ( 'INSERT INTO qsos SET ?', post,   function(error,info) {
+        //    conn.query ( 'INSERT INTO qsos SET ?', post,   function(error,info) {
+        conn.query ( 'INSERT INTO qsos  SET idqra_owner = ?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?', [idqras, location, mode, band, datetime, type],   function(error,info) {
             console.log("insert QSO");
             if (error) {
                 console.log("Error when insert QSO");

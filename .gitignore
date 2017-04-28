@@ -1,0 +1,14 @@
+# Created by .ignore support plugin (hsz.mobi)
+.gitignore
+.idea/inspectionProfiles/
+CognitoPostConfirmation/.idea/CognitoPostConfirmation.iml
+CognitoPostConfirmation/.idea/inspectionProfiles/
+CognitoPostConfirmation/.idea/modules.xml
+CognitoPostConfirmation/.idea/workspace.xml
+CognitoPostConfirmation/CognitoPostConfirmation.zip
+CognitoPostConfirmation/node_modules/
+CognitoPostConfirmation/npm-debug.log
+CognitoPreSignUp/
+TestLambda/TestLambda.zip
+TestLambda/node_modules/
+node_modules/
