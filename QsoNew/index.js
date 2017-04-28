@@ -36,6 +36,8 @@ exports.handler = (event, context, callback) => {
     var longitude;
     var datetime;
     var type;
+    var sub;
+
     if (process.env.TEST) {
         var test = {     "mode": "modetest1",
             "band": "bandtest1",
@@ -58,6 +60,7 @@ exports.handler = (event, context, callback) => {
         qra_owner = test.qra_owner.toUpperCase();
         qras = test.qras;
         type = test.type;
+        sub = '9970517e-ed39-4f0e-939e-930924dd7f73';
     }
     else {
         mode = event.body.mode;
@@ -68,9 +71,9 @@ exports.handler = (event, context, callback) => {
         qras = event.body.qras;
         type = event.body.type;
         qra_owner = event.body.qra_owner.toUpperCase();
-        console.log("QRAS",qras);
+        sub = event.context.sub;
     }
-
+    console.log(sub);
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -83,7 +86,7 @@ exports.handler = (event, context, callback) => {
 
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
-    conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", qra_owner,   function(error,info) {
+    conn.query ( "SELECT * FROM qras where idcognito=? LIMIT 1", sub,   function(error,info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);

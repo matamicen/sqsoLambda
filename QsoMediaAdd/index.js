@@ -5,7 +5,7 @@ var mysql = require('mysql');
 exports.handler = (event, context, callback) => {
 
 
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
     var Sub;
     var Name;
@@ -15,9 +15,10 @@ exports.handler = (event, context, callback) => {
     var type;
     var url;
     var datasize;
+    var qso;
     // var count;
     if (process.env.TEST) {
-        var test = {     "qso": "59",
+        var test = {     "qso": "327",
             "type":  "1",
             "url": "http://www.google.com",
             "datasize": "22"
@@ -35,7 +36,7 @@ exports.handler = (event, context, callback) => {
     }
 
     if (process.env.TEST){
-        Sub = "ac73c8e5-77d1-4ec4-9384-b49076c9d580";
+        Sub = "9970517e-ed39-4f0e-939e-930924dd7f72";
     }else if (event.context.sub){
         Sub = event.context.sub;
     }
@@ -57,7 +58,27 @@ exports.handler = (event, context, callback) => {
         database  :  'sqso'    // Enter your  MySQL database name.
     });
 
+    // GET QRA ID of OWNER
+    console.log("select QRA to get ID of Owner");
+    console.log(qso);
+    conn.query ( "SELECT qras.idcognito from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos =? and qras.idcognito=?", [qso , Sub],   function(error,info) {
+        if (error) {
+            console.log("Error when select QRA to get ID of Owner");
+            console.log(error);
+            conn.destroy();
+            callback(error.message);
+            return context.fail(error);
+        }
 
+        console.log("info" + info);
+
+        if (info.length === 0){
+            console.log("Caller user is not the QSO Owner");
+            console.log('error select: ' + error);
+            callback(error);
+            return context.fail(error);
+        }
+    });
     //***********************************************************
     post  = {"idqso": qso,
         "type": type,
