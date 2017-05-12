@@ -18,7 +18,7 @@ var mysql = require('mysql');
 
 
 exports.handler = (event, context, callback) => {
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
     console.log('Received event:', JSON.stringify(event, null, 2));
     console.log('Received context:', JSON.stringify(context, null, 2));
 
@@ -37,6 +37,7 @@ exports.handler = (event, context, callback) => {
     var datetime;
     var type;
     var sub;
+    var msg;
 
     if (process.env.TEST) {
         var test = {     "mode": "modetest1",
@@ -86,13 +87,29 @@ exports.handler = (event, context, callback) => {
 
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
+
     conn.query ( "SELECT * FROM qras where idcognito=? LIMIT 1", sub,   function(error,info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
             conn.destroy();
-            callback(error.message);
-            return context.fail(error);
+
+            msg = { "error": "1",
+                "message": "Error when select QRA to get ID of Owner" };
+            error = new Error("Error when select QRA to get ID of Owner");
+            callback(error);
+            return context.fail(msg);
+        }
+        else if(info.length === 0){
+            console.log("Error when select QRA to get ID of Owner");
+            console.log(error);
+            conn.destroy();
+
+            msg = { "error": "1",
+                "message": "Error when select QRA to get ID of Owner" };
+            error = new Error("Error when select QRA to get ID of Owner");
+            callback(error);
+            return context.fail(msg);
         }
         // console.log(info);
         qra = JSON.stringify(info);
@@ -126,7 +143,7 @@ exports.handler = (event, context, callback) => {
             qso = JSON.stringify(info);
             json =  JSON.parse(qso);
             newqso = json.insertId;
-            var msg = { "error": "0",
+            msg = { "error": "0",
                 "message": newqso };
             context.succeed(msg);
         });

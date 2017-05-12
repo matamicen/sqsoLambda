@@ -10,6 +10,7 @@ exports.handler = (event, context, callback) => {
     var Sub;
     var Name;
     var post;
+    var datetime;
     var media;
     var json;
     var type;
@@ -18,13 +19,15 @@ exports.handler = (event, context, callback) => {
     var qso;
     // var count;
     if (process.env.TEST) {
-        var test = {     "qso": "327",
+        var test = {     "qso": "333",
             "type":  "1",
             "url": "http://www.google.com",
+            "datetime": "2016-04-28 14:12:00",
             "datasize": "22"
         };
         qso = test.qso;
         type = test.type;
+        datetime = test.datetime;
         url = test.url;
         datasize = test.datasize;
     }
@@ -33,10 +36,11 @@ exports.handler = (event, context, callback) => {
         type = event.body.type;
         url = event.body.url;
         datasize = event.body.datasize;
+        datetime = event.body.datetime;
     }
 
     if (process.env.TEST){
-        Sub = "9970517e-ed39-4f0e-939e-930924dd7f72";
+        Sub = "57d6d760-c5ff-40e5-8fc8-943fa37d6987";
     }else if (event.context.sub){
         Sub = event.context.sub;
     }
@@ -85,7 +89,7 @@ exports.handler = (event, context, callback) => {
         "url": url,
         "datasize": datasize
     };
-    conn.query('INSERT INTO qsos_media SET ?', post, function(error, info) {
+    conn.query('INSERT INTO qsos_media SET idqso = ?, type = ?, url = ?, datasize = ?, datetime = ?', [qso, type, url, datasize, datetime], function(error, info) {
         if (error) {
             console.log("Error when Insert QSO MEDIA");
             console.log(error.message);

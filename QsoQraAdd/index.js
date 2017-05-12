@@ -6,8 +6,8 @@ exports.handler = (event, context, callback) => {
 
 
     context.callbackWaitsForEmptyEventLoop = false;
-    // console.log('Received event:', JSON.stringify(event, null, 2));
-    // console.log('Received context:', JSON.stringify(context, null, 2));
+    console.log('Received event:', JSON.stringify(event, null, 2));
+    console.log('Received context:', JSON.stringify(context, null, 2));
 
     var sub;
     var Name;
@@ -17,12 +17,16 @@ exports.handler = (event, context, callback) => {
     var json;
     var idqras;
     var qso;
-    // var count;
+    var msg;
+    var count;
     if (process.env.TEST) {
-        var test = {     "qso": "327",
-            "qras":  [ "test_qra2",
-                "test_qra",
-                "test_qra3"]
+        var test = {
+            "qso": "333",
+            "qras": [
+                "lu1bjw",
+                "lu7aaa",
+                "lu9sde"
+            ]
         };
         qso = test.qso;
         qras = test.qras;
@@ -34,7 +38,7 @@ exports.handler = (event, context, callback) => {
     }
 
     if (process.env.TEST){
-        sub = "9970517e-ed39-4f0e-939e-930924dd7f73";
+        sub = "57d6d760-c5ff-40e5-8fc8-943fa37d6987";
     }else if (event.context.sub){
         sub = event.context.sub;
     }
@@ -68,7 +72,10 @@ exports.handler = (event, context, callback) => {
             console.log(error);
             conn.destroy();
             callback(error.message);
-            return context.fail(error);
+            msg = { "error": "1",
+                "message": "Error when select QRA to get ID of Owner" };
+            return context.fail(msg);
+
         }
 
         console.log("info" + info);
@@ -77,7 +84,10 @@ exports.handler = (event, context, callback) => {
             console.log("Caller user is not the QSO Owner");
             console.log('error select: ' + error);
             callback(error);
-            return context.fail(error);
+
+            msg = { "error": "1",
+                "message": "Caller user is not the QSO Owner" };
+            return context.fail(msg);
         }else{
 
             // 1st para in async.each() is the array of items
@@ -91,61 +101,60 @@ exports.handler = (event, context, callback) => {
                     //   callback();
                     // });
                     //  Name = qras[i];
-                    console.log("GET QRA", Name);
+                    console.log("GET QRA", Name.toUpperCase());
                     //***********************************************************
                     conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name.toUpperCase(),   function(error,info) {  // querying the database
-                        //   console.log("info=",info);
+                        console.log("info=",info);
                         if (error) {
                             console.log("Error When GET QRA");
                             console.log('error select: ' + error);
                             callback(error);
                             return context.fail(error);
-                        }
-                        qra = JSON.stringify(info);
-                        json =  JSON.parse(qra);
-                        idqras = json[0].idqras;
-
-                        if (info.length === 0) {
+                        }else if (!info.length) {
+                            // qra = JSON.stringify(info);
+                            // json =  JSON.parse(qra);
+                            // idqras = json[0].idqras;
                             //QRA Not Found => INSERT
                             console.log("QRA not found, Insert new QRA");
-                            post  = {"qra" : Name, "idcognito" : Sub};
+                            post  = {"qra" : Name.toUpperCase()};
                             // console.log('POST' + post);
                             //***********************************************************
                             conn.query ( 'INSERT INTO qras SET ?', post,   function(error,info) {  // querying the database
                                 if (error) {
+                                    console.log("Error When INSERT QRA");
                                     console.log(error.message);
                                     conn.destroy();
                                     callback(error.message);
-                                    return context.fail(error);
-                                }
+                                    //  return context.fail(error);
+                                } else {
 
-                                console.log("qra inserted");
-                                // console.log(info);
-                                qra = JSON.stringify(info);
-                                json =  JSON.parse(qra);
-                                idqras = json.insertId;
-                                post  = {"idqso": qso,
-                                    "idqra": idqras};
+                                    console.log("qra inserted");
+                                    // console.log(info);
+                                    qra = JSON.stringify(info);
+                                    json =  JSON.parse(qra);
+                                    idqras = json.insertId;
+                                    post  = {"idqso": qso,
+                                        "idqra": idqras};
 
-
-                                // console.log(post);
-                                // console.log("Insert QSO QRA");
-                                //***********************************************************
-                                conn.query('INSERT INTO qsos_qras SET ?', post, function(error, info) {
-                                    if (error) {
-                                        console.log("Error when Insert QSO QRA");
-                                        console.log(error.message);
-                                        conn.destroy();
-                                        callback(error.message);
-                                        return callback.fail(error);
-                                    } //End If
-                                    console.log(info);
-                                    if (info.insertId){
-                                        console.log("QSOQRA inserted", info.insertId);
-                                        // count++;
-                                        callback();
-                                    }
-                                }); //End Insert QSOQRA
+                                    // console.log(post);
+                                    // console.log("Insert QSO QRA");
+                                    //***********************************************************
+                                    conn.query('INSERT INTO qsos_qras SET ?', post, function(error, info) {
+                                        if (error) {
+                                            console.log("Error when Insert QSO QRA");
+                                            console.log(error.message);
+                                            conn.destroy();
+                                            callback(error.message);
+                                            return callback.fail(error);
+                                        } //End If
+                                        console.log(info);
+                                        if (info.insertId){
+                                            console.log("QSOQRA inserted", info.insertId);
+                                            count++;
+                                            callback();
+                                        }
+                                    }); //End Insert QSOQRA
+                                } //end Else
                             }); //end Insert QRA
                         } //end if
                         else {
@@ -165,7 +174,7 @@ exports.handler = (event, context, callback) => {
                                 } //End If
                                 if (info.insertId){
                                     console.log("QSOQRA inserted", info.insertId);
-                                    // count++;
+                                    count++;
                                     callback();
                                 }
                             }); //End Insert
@@ -178,7 +187,7 @@ exports.handler = (event, context, callback) => {
                     console.log("All tasks are done now");
                     // doSomethingOnceAllAreDone();
                     var msg = { "error": "0",
-                        "message": qso };
+                        "message": qso  };
                     context.succeed(msg);
                 }
             ); //end async
