@@ -12,3 +12,5 @@ CognitoPreSignUp/
 TestLambda/TestLambda.zip
 TestLambda/node_modules/
 node_modules/
+/QsoQraAdd/node_modules/
+/QsoGetPublicList/node_modules/
