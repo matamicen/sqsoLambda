@@ -14,3 +14,14 @@ TestLambda/node_modules/
 node_modules/
 /QsoQraAdd/node_modules/
 /QsoGetPublicList/node_modules/
+QsoEdit/QsoEdit.zip
+QsoGetPublicList/QsosGetLasts.zip
+QsoQraDel/QsoQraDel.zip
+
+/QRAsetProfilePic/node_modules/
+/QRAgetProfilePic/node_modules/
+/CognitoPreSignUp/node_modules/
+/CognitoPostConfirmation/node_modules/
+/node_modules/
+/QsoEdit/node_modules/
+/QsoQraDel/node_modules/
