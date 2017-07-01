@@ -14,6 +14,8 @@ exports.handler = (event, context, callback) => {
     var post;
     var qra;
     var qras;
+    var qra_output = {};
+    var qras_output = [];
     var json;
     var idqras;
     var qso;
@@ -25,7 +27,7 @@ exports.handler = (event, context, callback) => {
             "qras": [
                 "lu1bjw",
                 "lu7aaa",
-                "lu9sde"
+                "lu999aaes"
             ]
         };
         qso = test.qso;
@@ -92,15 +94,10 @@ exports.handler = (event, context, callback) => {
 
             // 1st para in async.each() is the array of items
             //***********************************************************
-            async.each(qras,
+            async.mapSeries(qras,
                 // 2nd param is the function that each item is passed to
                 function(Name, callback){
-                    // Call an asynchronous function, often a save() to DB
-                    // item.someAsyncCall(function (){
-                    //   // Async call is done, alert via callback
-                    //   callback();
-                    // });
-                    //  Name = qras[i];
+
                     console.log("GET QRA", Name.toUpperCase());
                     //***********************************************************
                     conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name.toUpperCase(),   function(error,info) {  // querying the database
@@ -111,9 +108,12 @@ exports.handler = (event, context, callback) => {
                             callback(error);
                             return context.fail(error);
                         }else if (!info.length) {
-                            // qra = JSON.stringify(info);
-                            // json =  JSON.parse(qra);
-                            // idqras = json[0].idqras;
+
+                            qras_output.push({qra: Name,
+                                url: "empty"});
+                            console.log("qras" + qras_output);
+
+
                             //QRA Not Found => INSERT
                             console.log("QRA not found, Insert new QRA");
                             post  = {"qra" : Name.toUpperCase()};
@@ -130,14 +130,15 @@ exports.handler = (event, context, callback) => {
 
                                     console.log("qra inserted");
                                     // console.log(info);
-                                    qra = JSON.stringify(info);
-                                    json =  JSON.parse(qra);
+                                    //  qra = JSON.stringify(info);
+                                    json =  JSON.parse(JSON.stringify(info));
                                     idqras = json.insertId;
                                     post  = {"idqso": qso,
-                                        "idqra": idqras};
+                                        "idqra": idqras,
+                                        "isOwner": false
+                                    };
 
-                                    // console.log(post);
-                                    // console.log("Insert QSO QRA");
+
                                     //***********************************************************
                                     conn.query('INSERT INTO qsos_qras SET ?', post, function(error, info) {
                                         if (error) {
@@ -158,11 +159,19 @@ exports.handler = (event, context, callback) => {
                             }); //end Insert QRA
                         } //end if
                         else {
+
                             qra = JSON.stringify(info);
                             json =  JSON.parse(qra);
                             idqras = json[0].idqras;
                             post  = {"idqso": qso,
-                                "idqra": idqras};
+                                "idqra": idqras,
+                                "isOwner": false
+                            };
+
+                            qras_output.push({qra: json[0].qra,
+                                url: json[0].profilepic});
+                            console.log("qras" + qras_output);
+
                             //***********************************************************
                             conn.query('INSERT INTO qsos_qras SET ?', post, function(error, info) {
                                 if (error) {
@@ -174,6 +183,7 @@ exports.handler = (event, context, callback) => {
                                 } //End If
                                 if (info.insertId){
                                     console.log("QSOQRA inserted", info.insertId);
+
                                     count++;
                                     callback();
                                 }
@@ -187,7 +197,8 @@ exports.handler = (event, context, callback) => {
                     console.log("All tasks are done now");
                     // doSomethingOnceAllAreDone();
                     var msg = { "error": "0",
-                        "message": qso  };
+                        "message": qras_output  };
+                    conn.destroy();
                     context.succeed(msg);
                 }
             ); //end async

@@ -17,7 +17,8 @@ var mysql = require('mysql');
  */
 
 
-exports.handler = (event, context, callback) => {
+exports.handler = (event, context, callback) =>
+{
     context.callbackWaitsForEmptyEventLoop = false;
     console.log('Received event:', JSON.stringify(event, null, 2));
     console.log('Received context:', JSON.stringify(context, null, 2));
@@ -40,7 +41,8 @@ exports.handler = (event, context, callback) => {
     var msg;
 
     if (process.env.TEST) {
-        var test = {     "mode": "modetest1",
+        var test = {
+            "mode": "modetest1",
             "band": "bandtest1",
             "qra_owner": "lu2ach",
             "longitude": "1",
@@ -61,7 +63,7 @@ exports.handler = (event, context, callback) => {
         qra_owner = test.qra_owner.toUpperCase();
         qras = test.qras;
         type = test.type;
-        sub = '9970517e-ed39-4f0e-939e-930924dd7f73';
+        sub = '7bec5f23-6661-4ba2-baae-d1d4f0440038';
     }
     else {
         mode = event.body.mode;
@@ -78,47 +80,52 @@ exports.handler = (event, context, callback) => {
 
     //***********************************************************
     var conn = mysql.createConnection({
-        host      :  'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com' ,  // give your RDS endpoint  here
-        user      :  'sqso' ,  // Enter your  MySQL username
-        password  :  'parquepatricios' ,  // Enter your  MySQL password
-        database  :  'sqso'    // Enter your  MySQL database name.
+        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com',  // give your RDS endpoint  here
+        user: 'sqso',  // Enter your  MySQL username
+        password: 'parquepatricios',  // Enter your  MySQL password
+        database: 'sqso'    // Enter your  MySQL database name.
     });
 
 
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
 
-    conn.query ( "SELECT * FROM qras where idcognito=? LIMIT 1", sub,   function(error,info) {
+    conn.query("SELECT * FROM qras where idcognito=? LIMIT 1", sub, function (error, info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
             conn.destroy();
 
-            msg = { "error": "1",
-                "message": "Error when select QRA to get ID of Owner" };
+            msg = {
+                "error": "1",
+                "message": "Error when select QRA to get ID of Owner"
+            };
             error = new Error("Error when select QRA to get ID of Owner");
             callback(error);
             return context.fail(msg);
         }
-        else if(info.length === 0){
+        else if (info.length === 0) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
             conn.destroy();
 
-            msg = { "error": "1",
-                "message": "Error when select QRA to get ID of Owner" };
+            msg = {
+                "error": "1",
+                "message": "Error when select QRA to get ID of Owner"
+            };
             error = new Error("Error when select QRA to get ID of Owner");
             callback(error);
             return context.fail(msg);
         }
         // console.log(info);
         qra = JSON.stringify(info);
-        json =  JSON.parse(qra);
+        json = JSON.parse(qra);
         idqras = json[0].idqras;
 
         location = "POINT(" + longitude + " " + latitude + ")";
         console.log(location);
-        post  = {"idqra_owner": idqras,
+        post = {
+            "idqra_owner": idqras,
             "mode": mode,
             "band": band,
             "location": location,
@@ -129,7 +136,7 @@ exports.handler = (event, context, callback) => {
 
         //INSERT INTO QSO TABLE
         //    conn.query ( 'INSERT INTO qsos SET ?', post,   function(error,info) {
-        conn.query ( 'INSERT INTO qsos  SET idqra_owner = ?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?', [idqras, location, mode, band, datetime, type],   function(error,info) {
+        conn.query('INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?', [ idqras, location, mode, band, datetime, type], function (error, info) {
             console.log("insert QSO");
             if (error) {
                 console.log("Error when insert QSO");
@@ -138,14 +145,41 @@ exports.handler = (event, context, callback) => {
                 callback(error.message);
                 return context.fail(error);
             }
+            if (info.insertId) {
+                console.log("QSO inserted", info.insertId);
+                qso = JSON.stringify(info);
+                json = JSON.parse(qso);
+                newqso = json.insertId;
+                msg = {
+                    "error": "0",
+                    "message": newqso
+                };
+                console.log("idqras" + idqras);
+                post = {
+                    "idqso": newqso,
+                    "idqra": idqras,
+                    "isOwner": true
+                };
 
-            console.log("QSO inserted", info.insertId);
-            qso = JSON.stringify(info);
-            json =  JSON.parse(qso);
-            newqso = json.insertId;
-            msg = { "error": "0",
-                "message": newqso };
-            context.succeed(msg);
-        });
+
+                //***********************************************************
+                conn.query('INSERT INTO qsos_qras SET ?', post, function (error, info) {
+                    if (error) {
+                        console.log("Error when Insert QSO QRA");
+                        console.log(error.message);
+                        conn.destroy();
+                        callback(error.message);
+                        return callback.fail(error);
+                    } //End If
+                    console.log(info);
+                    if (info.insertId) {
+                        console.log("QSOQRA inserted", info.insertId);
+
+                        callback();
+                    }
+                }); //Insert QSO QRA
+                context.succeed(msg);
+            } //ENDIF QSO Inserted
+        }); //Insert QSOS
     }); //END SELECT QRA
 };

@@ -43,7 +43,7 @@ exports.handler = (event, context, callback) => {
     console.log('Sub =', Sub);
     console.log('userName =', Name);
 
-    conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name,   function(error,info) {  // querying the database
+    conn.query ( "SELECT * FROM qras where qra=? LIMIT 1", Name.toUpperCase(),   function(error,info) {  // querying the database
         console.log("error=",error);
         console.log("info=",info);
         if (error) {
@@ -52,7 +52,7 @@ exports.handler = (event, context, callback) => {
         }
         if (info.length === 0) {
             //QRA Not Found => INSERT
-            var post  = {"qra" : Name, "idcognito" : Sub};
+            var post  = {"qra" : Name.toUpperCase(), "idcognito" : Sub};
             console.log('POST' + post);
             conn.query ( 'INSERT INTO qras SET ?', post,   function(error,info) {  // querying the database
                 if (error) {
@@ -77,7 +77,7 @@ exports.handler = (event, context, callback) => {
             var json =  JSON.parse(qra);
             var idqras = json[0].idqras;
             console.log("idqras=",idqras);
-            conn.query ( 'UPDATE qras SET idcognito=? WHERE idqras=?', [ Sub , idqras ],   function(error,info) {  // querying the database
+            conn.query ( 'UPDATE qras SET idcognito=? WHERE idqras=?', [ Sub , idqras.toUpperCase() ],   function(error,info) {  // querying the database
                 if (error) {
                     console.log(error.message);
                     context.done(null,event);

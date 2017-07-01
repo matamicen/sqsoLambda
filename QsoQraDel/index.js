@@ -13,14 +13,16 @@ exports.handler = (event, context, callback) => {
     var json;
     var qso;
     var qras;
+    var qras_output = [];
     var qra;
     var msg;
     // var count;
     if (process.env.TEST) {
         var test = {
-            "qso": "336",
-            "qras": [   "lw1ppp",
-                "lu2ach"
+            "qso": "333",
+            "qras": [
+                "LU4fss",
+                "LU9do"
             ]
         };
         qso = test.qso;
@@ -99,21 +101,23 @@ exports.handler = (event, context, callback) => {
                                 } else if (info.affectedRows > 0){
                                     console.log("QSOQRA deleted", info.affectedRows);
                                     // count++;
-                                    msg = { "error": "O",
-                                        "message": "QSOQRA deleted " + info.affectedRows };
-                                    return context.succeed(msg);
+                                    qras_output.push({"qra": qra});
+                                    callback();
                                 } else {
                                     console.log("Error when Delete QSO QRA");
                                     // count++;
+                                    qras_output.push({"qra": "Error when Delete QSO QRA"});
                                     msg = { "error": "1",
-                                        "message": "Error when Delete QSO QRA" };
-                                    return context.fail(JSON.stringify(msg));
+                                        "message": qras_output };
+                                    return context.succeed(msg);
                                 }
                             }); //End Insert
                         } else {
+                            console.log("not found");
+                            qras_output.push({"qra": "QRA not found"});
                             msg = { "error": "1",
-                                "message": "QRA not found" };
-                            return context.fail(JSON.stringify(msg));
+                                "message": qras_output };
+                            return context.succeed(msg);
                         }//end if
                     }); //End Select
                 },
@@ -123,7 +127,7 @@ exports.handler = (event, context, callback) => {
                     console.log("All tasks are done now");
                     // doSomethingOnceAllAreDone();
                     var msg = { "error": "0",
-                        "message": qras  };
+                        "message": qras_output  };
                     context.succeed(msg);
                 }
             ); //end async

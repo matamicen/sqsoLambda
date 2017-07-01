@@ -2,9 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/QRAgetProfilePic/index.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/QRAsetProfilePic/index.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Qso-Get-User-Feed/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CognitoPostConfirmation/index.js" afterPath="$PROJECT_DIR$/CognitoPostConfirmation/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoGetPublicList/index.js" afterPath="$PROJECT_DIR$/QsoGetPublicList/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoMediaAdd/index.js" afterPath="$PROJECT_DIR$/QsoMediaAdd/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoNew/index.js" afterPath="$PROJECT_DIR$/QsoNew/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoQraAdd/index.js" afterPath="$PROJECT_DIR$/QsoQraAdd/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoQraDel/index.js" afterPath="$PROJECT_DIR$/QsoQraDel/index.js" />
     </list>
     <ignored path="SqsoLambda.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,73 +35,30 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/QsoQraAdd/index.js">
+        <entry file="file://$PROJECT_DIR$/Qso-Get-User-Feed/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3298">
-              <caret line="194" column="2" lean-forward="false" selection-start-line="194" selection-start-column="2" selection-end-line="194" selection-end-column="2" />
+            <state relative-caret-position="393">
+              <caret line="178" column="0" lean-forward="true" selection-start-line="178" selection-start-column="0" selection-end-line="178" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CognitoPostConfirmation/index.js">
+        <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="13" column="0" lean-forward="false" selection-start-line="13" selection-start-column="0" selection-end-line="14" selection-end-column="71" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/QsoEdit/node_modules/fs/README.md">
-          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
-              <first_editor relative-caret-position="0">
-                <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-                <folding />
-              </first_editor>
-              <second_editor />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/QsoMediaAdd/index.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1819">
-              <caret line="107" column="2" lean-forward="false" selection-start-line="107" selection-start-column="2" selection-end-line="107" selection-end-column="2" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/QsoEdit/index.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2397">
-              <caret line="141" column="2" lean-forward="false" selection-start-line="141" selection-start-column="2" selection-end-line="141" selection-end-column="2" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/QsoQraDel/index.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1904">
-              <caret line="112" column="2" lean-forward="false" selection-start-line="112" selection-start-column="2" selection-end-line="112" selection-end-column="2" />
+            <state relative-caret-position="852">
+              <caret line="133" column="2" lean-forward="false" selection-start-line="133" selection-start-column="2" selection-end-line="133" selection-end-column="2" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
+        <entry file="file://$PROJECT_DIR$/QsoQraAdd/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="648">
-              <caret line="102" column="2" lean-forward="false" selection-start-line="102" selection-start-column="2" selection-end-line="102" selection-end-column="2" />
+            <state relative-caret-position="294">
+              <caret line="200" column="35" lean-forward="true" selection-start-line="200" selection-start-column="20" selection-end-line="200" selection-end-column="35" />
               <folding />
             </state>
           </provider>
@@ -103,28 +67,22 @@
       <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2550">
-              <caret line="150" column="2" lean-forward="false" selection-start-line="150" selection-start-column="2" selection-end-line="150" selection-end-column="2" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/.gitignore">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="110">
-              <caret line="13" column="13" lean-forward="true" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-              <folding />
+            <state relative-caret-position="1581">
+              <caret line="184" column="2" lean-forward="false" selection-start-line="184" selection-start-column="2" selection-end-line="184" selection-end-column="2" />
+              <folding>
+                <element signature="e#2495#5844#0" expanded="false" />
+                <element signature="e#4497#5791#0" expanded="false" />
+                <element signature="e#5167#5720#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CognitoPreSignUp/index.js">
+        <entry file="file://$PROJECT_DIR$/QsoMediaAdd/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
+            <state relative-caret-position="1768">
+              <caret line="104" column="44" lean-forward="false" selection-start-line="104" selection-start-column="43" selection-end-line="104" selection-end-column="44" />
               <folding />
             </state>
           </provider>
@@ -147,15 +105,18 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/QsoQraAdd/node_modules/TestLambda/index.js" />
-        <option value="$PROJECT_DIR$/CognitoPostConfirmation/index.js" />
         <option value="$PROJECT_DIR$/QsosGetLasts/index.js" />
+        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/QsoMediaAdd/index.js" />
         <option value="$PROJECT_DIR$/QsoQraDel/index.js" />
-        <option value="$PROJECT_DIR$/QsoQraAdd/index.js" />
+        <option value="$PROJECT_DIR$/CognitoPostConfirmation/index.js" />
+        <option value="$PROJECT_DIR$/QRAgetProfilePic/index.js" />
+        <option value="$PROJECT_DIR$/QRAsetProfilePic/index.js" />
         <option value="$PROJECT_DIR$/QsoEdit/index.js" />
         <option value="$PROJECT_DIR$/QsoNew/index.js" />
-        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/QsoGetPublicList/index.js" />
+        <option value="$PROJECT_DIR$/Qso-Get-User-Feed/index.js" />
+        <option value="$PROJECT_DIR$/QsoQraAdd/index.js" />
       </list>
     </option>
   </component>
@@ -168,6 +129,9 @@
   <component name="NodeModulesDirectoryManager">
     <handled-path value="$PROJECT_DIR$/CognitoPostConfirmation/node_modules" />
     <handled-path value="$PROJECT_DIR$/CognitoPreSignUp/node_modules" />
+    <handled-path value="$PROJECT_DIR$/QRAgetProfilePic/node_modules" />
+    <handled-path value="$PROJECT_DIR$/QRAsetProfilePic/node_modules" />
+    <handled-path value="$PROJECT_DIR$/Qso-Get-User-Feed/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoEdit/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoGetPublicList/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoQraAdd/node_modules" />
@@ -178,7 +142,7 @@
   <component name="ProjectFrameBounds">
     <option name="x" value="-8" />
     <option name="y" value="-8" />
-    <option name="width" value="1320" />
+    <option name="width" value="1295" />
     <option name="height" value="784" />
   </component>
   <component name="ProjectView">
@@ -197,7 +161,6 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -207,20 +170,6 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="sqsoLambda" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="sqsoLambda" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="sqsoLambda" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="TestLambda" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -304,12 +253,13 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="QsoEdit" />
+              <option name="myItemId" value="Qso-Get-User-Feed" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -321,18 +271,21 @@
     <property name="js-jscs-nodeInterpreter" value="C:\Program Files\nodejs\node.exe" />
     <property name="HbShouldOpenHtmlAsHb" value="" />
     <property name="js.eslint.eslintPackage" value="" />
+    <property name="add_unversioned_files" value="$PROJECT_DIR$/.gitignore" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\" />
-      <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoMediaAdd" />
-      <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoQraAdd\node_modules" />
-      <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoQraAdd" />
-      <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\CognitoPostConfirmation" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\Qso-Get-User-Feed" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QRAsetProfilePic" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoEdit" />
       <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoNew" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoGetPrivateList" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoGetPublicList" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QRAsetProfilePic" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoQraAdd" />
     </key>
   </component>
   <component name="RunManager">
@@ -432,7 +385,14 @@
       <workItem from="1493400003637" duration="3013000" />
       <workItem from="1493412692192" duration="2809000" />
       <workItem from="1494602576740" duration="7774000" />
-      <workItem from="1495832802417" duration="268000" />
+      <workItem from="1495832802417" duration="341000" />
+      <workItem from="1496087470467" duration="2249000" />
+      <workItem from="1497102707839" duration="4968000" />
+      <workItem from="1497108174291" duration="897000" />
+      <workItem from="1498054179928" duration="1249000" />
+      <workItem from="1498924708088" duration="7795000" />
+      <workItem from="1498940104676" duration="464000" />
+      <workItem from="1498941350984" duration="2903000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -497,22 +457,43 @@
       <option name="project" value="LOCAL" />
       <updated>1494625508063</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="QsoPublicList funcionando.">
+      <created>1495833095424</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1495833095424</updated>
+    </task>
+    <task id="LOCAL-00011" summary="qragetprofilepic">
+      <created>1497107696622</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1497107696622</updated>
+    </task>
+    <task id="LOCAL-00012" summary="qragetprofilepic">
+      <created>1497107704256</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1497107704256</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="35352000" />
+    <option name="totallyTimeSpent" value="55950000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1320" height="784" extended-state="6" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1295" height="784" extended-state="6" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24960998" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24821003" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296" sideWeight="0.5059289" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32890856" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.5155131" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.48448688" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.49407116" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.48210025" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -566,42 +547,27 @@
     <MESSAGE value="agregado en qsonew los campos: location, datetime y type" />
     <MESSAGE value="QSO edit funcionando, &#10;Validacion en todas las APIS que el qso_owner sea el mismo que cognito" />
     <MESSAGE value="Todas las apis funcionando. &#10; Version inicial de api para traer los qsos en json" />
-    <option name="LAST_COMMIT_MESSAGE" value="Todas las apis funcionando. &#10; Version inicial de api para traer los qsos en json" />
+    <MESSAGE value="QsoPublicList funcionando." />
+    <MESSAGE value="qragetprofilepic" />
+    <option name="LAST_COMMIT_MESSAGE" value="qragetprofilepic" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/Qso-Get-User-Feed/index.js</url>
+          <line>71</line>
+        </line-breakpoint>
+      </breakpoints>
+      <option name="time" value="1" />
+    </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1054">
-          <caret line="62" column="2" lean-forward="false" selection-start-line="62" selection-start-column="2" selection-end-line="62" selection-end-column="2" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2550">
-          <caret line="150" column="2" lean-forward="false" selection-start-line="150" selection-start-column="2" selection-end-line="150" selection-end-column="2" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CognitoPreSignUp/index.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -618,7 +584,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -636,7 +601,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -644,7 +608,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2261">
           <caret line="133" column="2" lean-forward="false" selection-start-line="133" selection-start-column="2" selection-end-line="133" selection-end-column="2" />
-          <folding />
+          <folding>
+            <element signature="e#2495#5844#0" expanded="false" />
+            <element signature="e#4497#5791#0" expanded="false" />
+            <element signature="e#5167#5720#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -652,7 +620,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -660,7 +627,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -677,7 +643,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -695,7 +660,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#2495#5844#0" expanded="false" />
+            <element signature="e#4497#5791#0" expanded="false" />
+            <element signature="e#5167#5720#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -703,7 +672,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="0" lean-forward="true" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -711,7 +679,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -728,7 +695,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -746,7 +712,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="697">
           <caret line="41" column="48" lean-forward="false" selection-start-line="41" selection-start-column="34" selection-end-line="41" selection-end-column="48" />
-          <folding />
+          <folding>
+            <element signature="e#2495#5844#0" expanded="false" />
+            <element signature="e#4497#5791#0" expanded="false" />
+            <element signature="e#5167#5720#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -754,7 +724,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -771,7 +740,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -789,7 +757,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="697">
           <caret line="41" column="48" lean-forward="true" selection-start-line="41" selection-start-column="34" selection-end-line="41" selection-end-column="48" />
-          <folding />
+          <folding>
+            <element signature="e#2495#5844#0" expanded="false" />
+            <element signature="e#4497#5791#0" expanded="false" />
+            <element signature="e#5167#5720#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -797,7 +769,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -814,7 +785,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -899,7 +869,6 @@
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="0">
             <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-            <folding />
           </first_editor>
           <second_editor />
         </state>
@@ -909,70 +878,91 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="50" lean-forward="false" selection-start-line="14" selection-start-column="50" selection-end-line="14" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CognitoPostConfirmation/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" column="0" lean-forward="false" selection-start-line="13" selection-start-column="0" selection-end-line="14" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/QsoMediaAdd/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1819">
-          <caret line="107" column="2" lean-forward="false" selection-start-line="107" selection-start-column="2" selection-end-line="107" selection-end-column="2" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/QsoQraDel/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1904">
-          <caret line="112" column="2" lean-forward="false" selection-start-line="112" selection-start-column="2" selection-end-line="112" selection-end-column="2" />
-          <folding />
+        <state relative-caret-position="395">
+          <caret line="135" column="2" lean-forward="false" selection-start-line="135" selection-start-column="2" selection-end-line="135" selection-end-column="2" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/QsoQraAdd/index.js">
+    <entry file="file://$PROJECT_DIR$/CognitoPostConfirmation/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3298">
-          <caret line="194" column="2" lean-forward="false" selection-start-line="194" selection-start-column="2" selection-end-line="194" selection-end-column="2" />
-          <folding />
+        <state relative-caret-position="395">
+          <caret line="97" column="2" lean-forward="false" selection-start-line="97" selection-start-column="2" selection-end-line="97" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QRAgetProfilePic/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="395">
+          <caret line="80" column="2" lean-forward="false" selection-start-line="80" selection-start-column="2" selection-end-line="80" selection-end-column="2" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/QsoEdit/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2397">
+        <state relative-caret-position="395">
           <caret line="141" column="2" lean-forward="false" selection-start-line="141" selection-start-column="2" selection-end-line="141" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="12" column="23" lean-forward="false" selection-start-line="12" selection-start-column="23" selection-end-line="12" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QRAsetProfilePic/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="327">
+          <caret line="68" column="2" lean-forward="false" selection-start-line="68" selection-start-column="2" selection-end-line="68" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QsoMediaAdd/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1768">
+          <caret line="104" column="44" lean-forward="false" selection-start-line="104" selection-start-column="43" selection-end-line="104" selection-end-column="44" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2550">
-          <caret line="150" column="2" lean-forward="false" selection-start-line="150" selection-start-column="2" selection-end-line="150" selection-end-column="2" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="110">
-          <caret line="13" column="13" lean-forward="true" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-          <folding />
+        <state relative-caret-position="1581">
+          <caret line="184" column="2" lean-forward="false" selection-start-line="184" selection-start-column="2" selection-end-line="184" selection-end-column="2" />
+          <folding>
+            <element signature="e#2495#5844#0" expanded="false" />
+            <element signature="e#4497#5791#0" expanded="false" />
+            <element signature="e#5167#5720#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="648">
-          <caret line="102" column="2" lean-forward="false" selection-start-line="102" selection-start-column="2" selection-end-line="102" selection-end-column="2" />
+        <state relative-caret-position="852">
+          <caret line="133" column="2" lean-forward="false" selection-start-line="133" selection-start-column="2" selection-end-line="133" selection-end-column="2" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Qso-Get-User-Feed/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="393">
+          <caret line="178" column="0" lean-forward="true" selection-start-line="178" selection-start-column="0" selection-end-line="178" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QsoQraAdd/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="294">
+          <caret line="200" column="35" lean-forward="true" selection-start-line="200" selection-start-column="20" selection-end-line="200" selection-end-column="35" />
           <folding />
         </state>
       </provider>

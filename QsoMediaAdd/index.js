@@ -17,10 +17,15 @@ exports.handler = (event, context, callback) => {
     var url;
     var datasize;
     var qso;
+    var response = {
+        "message": "",
+        "error": ""
+    };
+
     // var count;
     if (process.env.TEST) {
-        var test = {     "qso": "333",
-            "type":  "1",
+        var test = {     "qso": "447",
+            "type":  "image",
             "url": "http://www.google.com",
             "datetime": "2016-04-28 14:12:00",
             "datasize": "22"
@@ -40,19 +45,12 @@ exports.handler = (event, context, callback) => {
     }
 
     if (process.env.TEST){
-        Sub = "57d6d760-c5ff-40e5-8fc8-943fa37d6987";
+        Sub = "7bec5f23-6661-4ba2-baae-d1d4f0440038";
     }else if (event.context.sub){
         Sub = event.context.sub;
     }
     console.log("sub =", Sub);
 
-    if (process.env.TEST){
-        Name = "test";
-    }else if (event.context.nickname){
-        Name = event.context.nickname;
-    }
-
-    console.log('userName =', Name);
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -70,17 +68,21 @@ exports.handler = (event, context, callback) => {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
             conn.destroy();
-            callback(error.message);
-            return context.fail(error);
+            response.error = 400;
+            response.message = "Error: select QRA to get ID of Owner";
+            // return context.fail( "Error: select QRA to get ID of Owner");
+            return context.succeed(response);
         }
 
         console.log("info" + info);
 
         if (info.length === 0){
             console.log("Caller user is not the QSO Owner");
-            console.log('error select: ' + error);
-            callback(error);
-            return context.fail(error);
+            response.error = 400;
+            response.message = "Error: Caller user is not the QSO Owner";
+            conn.destroy();
+            //return context.fail( "Error: Caller user is not the QSO Owner");
+            return context.succeed(response);
         }
     });
     //***********************************************************
@@ -94,14 +96,17 @@ exports.handler = (event, context, callback) => {
             console.log("Error when Insert QSO MEDIA");
             console.log(error.message);
             conn.destroy();
-            callback(error.message);
-            return callback.fail(error);
+            response.error = 400;
+            response.message = "Error when Insert QSO MEDIA";
+            //return context.fail( "Error when Insert QSO MEDIA");
+            return context.succeed(response);
         } //End If
         if (info.insertId){
             console.log("QSOMEDIA inserted", info.insertId);
-            var msg = { "error": "0",
-                "message": qso };
-            context.succeed(msg);
+            conn.destroy();
+            response.error = 0;
+            response.message = url;
+            return context.succeed(response);
         }
     }); //End Insert
 
