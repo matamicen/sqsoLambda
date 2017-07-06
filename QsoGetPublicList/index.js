@@ -54,7 +54,7 @@ exports.handler = (event, context, callback) => {
                             function(callback2) { //GET QRA of QSO_OWNER
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("qra_owner - " + idqsos);
-                                conn.query ( "SELECT * from qras WHERE idqras = ? LIMIT 1", qso.idqra_owner,   function(error,info) {
+                                conn.query ( "SELECT qra, profilepic from qras WHERE idqras = ? LIMIT 1", qso.idqra_owner,   function(error,info) {
                                     if (!error) {
                                         //console.log(info);
                                         qra = JSON.parse(JSON.stringify(info));
@@ -76,7 +76,7 @@ exports.handler = (event, context, callback) => {
                             function(callback2) { //GET QRAS of QSO
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("qsos_qras" + idqsos);
-                                conn.query ( "SELECT * FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", idqsos,   function(error,qras) {
+                                conn.query ( "SELECT qra, profilepic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", idqsos,   function(error,qras) {
                                     if (!error) {
                                         console.log(qras);
                                         qso_qras = JSON.parse(JSON.stringify(qras));
@@ -110,7 +110,7 @@ exports.handler = (event, context, callback) => {
                             function (callback3) { //GET LIKES
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("GET LIKES" + idqsos);
-                                conn.query("SELECT * from qsos_likes WHERE idqso =? ", idqsos, function (error, likes) {
+                                conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", idqsos, function (error, likes) {
                                     if (!error) {
                                         console.log(likes);
                                         qso_likes = JSON.parse(JSON.stringify(likes));
