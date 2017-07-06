@@ -106,6 +106,26 @@ exports.handler = (event, context, callback) => {
 
                                 });
 
+                            },
+                            function (callback3) { //GET LIKES
+                                idqsos = JSON.stringify(qso.idqsos);
+                                console.log("GET LIKES" + idqsos);
+                                conn.query("SELECT * from qsos_likes WHERE idqso =? ", idqsos, function (error, likes) {
+                                    if (!error) {
+                                        console.log(likes);
+                                        qso_likes = JSON.parse(JSON.stringify(likes));
+                                        qso.likes = qso_likes;
+                                        //qsos.push(JSON.parse(JSON.stringify(qso)));
+                                        //     console.log(qso);
+                                        callback3();
+                                    }
+                                    else {
+                                        console.log(error);
+                                        callback2();
+                                    }
+
+                                });
+
                             } ],
                         function(err){
                             console.log("All tasks are done now");
