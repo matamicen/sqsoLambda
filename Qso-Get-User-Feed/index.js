@@ -29,6 +29,7 @@ exports.handler = (event, context, callback) =>
     var idqsos;
     var sub;
     var qso_media;
+    var qso_likes;
     var idqra_owner;
 
     if (process.env.TEST) {
@@ -139,6 +140,26 @@ exports.handler = (event, context, callback) =>
                                                 console.log(media);
                                                 qso_media = JSON.parse(JSON.stringify(media));
                                                 qso.media = qso_media;
+                                                //qsos.push(JSON.parse(JSON.stringify(qso)));
+                                                //     console.log(qso);
+                                                callback3();
+                                            }
+                                            else {
+                                                console.log(error);
+                                                callback2();
+                                            }
+
+                                        });
+
+                                    },
+                                    function (callback3) { //GET LIKES
+                                        idqsos = JSON.stringify(qso.idqsos);
+                                        console.log("GET LIKES" + idqsos);
+                                        conn.query("SELECT * from qsos_likes WHERE idqso =? ", idqsos, function (error, likes) {
+                                            if (!error) {
+                                                console.log(likes);
+                                                qso_likes = JSON.parse(JSON.stringify(likes));
+                                                qso.likes = qso_likes;
                                                 //qsos.push(JSON.parse(JSON.stringify(qso)));
                                                 //     console.log(qso);
                                                 callback3();
