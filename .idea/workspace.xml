@@ -3,9 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Qso-Get-User-Feed/index.js" afterPath="$PROJECT_DIR$/Qso-Get-User-Feed/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoCommentAdd/index.js" afterPath="$PROJECT_DIR$/QsoCommentAdd/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoGetPublicList/index.js" afterPath="$PROJECT_DIR$/QsoGetPublicList/index.js" />
     </list>
     <ignored path="SqsoLambda.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -375,7 +372,7 @@
       <workItem from="1499306607765" duration="1108000" />
       <workItem from="1500052197947" duration="934000" />
       <workItem from="1500493382491" duration="17794000" />
-      <workItem from="1500665686157" duration="280000" />
+      <workItem from="1500665686157" duration="501000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -496,20 +493,27 @@
       <option name="project" value="LOCAL" />
       <updated>1500504086008</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="qso user feed y public feed traen comentarios">
+      <created>1500666002282</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1500666002282</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="89265000" />
+    <option name="totallyTimeSpent" value="89486000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1290" height="784" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24920128" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.5210819" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.4813047" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.52316296" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.47683707" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.47891805" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -572,7 +576,8 @@
     <MESSAGE value="agregar logica de likes a qso get public list" />
     <MESSAGE value="solo mandar en json qra y profile pic, y en get likes mandar qra y profile picsolamente" />
     <MESSAGE value="qso comment add funcionando" />
-    <option name="LAST_COMMIT_MESSAGE" value="qso comment add funcionando" />
+    <MESSAGE value="qso user feed y public feed traen comentarios" />
+    <option name="LAST_COMMIT_MESSAGE" value="qso user feed y public feed traen comentarios" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
