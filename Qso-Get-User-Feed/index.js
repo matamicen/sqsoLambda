@@ -30,6 +30,7 @@ exports.handler = (event, context, callback) =>
     var sub;
     var qso_media;
     var qso_likes;
+    var qso_comments;
     var idqra_owner;
 
     if (process.env.TEST) {
@@ -146,27 +147,47 @@ exports.handler = (event, context, callback) =>
                                             }
                                             else {
                                                 console.log(error);
-                                                callback2();
+                                                callback3();
                                             }
 
                                         });
 
                                     },
-                                    function (callback3) { //GET LIKES
+                                    function (callback4) { //GET LIKES
                                         idqsos = JSON.stringify(qso.idqsos);
                                         console.log("GET LIKES" + idqsos);
-                                        conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", idqsos, function (error, likes) {
+                                        conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? ) ", idqsos, function (error, likes) {
                                             if (!error) {
                                                 console.log(likes);
                                                 qso_likes = JSON.parse(JSON.stringify(likes));
                                                 qso.likes = qso_likes;
                                                 //qsos.push(JSON.parse(JSON.stringify(qso)));
                                                 //     console.log(qso);
-                                                callback3();
+                                                callback4();
                                             }
                                             else {
                                                 console.log(error);
-                                                callback2();
+                                                callback4();
+                                            }
+
+                                        });
+
+                                    },
+                                    function (callback5) { //GET Comments
+                                        idqsos = JSON.stringify(qso.idqsos);
+                                        console.log("GET Comments" + idqsos);
+                                        conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comments.idqra = qras.idqras where  idqso=?", idqsos, function (error, comments) {
+                                            if (!error) {
+                                                console.log(comments);
+                                                qso_comments = JSON.parse(JSON.stringify(comments));
+                                                qso.comments = qso_comments;
+                                                //qsos.push(JSON.parse(JSON.stringify(qso)));
+                                                //     console.log(qso);
+                                                callback5();
+                                            }
+                                            else {
+                                                console.log(error);
+                                                callback5();
                                             }
 
                                         });

@@ -2,8 +2,7 @@ var fs = require('fs');
 var mysql = require('mysql');
 // var async = require('async');
 
-exports.handler = (event, context, callback) =
->
+exports.handler = (event, context, callback) =>
 {
 
 
@@ -31,7 +30,7 @@ exports.handler = (event, context, callback) =
         var test = {
             "qso": "473",
             "comment": "test comment",
-            "datetime": "2016-04-28 14:12:00",
+            "datetime": "2016-04-28 14:12:00"
 
         };
         qso = test.qso;
@@ -108,7 +107,7 @@ exports.handler = (event, context, callback) =
                             conn.destroy();
                             response.body.error = 0;
                             response.body.message = JSON.parse(JSON.stringify(comments));
-                            console.log("new comments" + response.message);
+                            console.log("new comments" + response.body.message);
                             return callback(null, response);
                         }
                         else {

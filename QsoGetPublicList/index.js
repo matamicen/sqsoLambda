@@ -23,6 +23,8 @@ exports.handler = (event, context, callback) => {
     var date = new Date();
     var qso_qras;
     var qso_medias;
+    var qso_comments;
+    var qso_likes;
     var qra;
     var qsos = [];
     var qsos_output = [];
@@ -73,7 +75,7 @@ exports.handler = (event, context, callback) => {
                                 });
 
                             },
-                            function(callback2) { //GET QRAS of QSO
+                            function(callback3) { //GET QRAS of QSO
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("qsos_qras" + idqsos);
                                 conn.query ( "SELECT qra, profilepic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", idqsos,   function(error,qras) {
@@ -83,16 +85,16 @@ exports.handler = (event, context, callback) => {
                                         qso.qras = qso_qras;
                                         // qsos.push(JSON.parse(JSON.stringify(qso)));
                                         //  console.log(qso);
-                                        callback2();
+                                        callback3();
                                     }else{
                                         console.log(error);
-                                        callback2();
+                                        callback3();
                                     }
 
                                 });
 
                             },
-                            function(callback2) { //GET MEDIA
+                            function(callback4) { //GET MEDIA
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("function2" + idqsos);
                                 conn.query ( "SELECT * from qsos_media WHERE idqso =? ", idqsos,   function(error,media) {
@@ -101,13 +103,16 @@ exports.handler = (event, context, callback) => {
                                         qso.media = qso_media;
                                         //qsos.push(JSON.parse(JSON.stringify(qso)));
                                         //     console.log(qso);
-                                        callback2();
+                                        callback4();
+                                    }else{
+                                        console.log(error);
+                                        callback4();
                                     }
 
                                 });
 
                             },
-                            function (callback3) { //GET LIKES
+                            function (callback5) { //GET LIKES
                                 idqsos = JSON.stringify(qso.idqsos);
                                 console.log("GET LIKES" + idqsos);
                                 conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", idqsos, function (error, likes) {
@@ -117,11 +122,31 @@ exports.handler = (event, context, callback) => {
                                         qso.likes = qso_likes;
                                         //qsos.push(JSON.parse(JSON.stringify(qso)));
                                         //     console.log(qso);
-                                        callback3();
+                                        callback5();
                                     }
                                     else {
                                         console.log(error);
-                                        callback2();
+                                        callback5();
+                                    }
+
+                                });
+
+                            },
+                            function (callback5) { //GET Comments
+                                idqsos = JSON.stringify(qso.idqsos);
+                                console.log("GET Comments" + idqsos);
+                                conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comments.idqra = qras.idqras where  idqso=?", idqsos, function (error, comments) {
+                                    if (!error) {
+                                        console.log(comments);
+                                        qso_comments = JSON.parse(JSON.stringify(comments));
+                                        qso.comments = qso_comments;
+                                        //qsos.push(JSON.parse(JSON.stringify(qso)));
+                                        //     console.log(qso);
+                                        callback5();
+                                    }
+                                    else {
+                                        console.log(error);
+                                        callback5();
                                     }
 
                                 });
