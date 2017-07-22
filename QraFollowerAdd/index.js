@@ -114,7 +114,7 @@ exports.handler = (event, context, callback) =>
                             // return context.fail( "Error: Error when selecting QRA");
                             return callback(null, response);
                         }
-                        else if (info.length >= 0) {
+                        else if (info.length > 0) {
                             console.log("already followed" );
                             //like already exist => do not insert again
                             response.body.error = 0;
