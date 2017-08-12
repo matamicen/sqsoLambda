@@ -75,7 +75,7 @@ exports.handler = (event, context, callback) =>
                     //Load QRA Info
                     function (callback) {
                         console.log("Get User Data" + idqra_owner);
-                        conn.query("SELECT qras.idqras, qras.profilepic from qras where qras.idqras=?", idqra_owner, function (error, info) {
+                        conn.query("SELECT qras.QRA, qras.profilepic from qras where qras.idqras=?", idqra_owner, function (error, info) {
 
                                 if (error) {
                                     console.log("Error when selecting FOLLOWERQRA");
@@ -95,7 +95,7 @@ exports.handler = (event, context, callback) =>
                                     callback(response);
                                 }
                                 else if (info.length > 0) {
-                                    output.qra = JSON.parse(JSON.stringify(info));
+                                    output.qra = JSON.parse(JSON.stringify(info))[0];
                                     callback();
                                 }
                             }
@@ -126,7 +126,7 @@ exports.handler = (event, context, callback) =>
                         );
                     },
 
-                    //Load Followed by
+                    //Load Followers
                     function (callback) {
                         conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra_followed = ?", idqra_owner, function (error, info) {
                                 if (error) {
@@ -139,7 +139,7 @@ exports.handler = (event, context, callback) =>
                                     callback(error);
                                 }
                                 else {
-                                    output.followedby = JSON.parse(JSON.stringify(info));
+                                    output.followers = JSON.parse(JSON.stringify(info));
                                     callback();
                                 }
 

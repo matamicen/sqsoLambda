@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/SNSTest/index.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/UserGetInfo/index.js" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/QraEndPointAdd/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/UserGetInfo/index.js" afterPath="$PROJECT_DIR$/UserGetInfo/index.js" />
     </list>
     <ignored path="SqsoLambda.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -26,12 +26,22 @@
     <favorites_list name="SqsoLambda" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/UserGetInfo/index.js">
           <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="35">
+              <caret line="66" column="44" lean-forward="false" selection-start-line="66" selection-start-column="44" selection-end-line="66" selection-end-column="44" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/QraEndPointAdd/index.js">
+          <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="596">
-              <caret line="173" column="0" lean-forward="true" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
+              <caret line="98" column="0" lean-forward="true" selection-start-line="98" selection-start-column="0" selection-end-line="98" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -73,6 +83,7 @@
         <option value="$PROJECT_DIR$/QraFollowerAdd/index.js" />
         <option value="$PROJECT_DIR$/SNSTest/index.js" />
         <option value="$PROJECT_DIR$/UserGetInfo/index.js" />
+        <option value="$PROJECT_DIR$/QraEndPointAdd/index.js" />
       </list>
     </option>
   </component>
@@ -94,6 +105,7 @@
     <handled-path value="$PROJECT_DIR$/CognitoPreSignUp/node_modules" />
     <handled-path value="$PROJECT_DIR$/QRAgetProfilePic/node_modules" />
     <handled-path value="$PROJECT_DIR$/QRAsetProfilePic/node_modules" />
+    <handled-path value="$PROJECT_DIR$/QraEndPointAdd/node_modules" />
     <handled-path value="$PROJECT_DIR$/QraFollowerAdd/node_modules" />
     <handled-path value="$PROJECT_DIR$/Qso-Get-User-Feed/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoCommentAdd/node_modules" />
@@ -109,8 +121,10 @@
     <handled-path value="$PROJECT_DIR$/node_modules" />
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="width" value="1274" />
-    <option name="height" value="768" />
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="1290" />
+    <option name="height" value="784" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -128,7 +142,6 @@
     </navigator>
     <panes>
       <pane id="Scratches" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -136,25 +149,11 @@
               <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
               <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="QraFollowerAdd" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="Qso-Get-User-Feed" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="UserGetInfo" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -169,19 +168,19 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/QsoDoLike/node_modules/fs/README.md&#10;C:/Users/468855/WebstormProjects/sqsoLambda/.gitignore" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\SNSTest\node_modules" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoDoLike" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\Qso-Get-User-Feed" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QRAsetProfilePic" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoEdit" />
       <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoNew" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\SNSTest\node_modules" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoDoLike" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -314,7 +313,8 @@
       <workItem from="1500752833163" duration="3623000" />
       <workItem from="1500757460815" duration="676000" />
       <workItem from="1502221923584" duration="1686000" />
-      <workItem from="1502466220992" duration="11762000" />
+      <workItem from="1502466220992" duration="15401000" />
+      <workItem from="1502552268205" duration="7224000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -463,11 +463,18 @@
       <option name="project" value="LOCAL" />
       <updated>1500757538065</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="user info get">
+      <created>1502483262253</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1502483262254</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="110079000" />
+    <option name="totallyTimeSpent" value="120942000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1290" height="784" extended-state="6" />
@@ -475,7 +482,7 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1373802" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.52396166" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3259587" sideWeight="0.4640575" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21091445" sideWeight="0.4640575" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.47603834" order="7" side_tool="false" content_ui="tabs" />
@@ -541,7 +548,8 @@
     <MESSAGE value="qso user feed y public feed traen comentarios" />
     <MESSAGE value="qso follower add funcionando" />
     <MESSAGE value="qso follower add corregido" />
-    <option name="LAST_COMMIT_MESSAGE" value="qso follower add corregido" />
+    <MESSAGE value="user info get" />
+    <option name="LAST_COMMIT_MESSAGE" value="user info get" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -550,13 +558,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/QsoQraAdd/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2686">
-          <caret line="158" column="2" lean-forward="false" selection-start-line="158" selection-start-column="2" selection-end-line="158" selection-end-column="2" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/QsoEdit/node_modules/fs/README.md" />
     <entry file="file://$PROJECT_DIR$/QsoMediaAdd/index.js">
       <provider selected="true" editor-type-id="text-editor">
@@ -800,7 +801,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2244">
           <caret line="132" column="1" lean-forward="false" selection-start-line="132" selection-start-column="1" selection-end-line="132" selection-end-column="1" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -808,7 +808,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3026">
           <caret line="178" column="2" lean-forward="false" selection-start-line="178" selection-start-column="2" selection-end-line="178" selection-end-column="2" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -816,7 +815,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="375">
           <caret line="100" column="56" lean-forward="false" selection-start-line="96" selection-start-column="24" selection-end-line="100" selection-end-column="56" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -824,7 +822,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
           <caret line="8" column="26" lean-forward="false" selection-start-line="8" selection-start-column="26" selection-end-line="8" selection-end-column="26" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -832,7 +829,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
           <caret line="6" column="1" lean-forward="true" selection-start-line="6" selection-start-column="1" selection-end-line="6" selection-end-column="1" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -840,7 +836,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="140">
           <caret line="75" column="16" lean-forward="true" selection-start-line="75" selection-start-column="16" selection-end-line="75" selection-end-column="16" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -848,7 +843,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="313">
           <caret line="71" column="49" lean-forward="true" selection-start-line="71" selection-start-column="49" selection-end-line="71" selection-end-column="49" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -856,14 +850,21 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="117" column="76" lean-forward="true" selection-start-line="117" selection-start-column="76" selection-end-line="117" selection-end-column="76" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/UserGetInfo/index.js">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="35">
+          <caret line="66" column="44" lean-forward="false" selection-start-line="66" selection-start-column="44" selection-end-line="66" selection-end-column="44" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QraEndPointAdd/index.js">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="596">
-          <caret line="173" column="0" lean-forward="true" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
+          <caret line="98" column="0" lean-forward="true" selection-start-line="98" selection-start-column="0" selection-end-line="98" selection-end-column="0" />
           <folding />
         </state>
       </provider>
