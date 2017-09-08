@@ -1,8 +1,12 @@
 var fs = require('fs');
 var mysql = require('mysql');
 // var async = require('async');
+var AWS = require('aws-sdk');
+AWS.config.region = 'eu-east-1';
+var lambda = new AWS.Lambda();
 
-exports.handler = (event, context, callback) =>
+exports.handler = (event, context, callback) =
+>
 {
 
 
@@ -13,6 +17,7 @@ exports.handler = (event, context, callback) =>
     var qso;
     var datetime;
     var comment;
+    var payload;
     var response = {
         statusCode: 200,
         headers: {
@@ -100,10 +105,31 @@ exports.handler = (event, context, callback) =>
                     console.log("QSOCOMMENT inserted", info.insertId);
                     conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comments.idqra = qras.idqras where  idqso=?", qso, function (error, comments) {
                         if (!error) {
+                            //PUSH Notification
+                            payload = {
+                                "commentID": info.insertID,
+                                "qso": qso
+                            };
+                            var params = {
+                                FunctionName: 'snsPushUser', // the lambda function we are going to invoke
+                                InvocationType: 'RequestResponse',
+                                LogType: 'Tail',
+                                Payload: JSON.stringify(payload)
+                            };
+
+                            lambda.invoke(params, function (err, data) {
+                                if (err) {
+                                    // context.fail(err);
+                                    console.log("push error");
+                                } else {
+                                    console.log("push OK");
+                                    // context.succeed('Lambda_B said ' + data.Payload);
+                                }
+                            })
+
                             console.log(comments);
 
-                            //qsos.push(JSON.parse(JSON.stringify(qso)));
-                            //     console.log(qso);
+
                             conn.destroy();
                             response.body.error = 0;
                             response.body.message = JSON.parse(JSON.stringify(comments));
