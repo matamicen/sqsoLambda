@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/SNS-Comment-add/index.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/SNS-Media-Add/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QraEndPointAdd/index.js" afterPath="$PROJECT_DIR$/QraEndPointAdd/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoCommentAdd/index.js" afterPath="$PROJECT_DIR$/QsoCommentAdd/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QsoMediaAdd/index.js" afterPath="$PROJECT_DIR$/QsoMediaAdd/index.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SNSTest/index.js" afterPath="$PROJECT_DIR$/SNSTest/index.js" />
     </list>
     <ignored path="SqsoLambda.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -340,7 +334,7 @@
       <workItem from="1502552268205" duration="8459000" />
       <workItem from="1504118598902" duration="5314000" />
       <workItem from="1504363234508" duration="2295000" />
-      <workItem from="1504881117418" duration="10921000" />
+      <workItem from="1504881117418" duration="11003000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -503,11 +497,18 @@
       <option name="project" value="LOCAL" />
       <updated>1502568043907</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="sns media add actualizado con url de prueba y enviandose a QRA y followers">
+      <created>1504901977297</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1504901977297</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="140707000" />
+    <option name="totallyTimeSpent" value="140789000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1290" height="784" extended-state="6" />
@@ -583,7 +584,8 @@
     <MESSAGE value="qso follower add corregido" />
     <MESSAGE value="user info get" />
     <MESSAGE value="Qra EndPoint Add creado y funcionando" />
-    <option name="LAST_COMMIT_MESSAGE" value="Qra EndPoint Add creado y funcionando" />
+    <MESSAGE value="sns media add actualizado con url de prueba y enviandose a QRA y followers" />
+    <option name="LAST_COMMIT_MESSAGE" value="sns media add actualizado con url de prueba y enviandose a QRA y followers" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -856,6 +858,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="714">
           <caret line="42" column="0" lean-forward="false" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
