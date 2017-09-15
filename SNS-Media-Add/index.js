@@ -30,6 +30,9 @@ exports.handler = (event, context, callback) =>
     var comment;
     var payload;
     var sns;
+    var params;
+    var url;
+
     if (process.env.TEST) {
         qso = 613;
         owner = 142;
@@ -71,6 +74,7 @@ exports.handler = (event, context, callback) =>
                                     sns = new AWS.SNS();
                                     //     console.log(line.endpoint_arn);
                                     comment = owner_qra + " started a QSO with you";
+                                    url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qso;
                                     payload = {
                                         default: "HEADER",
                                         GCM: {
@@ -78,14 +82,14 @@ exports.handler = (event, context, callback) =>
                                                 {
                                                     "header": comment,
                                                     "body": "Los papeles de Telecom Argentina caen 3,14 por ciento, a 105 pesos cada uno y lideran las bajas dentro del Merval, que acentúa su incursión en terreno negativo por una toma de ganancias que realizan los inversores tras siete alzas consecutivas.A media rueda, el principal indicador de la Bolsa porteña cae 1,30%, hasta situarse en las 23.934,62 unidades.",
-                                                    "url": "http://www.google.com"
+                                                    "url": url
                                                 }
 
                                         }
                                     };
                                     payload.GCM = JSON.stringify(payload.GCM);
                                     payload = JSON.stringify(payload);
-                                    var params = {
+                                    params = {
                                         Message: payload,
                                         MessageStructure: 'json',
                                         Subject: comment,
@@ -149,6 +153,7 @@ exports.handler = (event, context, callback) =>
                                     sns = new AWS.SNS();
                                     //console.log(line);
                                     comment = owner_qra + " started a QSO with " + line.qra;
+                                    url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qso;
                                     payload = {
                                         default: "HEADER",
                                         GCM: {
@@ -156,14 +161,14 @@ exports.handler = (event, context, callback) =>
                                                 {
                                                     "header": comment,
                                                     "body": "Los papeles de Telecom Argentina caen 3,14 por ciento, a 105 pesos cada uno y lideran las bajas dentro del Merval, que acentúa su incursión en terreno negativo por una toma de ganancias que realizan los inversores tras siete alzas consecutivas.A media rueda, el principal indicador de la Bolsa porteña cae 1,30%, hasta situarse en las 23.934,62 unidades.",
-                                                    "url": "http://www.google.com"
+                                                    "url": url
                                                 }
 
                                         }
                                     };
                                     payload.GCM = JSON.stringify(payload.GCM);
                                     payload = JSON.stringify(payload);
-                                    var params = {
+                                    params = {
                                         Message: payload,
                                         MessageStructure: 'json',
                                         Subject: comment,

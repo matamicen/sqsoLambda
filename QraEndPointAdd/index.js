@@ -2,7 +2,6 @@ var fs = require('fs');
 var mysql = require('mysql');
 // var async = require('async');
 
-
 exports.handler = (event, context, callback) =>
 {
 
@@ -23,7 +22,7 @@ exports.handler = (event, context, callback) =>
     // var count;
     if (process.env.TEST) {
         var test = {
-            "endpoint": "arn:aws:sns:us-east-1:116775337022:endpoint/GCM/AndroidSqso/49801a6d-b6b5-32c2-9533-8330b7f588a4"
+            "endpoint": "arn:aws:sns:us-east-1:116775337022:endpoint/GCM/AndroidSqso/1c962489-739f-3f47-b5ad-4ec3abea1261"
 
         };
         endpoint = test.endpoint;
@@ -74,7 +73,7 @@ exports.handler = (event, context, callback) =>
             //get qra of following
             idqra_owner = JSON.parse(JSON.stringify(info))[0].idqras;
             console.log("idqra " + idqra_owner + "endpoint " + endpoint);
-            conn.query('INSERT INTO qra_endpoints SET idqra = ?,endpoint_arn=?', [idqra_owner, endpoint], function (error, info) {
+            conn.query('INSERT INTO qra_endpoints (idqra, endpoint_arn) VALUES (?,?) ON DUPLICATE KEY UPDATE idqra = ?', [idqra_owner, endpoint, idqra_owner], function (error, info) {
                 if (error) {
                     console.log("Error when Insert qra_endpoints");
                     console.log(error.message);

@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="49f4d518-6856-4b28-b443-b77454792ed0" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/QsoDetailGet/index.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/QraEndPointAdd/index.js" afterPath="$PROJECT_DIR$/QraEndPointAdd/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SNS-Comment-add/index.js" afterPath="$PROJECT_DIR$/SNS-Comment-add/index.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SNS-Media-Add/index.js" afterPath="$PROJECT_DIR$/SNS-Media-Add/index.js" />
     </list>
     <ignored path="SqsoLambda.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -26,10 +30,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/SNS-Media-Add/index.js">
+        <entry file="file://$PROJECT_DIR$/QsoDetailGet/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="476">
-              <caret line="136" column="26" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="221" selection-end-column="1" />
+            <state relative-caret-position="453">
+              <caret line="184" column="1" lean-forward="false" selection-start-line="184" selection-start-column="1" selection-end-line="184" selection-end-column="1" />
               <folding />
             </state>
           </provider>
@@ -68,12 +72,13 @@
         <option value="$PROJECT_DIR$/Qso-Get-User-Feed/index.js" />
         <option value="$PROJECT_DIR$/QraFollowerAdd/index.js" />
         <option value="$PROJECT_DIR$/UserGetInfo/index.js" />
-        <option value="$PROJECT_DIR$/QraEndPointAdd/index.js" />
         <option value="$PROJECT_DIR$/QsoCommentAdd/index.js" />
         <option value="$PROJECT_DIR$/SNSTest/index.js" />
-        <option value="$PROJECT_DIR$/SNS-Comment-add/index.js" />
         <option value="$PROJECT_DIR$/QsoMediaAdd/index.js" />
+        <option value="$PROJECT_DIR$/QraEndPointAdd/index.js" />
+        <option value="$PROJECT_DIR$/SNS-Comment-add/index.js" />
         <option value="$PROJECT_DIR$/SNS-Media-Add/index.js" />
+        <option value="$PROJECT_DIR$/QsoDetailGet/index.js" />
       </list>
     </option>
   </component>
@@ -99,6 +104,7 @@
     <handled-path value="$PROJECT_DIR$/QraFollowerAdd/node_modules" />
     <handled-path value="$PROJECT_DIR$/Qso-Get-User-Feed/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoCommentAdd/node_modules" />
+    <handled-path value="$PROJECT_DIR$/QsoDetailGet/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoEdit/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoGetPublicList/node_modules" />
     <handled-path value="$PROJECT_DIR$/QsoLikeAdd/node_modules" />
@@ -143,34 +149,14 @@
             <path>
               <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
               <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="Qso-Get-User-Feed" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="QsoMediaAdd" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="SNS-Comment-add" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="SNS-Media-Add" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="sqsoLambda" type="b2602c69:ProjectViewProjectNode" />
-              <item name="sqsoLambda" type="462c0819:PsiDirectoryNode" />
-              <item name="SNSTest" type="462c0819:PsiDirectoryNode" />
+              <item name="QsoDetailGet" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scratches" />
       <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -185,19 +171,19 @@
     <property name="add_unversioned_files" value="$PROJECT_DIR$/QsoDoLike/node_modules/fs/README.md&#10;C:/Users/468855/WebstormProjects/sqsoLambda/.gitignore" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\SNSTest\node_modules" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\" />
-      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoDoLike" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\Qso-Get-User-Feed" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QRAsetProfilePic" />
       <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoEdit" />
       <recent name="C:\Users\llangenauer\WebstormProjects\SqsoLambda\QsoNew" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\SNSTest\node_modules" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoCommentAdd" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\" />
+      <recent name="C:\Users\468855\WebstormProjects\sqsoLambda\QsoDoLike" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -334,7 +320,11 @@
       <workItem from="1502552268205" duration="8459000" />
       <workItem from="1504118598902" duration="5314000" />
       <workItem from="1504363234508" duration="2295000" />
-      <workItem from="1504881117418" duration="11003000" />
+      <workItem from="1504881117418" duration="11618000" />
+      <workItem from="1505314197241" duration="680000" />
+      <workItem from="1505487980815" duration="15000" />
+      <workItem from="1505501759038" duration="2665000" />
+      <workItem from="1505511307600" duration="35000" />
     </task>
     <task id="LOCAL-00001" summary="Cognito Confirmation microservice">
       <created>1481212404203</created>
@@ -504,21 +494,29 @@
       <option name="project" value="LOCAL" />
       <updated>1504901977297</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="sns media add actualizado con url de prueba y enviandose a QRA y followers">
+      <created>1504902029515</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1504902029515</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="140789000" />
+    <option name="totallyTimeSpent" value="144799000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1290" height="784" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3298722" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3290735" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.52396166" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21091445" sideWeight="0.4640575" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21091445" sideWeight="0.4640575" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.15486726" sideWeight="0.47603834" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.15486726" sideWeight="0.47603834" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -530,24 +528,6 @@
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
-    <layout-to-restore>
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3296" sideWeight="0.5059289" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3296" sideWeight="0.49407116" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24901186" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -585,7 +565,8 @@
     <MESSAGE value="user info get" />
     <MESSAGE value="Qra EndPoint Add creado y funcionando" />
     <MESSAGE value="sns media add actualizado con url de prueba y enviandose a QRA y followers" />
-    <option name="LAST_COMMIT_MESSAGE" value="sns media add actualizado con url de prueba y enviandose a QRA y followers" />
+    <MESSAGE value="sns media y comment funcionando. &#10;qsodetailGet funcionando" />
+    <option name="LAST_COMMIT_MESSAGE" value="sns media y comment funcionando. &#10;qsodetailGet funcionando" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -594,13 +575,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/QsoNew/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
@@ -818,13 +792,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3026">
-          <caret line="178" column="2" lean-forward="false" selection-start-line="178" selection-start-column="2" selection-end-line="178" selection-end-column="2" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/QsoLikeAdd/index.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="375">
@@ -850,15 +817,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1122">
           <caret line="66" column="44" lean-forward="false" selection-start-line="66" selection-start-column="44" selection-end-line="66" selection-end-column="44" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/QraEndPointAdd/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="714">
-          <caret line="42" column="0" lean-forward="false" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -866,15 +824,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1088">
           <caret line="62" column="49" lean-forward="false" selection-start-line="62" selection-start-column="49" selection-end-line="62" selection-end-column="49" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/QsoCommentAdd/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1258">
-          <caret line="122" column="52" lean-forward="false" selection-start-line="122" selection-start-column="52" selection-end-line="122" selection-end-column="52" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -889,15 +838,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="596">
           <caret line="151" column="2" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="151" selection-end-column="2" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SNS-Comment-add/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="596">
-          <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -905,14 +845,52 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="15" column="36" lean-forward="false" selection-start-line="15" selection-start-column="23" selection-end-line="15" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QraEndPointAdd/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="453">
+          <caret line="98" column="0" lean-forward="true" selection-start-line="98" selection-start-column="0" selection-end-line="98" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SNS-Comment-add/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="453">
+          <caret line="113" column="0" lean-forward="true" selection-start-line="113" selection-start-column="0" selection-end-line="113" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QsoGetPublicList/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="49" column="33" lean-forward="false" selection-start-line="49" selection-start-column="33" selection-end-line="49" selection-end-column="33" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SNS-Media-Add/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="136" column="26" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="221" selection-end-column="1" />
+        <state relative-caret-position="300">
+          <caret line="49" column="29" lean-forward="true" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QsoCommentAdd/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="56" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/QsoDetailGet/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="453">
+          <caret line="184" column="1" lean-forward="false" selection-start-line="184" selection-start-column="1" selection-end-line="184" selection-end-column="1" />
           <folding />
         </state>
       </provider>
