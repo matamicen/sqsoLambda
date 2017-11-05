@@ -22,6 +22,8 @@ exports.handler = (event, context, callback) => {
     var idqra_owner;
     var qra_owner;
     var qso;
+    var desc;
+
     var response = {
         "message": "",
         "error": ""
@@ -33,13 +35,15 @@ exports.handler = (event, context, callback) => {
             "type":  "image",
             "url": "http://www.google.com",
             "datetime": "2016-04-28 14:12:00",
-            "datasize": "22"
+            "datasize": "22",
+            "description": "test"
         };
         qso = test.qso;
         type = test.type;
         datetime = test.datetime;
         url = test.url;
         datasize = test.datasize;
+        description = test.description;
     }
     else {
         qso = event.body.qso;
@@ -47,6 +51,7 @@ exports.handler = (event, context, callback) => {
         url = event.body.url;
         datasize = event.body.datasize;
         datetime = event.body.datetime;
+        description = event.body.description;
     }
 
     if (process.env.TEST){
@@ -98,7 +103,7 @@ exports.handler = (event, context, callback) => {
             "url": url,
             "datasize": datasize
         };
-        conn.query('INSERT INTO qsos_media SET idqso = ?, type = ?, url = ?, datasize = ?, datetime = ?', [qso, type, url, datasize, datetime], function(error, info) {
+        conn.query('INSERT INTO qsos_media SET idqso = ?, type = ?, url = ?, datasize = ?, datetime = ?, description=?', [qso, type, url, datasize, datetime, description], function(error, info) {
             if (error) {
                 console.log("Error when Insert QSO MEDIA");
                 console.log(error.message);

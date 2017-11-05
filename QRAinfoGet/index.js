@@ -31,9 +31,9 @@ exports.handler = (event, context, callback) =>
 
 
     if (process.env.TEST) {
-        Sub = "99a3c963-3f7d-4604-a870-3c675b012f63";
+        qra = "LU2ACH";
     } else if (event.context.sub) {
-        Sub = event.context.sub;
+        qra = event.context.qra;
     }
     console.log("sub =", Sub);
 
@@ -47,9 +47,9 @@ exports.handler = (event, context, callback) =>
     });
 
     // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
+    console.log("select IDQRA ");
 
-    conn.query("SELECT qras.idqras from qras where qras.idcognito=?", Sub, function (error, info) {
+    conn.query("SELECT qras.idqras from qras where qras.qra=?", qra, function (error, info) {
         if (error) {
             console.log("Error when selecting QRA");
             console.log(error);
@@ -60,9 +60,9 @@ exports.handler = (event, context, callback) =>
             return callback(null, response);
         }
         else if (info.length === 0) {
-            console.log("User does not exist");
+            console.log("QRA does not exist");
             response.body.error = 400;
-            response.body.message = "Error: User does not exist";
+            response.body.message = "Error: QRA does not exist";
 
             return callback(null, response);
         }
@@ -74,8 +74,8 @@ exports.handler = (event, context, callback) =>
             async.series([
                     //Load QRA Info
                     function (callback) {
-                        console.log("Get User Data" + idqra_owner);
-                        conn.query("SELECT * from qras where qras.idqras=?", idqra_owner, function (error, info) {
+                        console.log("Get QRA Data" + idqra_owner);
+                        conn.query("SELECT qras.QRA, qras.profilepic from qras where qras.idqras=?", idqra_owner, function (error, info) {
 
                                 if (error) {
                                     console.log("Error when selecting FOLLOWERQRA");
@@ -105,7 +105,7 @@ exports.handler = (event, context, callback) =>
                     //Load Following
                     function (callback) {
                         console.log("Getting Following of " + idqra_owner);
-                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (error, info) {
+                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (error, info) {
                                 console.log(info);
                                 if (error) {
                                     console.log("Error when selecting FOLLOWING QRA");

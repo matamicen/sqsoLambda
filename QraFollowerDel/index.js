@@ -12,7 +12,6 @@ exports.handler = (event, context, callback) =>
     var idqra_owner;
     var idqra_follower;
     var qra;
-    var datetime;
 
     var response = {
         statusCode: 200,
@@ -29,22 +28,21 @@ exports.handler = (event, context, callback) =>
     // var count;
     if (process.env.TEST) {
         var test = {
-            "qra": "LU2ACH",
-            "datetime": "2016-04-28 14:12:00"
+            "qra": "LU2ACH"
 
         };
         qra = test.qra;
-        datetime = test.datetime;
+
 
     }
     else {
         qra = event.body.qra;
-        datetime = event.body.datetime;
+
 
     }
 
     if (process.env.TEST) {
-        Sub = "99a3c963-3f7d-4604-a870-3c675b012f63";
+        Sub = "5c43aa68-4979-4730-9c5f-cc4ec4d78b4b";
     } else if (event.context.sub) {
         Sub = event.context.sub;
     }
@@ -114,28 +112,26 @@ exports.handler = (event, context, callback) =>
                             // return context.fail( "Error: Error when selecting QRA");
                             return callback(null, response);
                         }
-                        else if (info.length > 0) {
-                            console.log("already followed" );
-                            //like already exist => do not insert again
-                            response.body.error = 400;
+                        else if (info.length === 0) {
+                            console.log("QRA not followed");
+                            response.body.error = 0;
                             response.body.message = info;
                             return callback(null, response);
                         }
-                        else if (info.length === 0) {
+                        else if (info.length > 0) {
 
-                            console.log("idqra " + idqra_owner + "datetime" + datetime + "idqrafollower" + idqra_follower);
-                            conn.query('INSERT INTO qra_followers SET idqra = ?, idqra_followed=?, datetime=?', [idqra_owner, idqra_follower, datetime], function (error, info) {
+                            console.log("idqra " + idqra_owner +  "idqrafollower" + idqra_follower);
+                            conn.query('DELETE FROM qra_followers where idqra=? and idqra_followed=?', [idqra_owner, idqra_follower], function (error, info) {
                                 if (error) {
-                                    console.log("Error when Insert QSO FOLLOWED");
+                                    console.log("Error when Delete QSO FOLLOWED");
                                     console.log(error.message);
                                     conn.destroy();
                                     response.body.error = 400;
-                                    response.body.message = "Error when Insert QSO FOLLOWED";
-                                    //return context.fail( "Error when Insert QSO LIKES");
+                                    response.body.message = "Error when Delete QSO FOLLOWED";
                                     return callback(null, response);
                                 } //End If
-                                if (info.insertId) {
-                                    console.log("QSOADD inserted", info.insertId);
+                                if (info.affectedRows > 0) {
+                                    console.log("QSOFollow Delete", info.affectedRows);
 
                                     conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (error, info) {
                                             console.log(info);
@@ -148,7 +144,7 @@ exports.handler = (event, context, callback) =>
                                                 // return context.fail( "Error: Error when selecting QRA");
                                                 return callback(null, response);
                                             }
-                                            else{
+                                            else {
                                                 conn.destroy();
                                                 response.body.error = 0;
                                                 response.body.message = JSON.parse(JSON.stringify(info));
@@ -158,7 +154,6 @@ exports.handler = (event, context, callback) =>
 
                                         }
                                     );
-
 
 
                                 }
