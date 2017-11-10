@@ -2,7 +2,8 @@ var fs = require('fs');
 var mysql = require('mysql');
 var async = require('async');
 
-exports.handler = (event, context, callback) =>
+exports.handler = (event, context, callback) =
+>
 {
 
 
@@ -32,10 +33,10 @@ exports.handler = (event, context, callback) =>
 
     if (process.env.TEST) {
         qra = "LU2ACH";
-    } else if (event.context.sub) {
-        qra = event.context.qra;
+    } else if (event.body.qra) {
+        qra = event.body.qra;
     }
-    console.log("sub =", Sub);
+    console.log("qra =", qra);
 
 
     //***********************************************************
@@ -70,12 +71,11 @@ exports.handler = (event, context, callback) =>
             //get qra of following
             idqra_owner = JSON.parse(JSON.stringify(info))[0].idqras;
 
-
             async.series([
                     //Load QRA Info
                     function (callback) {
                         console.log("Get QRA Data" + idqra_owner);
-                        conn.query("SELECT qras.QRA, qras.profilepic from qras where qras.idqras=?", idqra_owner, function (error, info) {
+                        conn.query("SELECT * from qras where qras.idqras=?", idqra_owner, function (error, info) {
 
                                 if (error) {
                                     console.log("Error when selecting FOLLOWERQRA");
@@ -101,11 +101,10 @@ exports.handler = (event, context, callback) =>
                             }
                         );
                     },
-
                     //Load Following
                     function (callback) {
                         console.log("Getting Following of " + idqra_owner);
-                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (error, info) {
+                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (error, info) {
                                 console.log(info);
                                 if (error) {
                                     console.log("Error when selecting FOLLOWING QRA");
@@ -116,7 +115,7 @@ exports.handler = (event, context, callback) =>
                                     // return context.fail( "Error: Error when selecting QRA");
                                     callback(error);
                                 }
-                                else{
+                                else {
 
                                     output.following = JSON.parse(JSON.stringify(info));
                                     callback();
@@ -125,10 +124,9 @@ exports.handler = (event, context, callback) =>
                             }
                         );
                     },
-
                     //Load Followers
                     function (callback) {
-                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra_followed = ?", idqra_owner, function (error, info) {
+                        conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed = ?", idqra_owner, function (error, info) {
                                 if (error) {
                                     console.log("Error when selecting FOLLOWED BY QRA");
                                     console.log(error);
@@ -145,11 +143,58 @@ exports.handler = (event, context, callback) =>
 
                             }
                         );
+                    }, //END Function
+                    //Load QSOS
+                    function (callback) {
+                        conn.query("CALL qraqsofeedget(?)", qra, function (error, info) {
+                            console.log(error);
+                            // console.log(info.length);
+                            if (error) {
+                                console.log("Error when selecting QRA");
+
+                                conn.destroy();
+                                response.body.error = 400;
+                                response.body.message = "Error: Error when selecting QRA";
+                                // return context.fail( "Error: Error when selecting QRA");
+                                return callback(null, response);
+                            }
+                            else if (info.length > 0) {
+                                response.body.error = 0;
+
+
+                                qsos = JSON.parse(JSON.stringify(info))[0];
+                                qso_qras = JSON.parse(JSON.stringify(info))[2];
+                                qso_comments = JSON.parse(JSON.stringify(info))[3];
+                                qso_likes = JSON.parse(JSON.stringify(info))[4];
+                                qso_media = JSON.parse(JSON.stringify(info))[5];
+
+
+                                qsos_output = qsos.map(qso = > {
+                                    qso.qso_qras = qso_qras.filter(obj = > obj.idqsos === qso.idqsos
+                            )
+                                ;
+                                qso.qso_comments = qso_comments.filter(obj = > obj.idqsos === qso.idqsos
+                            )
+                                ;
+                                qso.qso_likes = qso_likes.filter(obj = > obj.idqsos === qso.idqsos
+                            )
+                                ;
+                                qso.qso_media = qso_media.filter(obj = > obj.idqsos === qso.idqsos
+                            )
+                                ;
+                                return qso;
+                            })
+                                ;
+
+                                output.qsos = qsos_output;
+                                callback();
+                            }
+                        });
+
                     } //END Function
                 ],
                 //LAST FUNCTION
-                function(err)
-                {
+                function (err) {
 
                     if (err) {
                         response.body.error = 220;
@@ -164,10 +209,10 @@ exports.handler = (event, context, callback) =>
                     console.log("new follower " + response.body.message);
                     return callback(null, response);
                 }
-
             ); //End Async
 
         }
     });
     //End Query to get QRA ID
-};
+}
+;
