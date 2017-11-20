@@ -170,16 +170,16 @@ exports.handler = (event, context, callback) =
 
 
                                 qsos_output = qsos.map(qso = > {
-                                    qso.qso_qras = qso_qras.filter(obj = > obj.idqsos === qso.idqsos
+                                    qso.qras = qso_qras.filter(obj = > obj.idqsos === qso.idqsos
                             )
                                 ;
-                                qso.qso_comments = qso_comments.filter(obj = > obj.idqsos === qso.idqsos
+                                qso.comments = qso_comments.filter(obj = > obj.idqsos === qso.idqsos
                             )
                                 ;
-                                qso.qso_likes = qso_likes.filter(obj = > obj.idqsos === qso.idqsos
+                                qso.likes = qso_likes.filter(obj = > obj.idqsos === qso.idqsos
                             )
                                 ;
-                                qso.qso_media = qso_media.filter(obj = > obj.idqsos === qso.idqsos
+                                qso.media = qso_media.filter(obj = > obj.idqsos === qso.idqsos
                             )
                                 ;
                                 return qso;
