@@ -52,7 +52,7 @@ exports.handler = (event, context, callback) => {
         }
         if (info.length === 0) {
             //QRA Not Found => INSERT
-            var post  = {"qra" : Name.toUpperCase(), "idcognito" : Sub};
+            var post  = {"qra" : Name.toUpperCase(), "idcognito" : Sub, "url": "empty"};
             console.log('POST' + post);
             conn.query ( 'INSERT INTO qras SET ?', post,   function(error,info) {  // querying the database
                 if (error) {
