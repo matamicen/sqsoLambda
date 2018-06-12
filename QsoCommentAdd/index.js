@@ -5,9 +5,7 @@ var AWS = require('aws-sdk');
 AWS.config.region = 'eu-east-1';
 var lambda = new AWS.Lambda();
 
-exports.handler = (event, context, callback) =
->
-{
+exports.handler = (event, context, callback) => {
 
 
     context.callbackWaitsForEmptyEventLoop = false;
