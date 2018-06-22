@@ -1,4 +1,6 @@
+
 var mysql = require('mysql');
+
 
 exports.handler = (event, context, callback) => {
 
@@ -10,12 +12,9 @@ exports.handler = (event, context, callback) => {
     var qra_res;
     var msg;
     var sub;
-    if (process.env.TEST) {
-        var test = {
-            "qra": "SDSD"
-        };
-        qra = test.qra;
-        sub = "ccd403e3-06ae-4996-bb70-3aacf32a86df";
+    if (event.qra) {
+        qra = event.qra;
+        sub = event.sub;
     } else {
         qra = event.body.qra;
         sub = event.context.sub;
@@ -31,8 +30,11 @@ exports.handler = (event, context, callback) => {
 
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
-
-    conn.query("SELECT qras.idcognito, qras.idqras from qras where qras.idcognito=?", [sub], function (error, info) {
+    
+    conn.query("SELECT qras.idcognito, qras.idqras from qras where qras.idcognito=?",
+    [
+        sub
+    ], function (error, info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
@@ -62,12 +64,12 @@ exports.handler = (event, context, callback) => {
                 return context.fail(msg);
             } else if (info.length > 0) {
                 console.log("QRA FOUND");
-
+                
                 qra_res = JSON.parse(JSON.stringify(info));
                 console.log("FIND FOLLOWERS");
-
+                
                 conn.query('SELECT * FROM qra_followers where idqra=? and idqra_followed=?', [
-                    idqras_owner, qra_res[0].idqras
+                    idqras_owner,  qra_res[0].idqras
                 ], function (error, info) {
                     if (error) {
                         console.log("Error when select qra_followers");
@@ -97,7 +99,7 @@ exports.handler = (event, context, callback) => {
                                 }
                             };
                         }
-
+                           
                     } else {
                         if (qra_res[0].profilepic) {
                             msg = {
@@ -117,12 +119,17 @@ exports.handler = (event, context, callback) => {
                                     "following": 'FALSE'
                                 }
                             };
-                        }
+                        }                      
                     }
                     conn.destroy();
                     context.succeed(msg);
                 }); //End Insert
 
+              
+               
+               
+
+                
             } else {
                 //context.done(null,event);
                 conn.destroy();
@@ -130,7 +137,8 @@ exports.handler = (event, context, callback) => {
                     "error": "0",
                     "message": {
                         "qra": qra,
-                        "url": "empty"
+                        "url": "empty",
+                        "following": 'NOT_EXIST'
                     }
                 };
                 return context.succeed(msg);
