@@ -48,7 +48,7 @@ exports.handler = (event, context, callback) => {
     else {
         birthdate = new Date(event.request.userAttributes.birthdate);
     }
-    
+    console.log(birthdate);
     if (event.userName) {
         Name = event.userName.toUpperCase();
     }
@@ -67,7 +67,7 @@ exports.handler = (event, context, callback) => {
         }
         if (info.length === 0) {
             //QRA Not Found => INSERT
-            var post = { "qra": Name.toUpperCase(), "email": email, "birthday": birthdate, "idcognito": Sub, "url": "empty" };
+            var post = { "qra": Name.toUpperCase(), "email": email, "birthday": birthdate, "idcognito": Sub };
             console.log('POST' + post);
             conn.query('INSERT INTO qras SET ?', post, function(error, info) { // querying the database
                 if (error) {
