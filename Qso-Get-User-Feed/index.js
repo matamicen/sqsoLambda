@@ -59,7 +59,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     async function getQSOSinfo(qsos) {
-
+        
         for (let i = 0; i < qsos.length; i++) {
             let qso = qsos[i];
             //Get Info of QSO Owner
@@ -108,15 +108,14 @@ exports.handler = async(event, context, callback) => {
             ...arr1,
             ...arr2
         ];
-        console.log("arr3")
-        console.log(arr3)
+
         let  arr4 = arr3.sort(function (a, b) {
             // Turn your strings into dates, and then subtract them to get a value that is
             // either negative, positive, or zero.
-    console.log(new Date(b.datetime) - new Date(a.datetime))
+    
             return (new Date(b.datetime) - new Date(a.datetime));
         });
-        console.log("arr4")
+        
         console.log(arr4);
         return arr4;
     }
@@ -215,7 +214,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
             // console.log("get comment of QSO");
             conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-                    "ents.idqra = qras.idqras where  idqso=?",
+                    "ents.idqra = qras.idqras where  idqso=? and deleted is NULL",
             qso.idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
