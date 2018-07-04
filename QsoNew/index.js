@@ -1,33 +1,14 @@
 var fs = require('fs');
 var mysql = require('mysql');
 
-/*{     "mode": "modetest1",
- "band": "bandtest1",
- "qra_owner": "lu2ach",
- "longitude": "1",
- "latitude": "1",
- "datetime": "2016-04-28 14:12:00",
- "state": "statetest1",
- "type": "QSO",
- "qras": ["LU1BJW",
- "LU3QQQ",
- "LU8AJ",
- "LU9DO"],
- }
- */
 
 
-exports.handler = (event, context, callback) =>
+exports.handler = async (event, context, callback) =>
 {
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    console.log('Received context:', JSON.stringify(context, null, 2));
 
     var post;
-    var qra;
-    var qra_owner;
-    var qras;
-    var json;
+    // var qra_owner;
     var idqras;
     var newqso;
     var mode;
@@ -40,30 +21,17 @@ exports.handler = (event, context, callback) =>
     var sub;
     var msg;
 
-    if (process.env.TEST) {
-        var test = {
-            "mode": "modetest1",
-            "band": "bandtest1",
-            "qra_owner": "lu2ach",
-            "longitude": "1",
-            "latitude": "1",
-            "datetime": "2016-04-28 14:12:00",
-            "state": "statetest1",
-            "type": "QSO",
-            "qras": ["LU1BJW",
-                "LU3QQQ",
-                "LU8AJ",
-                "LU9DO"],
-        };
-        mode = test.mode;
-        band = test.band;
-        latitude = test.latitude;
-        longitude = test.longitude;
-        datetime = test.datetime;
-        qra_owner = test.qra_owner.toUpperCase();
-        qras = test.qras;
-        type = test.type;
-        sub = '7bec5f23-6661-4ba2-baae-d1d4f0440038';
+    if (event.qra_owner) {
+     
+        mode = event.mode;
+        band = event.band;
+        latitude = event.latitude;
+        longitude = event.longitude;
+        datetime = event.datetime;
+        // qra_owner = event.qra_owner.toUpperCase();
+        
+        type = event.type;
+        sub = event.sub;
     }
     else {
         mode = event.body.mode;
@@ -71,115 +39,108 @@ exports.handler = (event, context, callback) =>
         latitude = event.body.latitude;
         longitude = event.body.longitude;
         datetime = event.body.datetime;
-        qras = event.body.qras;
+        // qras = event.body.qras;
         type = event.body.type;
-        qra_owner = event.body.qra_owner.toUpperCase();
+        // qra_owner = event.body.qra_owner.toUpperCase();
         sub = event.context.sub;
     }
     console.log(sub);
 
     //***********************************************************
-    var conn = mysql.createConnection({
+    var conn = await mysql.createConnection({
         host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com',  // give your RDS endpoint  here
         user: 'sqso',  // Enter your  MySQL username
         password: 'parquepatricios',  // Enter your  MySQL password
         database: 'sqso'    // Enter your  MySQL database name.
     });
-
-
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-
-    conn.query("SELECT * FROM qras where idcognito=? LIMIT 1", sub, function (error, info) {
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
+    try {
+        let idqras_owner = await getQRA(sub);
+        if (!idqras_owner) {
+            console.log("User does not exist");
             conn.destroy();
-
             msg = {
                 "error": "1",
-                "message": "Error when select QRA to get ID of Owner"
+                "message": "User does not exist"
             };
-            error = new Error("Error when select QRA to get ID of Owner");
-            callback(error);
+            callback("User does not exist");
             return context.fail(msg);
         }
-        else if (info.length === 0) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
-            conn.destroy();
-
+        newqso = await saveQSO(idqras_owner,mode, band, datetime, type, longitude, latitude);
+        var info = await saveQRA(newqso, idqras_owner);
+        
+        if (info.insertId) {
             msg = {
-                "error": "1",
-                "message": "Error when select QRA to get ID of Owner"
-            };
-            error = new Error("Error when select QRA to get ID of Owner");
-            callback(error);
-            return context.fail(msg);
-        }
-        // console.log(info);
-        qra = JSON.stringify(info);
-        json = JSON.parse(qra);
-        idqras = json[0].idqras;
-
-        location = "POINT(" + longitude + " " + latitude + ")";
-        console.log(location);
-        post = {
-            "idqra_owner": idqras,
-            "mode": mode,
-            "band": band,
-            "location": location,
-            "datetime": datetime,
-            "type": type
-        };
-        console.log(post);
-
-        //INSERT INTO QSO TABLE
-        //    conn.query ( 'INSERT INTO qsos SET ?', post,   function(error,info) {
-        conn.query('INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?', [ idqras, location, mode, band, datetime, type], function (error, info) {
-            console.log("insert QSO");
-            if (error) {
-                console.log("Error when insert QSO");
-                console.log(error.message);
-                conn.destroy();
-                callback(error.message);
-                return context.fail(error);
-            }
-            if (info.insertId) {
-                console.log("QSO inserted", info.insertId);
-                qso = JSON.stringify(info);
-                json = JSON.parse(qso);
-                newqso = json.insertId;
-                msg = {
                     "error": "0",
                     "message": newqso
                 };
-                console.log("idqras" + idqras);
-                post = {
-                    "idqso": newqso,
-                    "idqra": idqras,
-                    "isOwner": true
-                };
+             conn.destroy();
+        return callback(null, msg);
+        }
+    
+    
+    } catch (e) {
+        console.log("Error executing QsoNew");
+        console.log(e);
+        conn.destroy();
+        callback(e.message);
+        msg = {
+            "error": "1",
+            "message": e.message
+        };
+        return context.fail(msg);
+    }
 
+    function getQRA(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // console.log("get QRA info from Congito ID");
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                
+                resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+            });
+        });
+    }
+    function saveQSO(idqras, mode, band, datetime, type, longitude, latitude) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // console.log("get QRA info from Congito ID");
+            location = "POINT(" + longitude + " " + latitude + ")";
+            conn.query("INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?, GUID = UUID()", [ idqras, location, mode, band, datetime, type], function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)).insertId);
+                // console.log(info);
+            });
+        });
+    }
+    function saveQRA(newqso, idqras) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // console.log("get QRA info from Congito ID");
+            post = {
+                "idqso": newqso,
+                "idqra": idqras,
+                "isOwner": true
+            };
 
-                //***********************************************************
-                conn.query('INSERT INTO qsos_qras SET ?', post, function (error, info) {
-                    if (error) {
-                        console.log("Error when Insert QSO QRA");
-                        console.log(error.message);
-                        conn.destroy();
-                        callback(error.message);
-                        return callback.fail(error);
-                    } //End If
-                    console.log(info);
-                    if (info.insertId) {
-                        console.log("QSOQRA inserted", info.insertId);
-
-                        callback();
-                    }
-                }); //Insert QSO QRA
-                context.succeed(msg);
-            } //ENDIF QSO Inserted
-        }); //Insert QSOS
-    }); //END SELECT QRA
+            //***********************************************************
+            conn.query('INSERT INTO qsos_qras SET ?', post, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+                // console.log(info);
+            });
+        });
+    }
 };
