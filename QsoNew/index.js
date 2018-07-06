@@ -66,6 +66,7 @@ exports.handler = async (event, context, callback) =>
             return context.fail(msg);
         }
         newqso = await saveQSO(idqras_owner,mode, band, datetime, type, longitude, latitude);
+        await UpdateQsosCounterInQra(idqras_owner);
         var info = await saveQRA(newqso, idqras_owner);
         
         if (info.insertId) {
@@ -134,6 +135,24 @@ exports.handler = async (event, context, callback) =>
 
             //***********************************************************
             conn.query('INSERT INTO qsos_qras SET ?', post, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+                // console.log(info);
+            });
+        });
+    }
+        function UpdateQsosCounterInQra(idqras) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // console.log("get QRA info from Congito ID");
+
+            
+            //***********************************************************
+            conn.query('UPDATE sqso.qras SET qsos_counter = qsos_counter+1, last_created_qso=NOW() WHERE idqras=?',idqras, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
