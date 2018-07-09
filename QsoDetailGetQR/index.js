@@ -8,11 +8,6 @@ exports.handler = async(event, context, callback) =>
     context.callbackWaitsForEmptyEventLoop = false;
 
  
-    var qra;
-
-    var msg;
-
-    var qso;
     var response = {
         statusCode: 200,
         headers: {
@@ -46,7 +41,7 @@ exports.handler = async(event, context, callback) =>
         if (!qso){
             console.log("QSO does not exist");
             conn.destroy();
-            response.body.error = "1";
+            response.body.error = 1;
             response.body.message = "QSO does not exist";
             
             
@@ -59,7 +54,7 @@ exports.handler = async(event, context, callback) =>
         qso.qras = await getQsoQras(qso);
         qso.likes = await getQsoLikes(qso);
         qso.comments = await getQsoComments(qso);
-        
+        qso.media = await getQsoMedia(qso);
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
@@ -71,7 +66,7 @@ exports.handler = async(event, context, callback) =>
         console.log(e);
         conn.destroy();
       
-                  response.body.error = "1";
+                  response.body.error = 1;
             response.body.message = e.message;
             
             
