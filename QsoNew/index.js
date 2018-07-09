@@ -112,7 +112,7 @@ exports.handler = async (event, context, callback) =>
             // Alternately, try/catch and reject(err) on catch.
             // console.log("get QRA info from Congito ID");
             location = "POINT(" + longitude + " " + latitude + ")";
-            conn.query("INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?, GUID = UUID()", [ idqras, location, mode, band, datetime, type], function (err, info) {
+            conn.query("INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band = ?, datetime = ?, type = ?, GUID_QR = UUID(), GUID_URL = UUID()", [ idqras, location, mode, band, datetime, type], function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
