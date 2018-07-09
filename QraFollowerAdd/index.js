@@ -2,9 +2,7 @@
 var mysql = require('mysql');
 // var async = require('async');
 
-exports.handler = async(event, context, callback) =>
-{
-
+exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -26,24 +24,22 @@ exports.handler = async(event, context, callback) =>
     };
 
     // var count;
-    if (event.qra) {     
+    if (event.qra) {
         qra = event.qra;
         datetime = event.datetime;
-        sub =event.sub;
-    }
-    else {
+        sub = event.sub;
+    } else {
         qra = event.body.qra;
         datetime = event.body.datetime;
         sub = event.context.sub;
     }
 
-   
     //***********************************************************
     var conn = await mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com',  // give your RDS endpoint  here
-        user: 'sqso',  // Enter your  MySQL username
-        password: 'parquepatricios',  // Enter your  MySQL password
-        database: 'sqso'    // Enter your  MySQL database name.
+        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
+        user: 'sqso', // Enter your  MySQL username
+        password: 'parquepatricios', // Enter your  MySQL password
+        database: 'sqso' // Enter your  MySQL database name.
     });
     try {
         console.log("checkQraCognito")
@@ -61,45 +57,44 @@ exports.handler = async(event, context, callback) =>
         console.log("getQra")
         idqra_follower = await getQra(qra);
         if (!idqra_follower) {
-                console.log("User does not exist");
-                response.body.error = 400;
-                response.body.message = "Error: FOLLOWER User does not exist";
-                conn.destroy();                
-                return callback(null, response);
-            }
-            console.log("checkQraAlreadyFollowing")
-        let  info = await checkQraAlreadyFollowing(idqras_owner, idqra_follower);
-        if ( info.length > 0) {
-                console.log("already followed" );
-                //like already exist => do not insert again
-                response.body.error = 400;
+            console.log("User does not exist");
+            response.body.error = 400;
+            response.body.message = "Error: FOLLOWER User does not exist";
+            conn.destroy();
+            return callback(null, response);
+        }
+        console.log("checkQraAlreadyFollowing")
+        let info = await checkQraAlreadyFollowing(idqras_owner, idqra_follower);
+        if (info.length > 0) {
+            console.log("already followed");
+            //like already exist => do not insert again
+            response.body.error = 400;
+            response.body.message = info;
+            return callback(null, response);
+        }
+        console.log("insertFollower")
+        let insertId = await insertFollower(idqras_owner, idqra_follower, datetime);
+        if (insertId) {
+            console.log("UpdateFollowersCounterInQra")
+            await UpdateFollowersCounterInQra(idqra_follower);
+            console.log("getFollowers")
+            info = await getFollowers(idqras_owner);
+            if (info) {
+                conn.destroy();
+                response.body.error = 0;
                 response.body.message = info;
+                console.log("new follower ");
                 return callback(null, response);
             }
-            console.log("insertFollower")
-            let insertId = await insertFollower(idqras_owner, idqra_follower, datetime);
-            if (insertId) {
-                console.log("UpdateFollowersCounterInQra")
-                await UpdateFollowersCounterInQra(idqra_follower);  
-                console.log("getFollowers") 
-                info = await getFollowers(idqras_owner);
-                if (info) {
-                    conn.destroy();
-                                                response.body.error = 0;
-                                                response.body.message = info;
-                                                console.log("new follower ");
-                                                return callback(null, response);
-                }
-            }
-        
-        
+        }
+
     } catch (e) {
         console.log("Error executing QRA Follower Add");
         console.log(e);
         conn.destroy();
         callback(e.message);
         var msg = {
-            "error": "1",
+            "error": 1,
             "message": e.message
         };
         return context.fail(msg);
@@ -108,78 +103,84 @@ exports.handler = async(event, context, callback) =>
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info from Congito ID");
-
-            
-            //***********************************************************
-            conn.query('UPDATE sqso.qras SET followers_counter = followers_counter+1  WHERE idqras=?',idqras, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
+            // ***********************************************************
+            conn
+                .query('UPDATE sqso.qras SET followers_counter = followers_counter+1  WHERE idqras=?', idqras, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
         });
     }
     function checkQraCognito(sub) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info from Congito ID");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                
-                resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-            });
+            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+            // from Congito ID");
+            conn
+                .query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                });
         });
     }
     function getQra(qracode) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            
-            conn.query("SELECT qras.idqras from qras where qras.qra=?", qracode, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                
-                resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-            });
+
+            conn
+                .query("SELECT qras.idqras from qras where qras.qra=?", qracode, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                });
         });
-    }    
+    }
     function checkQraAlreadyFollowing(idqra_owner, idqra_follower) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            
-            conn.query("SELECT * from qra_followers WHERE idqra = ? and idqra_followed=?", [idqra_owner, idqra_follower], function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
+
+            conn
+                .query("SELECT * from qra_followers WHERE idqra = ? and idqra_followed=?", [
+                    idqra_owner, idqra_follower
+                ], function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
         });
     }
-    function insertFollower(idqra_owner, idqra_follower,datetime) {
+    function insertFollower(idqra_owner, idqra_follower, datetime) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            
-            conn.query("INSERT INTO qra_followers SET idqra = ?, idqra_followed=?, datetime=?", [idqra_owner, idqra_follower, datetime], function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                
-                resolve(JSON.parse(JSON.stringify(info)).insertId);
-            });
+
+            conn
+                .query("INSERT INTO qra_followers SET idqra = ?, idqra_followed=?, datetime=?", [
+                    idqra_owner, idqra_follower, datetime
+                ], function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                });
         });
     }
     function getFollowers(idqra_owner) {
@@ -187,12 +188,15 @@ exports.handler = async(event, context, callback) =>
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log(idqra_owner)
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", idqra_owner, function (err, info) {
+            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+                    "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
+                    " ?",
+            idqra_owner, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
-                
+
                 resolve(JSON.parse(JSON.stringify(info)));
             });
         });

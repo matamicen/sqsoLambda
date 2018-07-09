@@ -1,43 +1,38 @@
+
 var mysql = require('mysql');
 // var async = require('async');
 var AWS = require('aws-sdk');
 AWS.config.region = 'us-east-1';
 
-exports.handler = (event, context, callback) => {
+
+exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var Sub;
-
+    var sub;
     var qso;
-    var idcomment
-
+    var idcomment;
     var response = {
-        "message": "",
-        "error": ""
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
     };
 
-    // var count;
-    if (process.env.TEST) {
-        var test = {
-            "idcomment": 307,
-            "qso": 1307
-        };
-
-        qso = test.qso;
-        idcomment = test.idcomment;
+    if (event.qso) {
+        qso = event.qso;
+        idcomment = event.idcomment;
+        sub = event.sub;
     } else {
         qso = event.body.qso;
         idcomment = event.body.idcomment;
-
+        sub = event.context.sub;
     }
-
-    if (process.env.TEST) {
-        Sub = "ccd403e3-06ae-4996-bb70-3aacf32a86df";
-    } else if (event.context.sub) {
-        Sub = event.context.sub;
-    }
-    console.log("sub =", Sub);
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -46,61 +41,81 @@ exports.handler = (event, context, callback) => {
         password: 'parquepatricios', // Enter your  MySQL password
         database: 'sqso' // Enter your  MySQL database name.
     });
-
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-    console.log(qso);
-    conn.query("SELECT qras.idqras, qras.qra from qras inner join qsos on qras.idqras = qsos.idq" +
-            "ra_owner where qsos.idqsos =? and qras.idcognito=?",
-    [
-        qso, Sub
-    ], function (error, info) {
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
+    try {
+        let idqras_owner = await checkQraCognito(sub);
+        if (!idqras_owner) {
+            console.log("User does not exist");
             conn.destroy();
-            response.error = 400;
-            response.message = "Error: select QRA to get ID of Owner";
-            // return context.fail( "Error: select QRA to get ID of Owner");
-            return context.succeed(response);
+            response.body.error = 1;
+            response.body.message = "User does not exist";
+            return callback(null, response);
+        }
+        let info = await deleteComment(idcomment);
+        if (info) {
+            await UpdateCommentCounterInQso(qso);
+            conn.destroy();
+            response.body.error = 0;
+            response.body.message = info;
+            console.log("comment deleted ");
+            return callback(null, response);
         }
 
-        if (info.length === 0) {
-            console.log("Caller user is not the QSO Owner");
-            response.error = 400;
-            response.message = "Error: Caller user is not the QSO Owner";
-            conn.destroy();
-            //return context.fail( "Error: Caller user is not the QSO Owner");
-            return context.succeed(response);
-        }
+    } catch (e) {
+        console.log("Error executing QRA Comment Del");
+        console.log(e);
+        conn.destroy();
+        callback(e.message);
+        response.body.error = 1;
+        response.body.message = e.message;
+        return callback(null, response);
+    }
+    function UpdateCommentCounterInQso(qso) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("UpdateCommentCounterInQso");
+            //***********************************************************
+            conn.query('UPDATE sqso.qsos SET comments_counter = comments_counter-1  WHERE idqsos=?', qso, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+                // console.log(info);
+            });
+        });
+    }
+    function deleteComment(idcomment) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("insertComment");
+            conn.query('UPDATE qsos_comments SET deleted=1 WHERE idqsos_comments=?', [idcomment], function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+            });
+        });
+    }
+    function checkQraCognito(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("checkQraCognito");
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
 
-        //***********************************************************
-
-        conn
-            .query('UPDATE qsos_comments SET deleted=1 WHERE idqsos_comments=?', [idcomment], function (error, info) {
-                if (error) {
-                    console.log("Error when delete Comment");
-                    console.log(error.message);
-                    conn.destroy();
-                    response.error = 400;
-                    response.message = "Error when delete Comment";
-                    //return context.fail( "Error when Insert QSO");
-                    return context.succeed(response);
-                } //End If
-                console.log(info);
-                if (info.affectedRows) {
-                    console.log("Comment Deleted");
-                    var msg = {
-                        "error": "0",
-                        "message": info.message
-                    };
-                    console.log(info.message);
-
-                    //***********************************************************
-
-                    context.succeed(msg);
-                } //ENDIF
-
-            }); //End Insert
-    });
 };
