@@ -79,7 +79,7 @@ exports.handler = async(event, context, callback) =>
             // Alternately, try/catch and reject(err) on catch.
             // console.log("get QRA info from Congito ID");            
             //***********************************************************
-            conn.query('SELECT * from qsos WHERE GUID = ?',qso, function (err, info) {
+            conn.query('SELECT * from qsos WHERE GUID_QR = ?',qso, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
