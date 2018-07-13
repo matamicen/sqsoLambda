@@ -57,7 +57,7 @@ exports.handler = (event, context, callback) => {
                 "error": "0",
                 "message": {
                     "qra": qra,
-                    "url": "empty"
+                    "url": null
                 }
             };
             return context.succeed(msg);

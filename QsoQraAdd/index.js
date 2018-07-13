@@ -87,7 +87,7 @@ exports.handler = (event, context, callback) => {
             callback(error);
 
             msg = {
-                "error": "1",
+                "error": 1,
                 "message": "Caller user is not the QSO Owner"
             };
             return context.fail(msg);
@@ -111,14 +111,14 @@ exports.handler = (event, context, callback) => {
                             return context.fail(error);
                         } else if (!info.length) {
 
-                            qras_output.push({qra: Name, url: "empty"});
+                            qras_output.push({qra: Name, url: null});
                             console.log("qras" + qras_output);
 
                             //QRA Not Found => INSERT
                             console.log("QRA not found, Insert new QRA");
                             post = {
-                                "qra": Name.toUpperCase(),
-                                "profilepic": "empty"
+                                "qra": Name.toUpperCase()
+                              
                             };
                             // console.log('POST' + post);
                             // ***********************************************************
@@ -223,7 +223,7 @@ exports.handler = (event, context, callback) => {
                     console.log("All tasks are done now");
                     // doSomethingOnceAllAreDone();
                     var msg = {
-                        "error": "0",
+                        "error": 0,
                         "message": qras_output
                     };
                     conn.destroy();

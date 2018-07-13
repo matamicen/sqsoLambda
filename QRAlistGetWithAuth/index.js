@@ -53,7 +53,7 @@ exports.handler = async(event, context, callback) => {
                 "error": 1,
                 "message": {
                     "qra": qra,
-                    "url": "empty",
+                    "url": "null",
                     "following": "NOT_EXIST"
                 }
             };
