@@ -1,19 +1,18 @@
-var fs = require('fs');
-var mysql = require('mysql');
-var async = require('async');
 
-exports.handler = (event, context, callback) => {
+var mysql = require('mysql');
+
+
+exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    // console.log('Received context:', JSON.stringify(context, null, 2));
 
     var qra;
+
     
-    var qra_updated;
-    var qras_output = [];
+    
     var msg;
     var sub;
+    var qras= [];
     // {     "sub": "ccd403e3-06ae-4996-bb70-3aacf32a86df",     "qra": "LU8AJ1"   }
     if (event.qra) {
         qra = event.qra;
@@ -30,117 +29,122 @@ exports.handler = (event, context, callback) => {
         password: 'parquepatricios', // Enter your  MySQL password
         database: 'sqso' // Enter your  MySQL database name.
     });
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-    conn.query("SELECT qras.idcognito, qras.idqras from qras where qras.idcognito=?", [sub], function (error, info) {
-        
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
-            conn.destroy();
-            callback(error.message);
-            msg = {
-                "error": "1",
-                "message": "Error when select QRA to get ID of Owner"
-            };
-            return context.fail(msg);
 
-        } else if (info.length === 0) {
+    try {
+        let idqras_owner = await getQRA(sub);
+        if (!idqras_owner) {
             console.log("User does not exist");
             conn.destroy();
-            callback(error.message);
+            
             msg = {
-                "error": "1",
+                "error": 1,
                 "message": "User does not exist"
             };
+            callback(msg);
             return context.fail(msg);
-        } else if (info.length > 0) {
-            var idqras_owner = JSON.parse(JSON.stringify(info))[0].idqras;
-            console.log(idqras_owner);
-            //QRA FOUND => Update QRA with ID Cognito
+        }
+        var followings = await getFollowings(idqras_owner);
+        
+        qras = await getQRAs(qra.toUpperCase());
+        
+        if (qras.length == 0) {
+            conn.destroy();
+            msg = {
+                "error": 1,
+                "message": {
+                    "qra": qra,
+                    "url": "empty",
+                    "following": "NOT_EXIST"
+                }
+            };
+            return callback(null, msg);
+        }
+        qras = await verifyFollowings(qras, followings);
+        
+        msg = {
+            "error": 0,
+            "message": qras
+        };
+        conn.destroy();
+        return context.succeed(msg);
 
+    } catch (e) {
+        console.log("Error in QRAlistGetWithAuth");
+        console.log(e);
+        conn.destroy();
+        callback(e.message);
+        msg = {
+            "error": 1,
+            "message": e.message
+        };
+        return context.fail(msg);
+    }
+
+    function verifyFollowings(qras, following) {
+        console.log("verifyFollowings");
+        for (let i = 0; i < qras.length; i++) {
+
+            // if (following.filter( (f) => { f.idqra_followed=== qras.idqras; }).length >
+            // 0){
+          
+            if (following.some(f => f.idqra_followed === qras[i].idqras)) {
+                qras[i].following = 'TRUE';
+                console.log("true")
+            }
+            else {
+                qras[i].following = 'FALSE';
+                console.log("false")
+            }
+             
+        }
+        
+        return qras;
+    }
+    function getFollowings(idqras_owner) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getFollowings");
+            conn.query('SELECT * FROM qra_followers where idqra=?', idqras_owner, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                resolve(JSON.parse(JSON.stringify(info)));
+            });
+        });
+    }
+    function getQRAs(qra) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getQRAs");
             conn.query("SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
                     "astname,'')) AS name, profilepic, idqras  FROM qras where qra LIKE ?",
-            qra.toUpperCase() + '%', function (error, info) { // querying the database
-                if (error) {
-                    console.log(error.message);
-                    // context.done(null,event);
-                    conn.destroy();
-                    msg = {
-                        "error": "1",
-                        "message": "Could not get profile picture"
-                    };
-                    return context.fail(msg);
-                } else if (info.length > 0) {
-                    console.log("QRAs Found");
-                 
-                    var qras = JSON.parse(JSON.stringify(info));
-                    // 1st para in async.each() is the array of items
-                    // ***********************************************************
-                    async.mapSeries(qras,
-                    // 2nd param is the function that each item is passed to
-                    function (qra, callback) {
-                        
-                        conn
-                            .query('SELECT * FROM qra_followers where idqra=? and idqra_followed=?', [
-                                idqras_owner, qra.idqras
-                            ], function (error, info) {
-                                if (error) {
-                                    console.log("Error when select qra_followers");
-                                    console.log(error.message);
-                                    conn.destroy();
-                                    callback(error.message);
-                                    return callback.fail(error);
-                                } //End If
-                                if (info.length) {
-                                    qra_updated = qra;
-                                    qra_updated.following = 'TRUE';
-                                    console.log(qra_updated);
-                                    qras_output.push(qra_updated);
-                                   
-
-                                    callback();
-                                } else {
-                                    qra_updated = qra;
-                                    qra_updated.following = 'FALSE';
-                                    console.log(qra_updated);
-                                    qras_output.push(qra_updated);
-                                    
-
-                                    callback();
-                                }
-                            }); //End Insert
-
-                    },
-                    // *********************************************************** 3rd param is the
-                    // function to call when everything's done
-                    function (err) {
-                        console.log("All tasks are done now");
-                        // doSomethingOnceAllAreDone();
-                        var msg = {
-                            "error": "0",
-                            "message": qras_output
-                        };
-                        conn.destroy();
-                        context.succeed(msg);
-                    }); //end async
-                    // conn.destroy(); qra_res = JSON.parse(JSON.stringify(info)); msg = { "error":
-                    // "0",     "message": qra_res }; context.succeed(msg);
-                } else {
-                    //context.done(null,event);
-                    conn.destroy();
-                    msg = {
-                        "error": "0",
-                        "message": {
-                            "qra": qra,
-                            "url": "empty",
-                            "following": "NOT_EXIST"
-                        }
-                    };
-                    return context.succeed(msg);
+            qra + '%', function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
                 }
-            
+
+                resolve(JSON.parse(JSON.stringify(info)));
             });
-        }
-    });
+        });
+    }
+    function getQRA(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getQRA");
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+            });
+        });
+    }
 };
