@@ -1,29 +1,32 @@
-var fs = require('fs');
 var mysql = require('mysql');
 
+
+
 exports.handler = async(event, context, callback) => {
-    // console.log('Received event:', JSON.stringify(event, null, 2));
-    // console.log('Received context:', JSON.stringify(context, null, 2));
+
 
     context.callbackWaitsForEmptyEventLoop = false;
-    var date = new Date();
-    var qsos_output = [];
-    var msg;
-    var sub;
-    var idqra_owner;
 
-    if (event.sub) {
-        sub = event.sub;
-    } else if (event.context.sub) {
-        sub = event.context.sub;
-    }
-    //***********************************************************
+
+
+    var sub;
+
+    var msg;
     var conn = mysql.createConnection({
         host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
         user: 'sqso', // Enter your  MySQL username
         password: 'parquepatricios', // Enter your  MySQL password
         database: 'sqso' // Enter your  MySQL database name.
     });
+
+    if (event.sub) {
+        sub = event.sub;
+    }
+    else if (event.context.sub) {
+        sub = event.context.sub;
+    }
+
+
 
     try {
         let idqras_owner = await getQRA(sub);
@@ -37,16 +40,13 @@ exports.handler = async(event, context, callback) => {
             callback("User does not exist");
             return context.fail(msg);
         }
-        let qsos = await getQSOSall(idqras_owner, date);
-        qsos_output = await getQSOSinfo(qsos);
-
-        console.log("All tasks are done now");
-        // doSomethingOnceAllAreDone();
+        let qsos_output = await getQsos(idqras_owner);
         console.log(qsos_output);
         conn.destroy();
         context.succeed(qsos_output);
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error when select QRA to get ID of Owner");
         console.log(e);
         conn.destroy();
@@ -58,37 +58,12 @@ exports.handler = async(event, context, callback) => {
         return context.fail(msg);
     }
 
-    async function getQSOSinfo(qsos) {
-        
-        for (let i = 0; i < qsos.length; i++) {
-            let qso = qsos[i];
-            //Get Info of QSO Owner
-            let qra = await getOwnerInfo(qso);
-            qso.qra = qra.qra;
-            qso.profilepic = qra.profilepic;
-
-            //Get Info of QRAS of the QSO
-            qso.qras = await getQRAInfo(qso);
-
-            //Get Comments of QSO
-            qso.comments = await getCommentInfo(qso);
-
-            //Get Media of QSO
-            qso.media = await getMediaInfo(qso);
-
-            //Get Likes of QSO
-            qso.likes = await getLikeInfo(qso);
-            // console.log(qso);
-            qsos_output.push(qso);
-        }
-        return qsos_output;
-    }
     function getQRA(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // console.log("get QRA info from Congito ID");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -97,149 +72,37 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
-    async function getQSOSall(idqras, date) {
-        // console.log("getQSOS ALL");
-        // console.log(idqras);
-        const arr1 = await getQSOS(idqras, date);
-        // console.log(arr1);
-        const arr2 = await getQSOSofFollowing(idqras, date);
-        // console.log(arr2);
-        const arr3 = [
-            ...arr1,
-            ...arr2
-        ];
 
-        let  arr4 = arr3.sort(function (a, b) {
-            // Turn your strings into dates, and then subtract them to get a value that is
-            // either negative, positive, or zero.
-    
-            return (new Date(b.datetime) - new Date(a.datetime));
-        });
-        
-        console.log(arr4);
-        return arr4;
-    }
-    function getQSOS(idqras, date) {
-        return new Promise(function (resolve, reject) {
+    async function getQsos(idqra) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QSOS");
-            
-            conn.query("SELECT qsos.* from qsos INNER JOIN qsos_qras on qsos.idqsos = qsos_qras.idqso WH" +
-                    "ERE qsos.datetime <=? and qsos_qras.idqra = ? and deleted IS NULL  order by datet" +
-                    "ime desc LIMIT 50",
-            [
-                date, idqras
-            ], function (err, info) {
+            // console.log("get QRA info from Congito ID");
+            conn.query("CALL qsouserlistget2(?)", idqra, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info)));
+                
+                let qsos = JSON.parse(JSON.stringify(info))[0];
+                let qso_qras = JSON.parse(JSON.stringify(info))[1];
+                let qso_comments = JSON.parse(JSON.stringify(info))[2];
+                let qso_likes = JSON.parse(JSON.stringify(info))[3];
+                let qso_media = JSON.parse(JSON.stringify(info))[4];
+                let qso_orig = JSON.parse(JSON.stringify(info))[5];
+                
+                qsos.map(qso => {
+                    qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.original = qso_orig.find(obj => obj.idqsos === qso.idqso_shared);
+                });
+                
+                resolve(qsos);
+                
             });
         });
-    }
-    function getQSOSofFollowing(idqras, date) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QSOS of Followings");
-            // console.log(idqras);
-            conn.query("SELECT qsos.* from qsos INNER JOIN qra_followers on qra_followers.idqra_followed = qsos.idqra_owner WHERE q" +
-                    "sos.datetime <=? and qra_followers.idqra = ? and deleted IS NULL order by dateti" +
-                    "me desc LIMIT 50",
-            [
-                date, idqras
-            ], function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
-        });
-    }
-    function getOwnerInfo(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info of each QSO");
-            // idqsos = JSON.stringify(qso.idqsos);
-            conn.query("SELECT qra, profilepic from qras WHERE idqras = ? LIMIT 1", qso.idqra_owner, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info))[0]);
-            });
-        });
-    }
-    function getQRAInfo(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get info of each QRA of QSO");
-            conn.query("SELECT qra, profilepic FROM sqso.qras where idqras in ( SELECT idqra FROM sqso.q" +
-                    "sos_qras where isOwner = false and idqso = ? ) ",
-            qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
-        });
-    }
-    function getMediaInfo(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get Media of QSO");
-            conn.query("SELECT * from qsos_media WHERE idqso =? ", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
-        });
-    }
-    function getCommentInfo(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get comment of QSO");
-            conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-                    "ents.idqra = qras.idqras where  idqso=? and deleted is NULL",
-            qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
-        });
-    }
-    function getLikeInfo(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get likes of QSO");
-            conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_l" +
-                    "ikes WHERE idqso =? ) ",
-            qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                // console.log(info);
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
-        });
+
     }
 };
