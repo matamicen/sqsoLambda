@@ -33,19 +33,19 @@ exports.handler = async (event, context, callback) => {
             console.log("Caller is not QSO Owner");
             conn.destroy();
             msg = {
-                "error": "1",
+                "error": 1,
                 "message": "User does not exist"
             };
             callback("User does not exist");
             return context.fail(msg);
-        }
+        }        
         let info = await delQSO(qso);
         await UpdateQsosCounterInQra(idqras_owner);
-
+        await deleteRelatedQSOs(qso);
         if (info.affectedRows) {
             console.log("QSO Deleted");
             var msg = {
-                "error": "0",
+                "error": 0,
                 "message": info.message
             };
             conn.destroy();
@@ -58,18 +58,40 @@ exports.handler = async (event, context, callback) => {
         conn.destroy();
         callback(e.message);
         msg = {
-            "error": "1",
+            "error": 1,
             "message": e.message
         };
         return context.fail(msg);
     }
-  
+    async function deleteRelatedQSOs(idqso) {
+        let qsos = await getRelatedQSOs(idqso);
+        for (let i = 0; i < qsos.length; i++) {
+            let info = await delQSO(qsos[i].idqsos);
+            await UpdateQsosCounterInQra(qsos[i].idqra_owner);
+        }
+        return null;
+    }
+    function getRelatedQSOs(idqso) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch. 
+            console.log("getRelatedQSOs");
+            conn
+                .query("SELECT idqsos, idqra_owner from qsos where idqso_shared= ?", [ idqso ], function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
     function getQRA(idqso, sub) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
-            // from Congito ID");
-               
+            // Alternately, try/catch and reject(err) on catch. 
+            
             conn
                 .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos=? and qras.idcognito=?", [ idqso , sub ], function (err, info) {
                     // Call reject on error states, call resolve with results
