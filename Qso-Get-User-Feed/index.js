@@ -90,6 +90,7 @@ exports.handler = async(event, context, callback) => {
                 let qso_likes = JSON.parse(JSON.stringify(info))[3];
                 let qso_media = JSON.parse(JSON.stringify(info))[4];
                 let qso_orig = JSON.parse(JSON.stringify(info))[5];
+                let qso_links = JSON.parse(JSON.stringify(info))[6];
                 
                 qsos.map(qso => {
                     qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
@@ -97,6 +98,7 @@ exports.handler = async(event, context, callback) => {
                     qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                     qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                     qso.original = qso_orig.find(obj => obj.idqsos === qso.idqso_shared);
+                    qso.links = qso_links.find(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                 });
                 
                 resolve(qsos);

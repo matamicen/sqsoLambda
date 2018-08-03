@@ -1,14 +1,13 @@
-var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
 
 
-exports.handler = (event, context, callback) => {
+
+exports.handler = async(event, context, callback) => {
 
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    //***********************************************************
+    var msg;
     var conn = mysql.createConnection({
         host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
         user: 'sqso', // Enter your  MySQL username
@@ -16,50 +15,60 @@ exports.handler = (event, context, callback) => {
         database: 'sqso' // Enter your  MySQL database name.
     });
 
+  
 
 
-    var qso_qras;
-    var qso_media;
-    var qso_comments;
-    var qso_likes;
-    var qsos = [];
-    var qsos_output = [];
-    var msg;
+    try {
+        let qsos_output = await getQsos();
+        console.log(qsos_output);
+        conn.destroy();
+        context.succeed(qsos_output);
 
+    }
+    catch (e) {
+        console.log("Error when select Public QSO Feed");
+        console.log(e);
+        conn.destroy();
+        callback(e.message);
+        msg = {
+            "error": "1",
+            "message": "Error when select Public QSO Feed"
+        };
+        return context.fail(msg);
+    }
 
-
-    conn.query("CALL qsopubliclistget( )", function(error, info) {
-        //    conn.query ( "SELECT * from qsos WHERE idqsos = 399 order by datetime desc LIMIT 1",   function(error,rows) {
-        if (error) {
-            console.log("ERROR In Get QSOS up to today");
-            console.log(error);
-            conn.destroy();
-            callback(error.message);
-            msg = {
-                "error": "1",
-                "message": "ERROR In Get QSOS up to today"
-            };
-            return context.fail(msg);
-        }
-        else {
-            qsos = JSON.parse(JSON.stringify(info))[0];
-            qso_qras = JSON.parse(JSON.stringify(info))[1];
-            qso_comments = JSON.parse(JSON.stringify(info))[2];
-            qso_likes = JSON.parse(JSON.stringify(info))[3];
-            qso_media = JSON.parse(JSON.stringify(info))[4];
-
-            qsos_output = qsos.map(qso => {
-                qso.qras = qso_qras.filter(obj => obj.idqsos === qso.idqsos);
-            qso.comments = qso_comments.filter(obj => obj.idqsos === qso.idqsos);
-            qso.likes = qso_likes.filter(obj => obj.idqsos === qso.idqsos);
-            qso.media = qso_media.filter(obj => obj.idqsos === qso.idqsos);
-            return qso;
+    async function getQsos() {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // console.log("get QRA info from Congito ID");
+            conn.query("CALL qsopubliclistget2()", function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                
+                let qsos = JSON.parse(JSON.stringify(info))[0];
+                let qso_qras = JSON.parse(JSON.stringify(info))[1];
+                let qso_comments = JSON.parse(JSON.stringify(info))[2];
+                let qso_likes = JSON.parse(JSON.stringify(info))[3];
+                let qso_media = JSON.parse(JSON.stringify(info))[4];
+                let qso_orig = JSON.parse(JSON.stringify(info))[5];
+                let qso_links = JSON.parse(JSON.stringify(info))[6];
+                
+                qsos.map(qso => {
+                    qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.original = qso_orig.find(obj => obj.idqsos === qso.idqso_shared);
+                    qso.links = qso_links.find(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                });
+                
+                resolve(qsos);
+                
+            });
         });
-            qsos_output = qsos_output.filter(obj => obj.media.length > 0);
-            console.log(qsos_output);
-            conn.destroy();
-            context.succeed(qsos_output);
 
-        }
-    });
+    }
 };
