@@ -61,8 +61,8 @@ exports.handler = async(event, context, callback) => {
                     qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                     qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                     qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                    qso.original = qso_orig.find(obj => obj.idqsos === qso.idqso_shared);
-                    qso.links = qso_links.find(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
+                    qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                 });
                 
                 resolve(qsos);
