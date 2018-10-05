@@ -20,14 +20,9 @@ exports.handler = async(event, context, callback) =>
         }
     };
 
-    if (event.qso) {
 
-       
-        qso = event.qso;
-    }
-    else {
         qso = event.body.qso;
-    }
+
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -55,6 +50,7 @@ exports.handler = async(event, context, callback) =>
         qso.likes = await getQsoLikes(qso);
         qso.comments = await getQsoComments(qso);
         qso.media = await getQsoMedia(qso);
+        qso.links = await getQsoLinks(qso);
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
@@ -164,6 +160,36 @@ exports.handler = async(event, context, callback) =>
                 // console.log(info);
             });
         });
-    };
- 
+    }
+    async function getQsoLinks(qso) {        
+        let qsos = await getLinks(qso);
+        for (let i = 0; i < qsos.length; i++) {         
+            
+            var qra = await getQsoOwnerData(qsos[i]);
+            qsos[i].qra = qra.qra;
+            qsos[i].profilepic = qra.profilepic;
+           
+            qsos[i].qras = await getQsoQras(qsos[i]);
+            qsos[i].likes = await getQsoLikes(qsos[i]);
+            qsos[i].comments = await getQsoComments(qsos[i]);
+            qsos[i].media = await getQsoMedia(qsos[i]);
+            
+        }
+        return qsos;        
+    }
+    function getLinks(qso) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.             
+            //***********************************************************
+            conn.query("SELECT qsos.* from qsos_links inner join qsos on qsos_links.idqso_rel = qsos.idqsos  where  qsos_links.idqso=?", qso.idqsos, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+                // console.log(info);
+            });
+        });
+    }
 };
