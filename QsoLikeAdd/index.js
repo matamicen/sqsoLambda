@@ -22,11 +22,12 @@ exports.handler = async(event, context, callback) => {
     };
 
     // var count;
+    
     if (event.qso) {
         qso = event.qso;        
         sub = event.sub;
     } else {
-        qso = event.qso;        
+        qso = event.body.qso;        
         sub = event.context.sub;
     }
 
@@ -51,7 +52,7 @@ exports.handler = async(event, context, callback) => {
                
         
         let likes = await getLikes(qso);
-        let found = likes.find(o => o.idqra === idqras_owner)
+        let found = likes.find(o => o.idqra === idqras_owner);
         if (found) {
             console.log("already liked");
             //like already exist => do not insert again
@@ -60,7 +61,7 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
         
-        info = await insertLike(idqras_owner, qso);
+        let info = await insertLike(idqras_owner, qso);
         if (info) {            
             await UpdateLikesCounterInQso(qso);            
                 conn.destroy();
