@@ -11,7 +11,7 @@ BEGIN
 CREATE TEMPORARY TABLE IF NOT EXISTS t_qsos (SELECT *
 						from qsos 
 						where deleted =0		
-						order by qsos.datetime desc limit 100 );
+						order by qsos.datetime desc limit 50 );
 DROP TEMPORARY TABLE IF EXISTS t_qsos1;
 DROP TEMPORARY TABLE IF EXISTS t_qsos2;
 CREATE TEMPORARY TABLE t_qsos1 (select * from t_qsos);
@@ -133,18 +133,41 @@ order by idqsos;
              
 #Links
 (SELECT 
-    qsos_links.*
-from
-    qsos_links
+		qsos_links.*,
+		qsos.*,
+		qras.idqras,
+		qras.qra,
+		qras.profilepic    
+			from
+		qsos_links
+		inner join 
+			qsos on qsos.idqsos = qsos_links.idqso_rel
+		INNER JOIN
+			qsos_qras ON qsos.idqsos = qsos_qras.idqso
+		inner join 
+			qras on qsos_qras.idqra = qras.idqras
         inner join
-    t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso  
-order by idqso) UNION (SELECT 
-   qsos_links.*
-from
-    qsos_links
+			t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso  
+		where qsos_qras.isOwner = 1
+		order by idqso) UNION (
+	SELECT 
+		   qsos_links.*,
+		qsos.*,
+		qras.idqras,
+		qras.qra,
+		qras.profilepic    
+			from
+		qsos_links
+		inner join 
+			qsos on qsos.idqsos = qsos_links.idqso_rel
+		INNER JOIN
+			qsos_qras ON qsos.idqsos = qsos_qras.idqso
+		inner join 
+			qras on qsos_qras.idqra = qras.idqras        
         inner join
-    t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
-order by idqso)
+			t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
+		where qsos_qras.isOwner = 1
+		order by idqso)
 ;
  
    
