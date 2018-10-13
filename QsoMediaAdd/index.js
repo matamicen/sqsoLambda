@@ -57,6 +57,17 @@ exports.handler = async(event, context, callback) => {
             callback("User does not exist");
             return context.fail(response);
         }
+        if (type === 'image') {
+            let image_nsfw = await checkImageNSFW(url);
+            if (image_nsfw) {
+                console.log("Image is NSFW");
+                conn.destroy();
+                response.body.error = 1;
+                response.body.message = "NSFW";
+                // callback("User does not exist");
+                return callback(null, response);
+            }
+        }
         let info = await addQSOMedia(qso, type, url, datasize, datetime, description, height, width);
 
         if (info.affectedRows) {
@@ -67,7 +78,8 @@ exports.handler = async(event, context, callback) => {
             response.body.message = url;
             return callback(null, response);
         } //ENDIF
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing Qso Media add");
         console.log(e);
         conn.destroy();
@@ -77,61 +89,66 @@ exports.handler = async(event, context, callback) => {
         callback(null, response);
         return context.fail(response);
     }
+
     function checkOwnerInQso(idqso, sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
-                        "here qsos.idqsos=? and qras.idcognito=?",
-                [
-                    idqso, sub
-                ], function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
+                    "here qsos.idqsos=? and qras.idcognito=?", [
+                        idqso, sub
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    if (info.length > 0) {
-                        resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                    } else {
-                        resolve();
-                    }
-                });
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
         });
     }
+
     function addQSOMedia(qso, type, url, datasize, datetime, description, height, width) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("addQSOMedia");
 
             //***********************************************************
             conn.query('INSERT INTO qsos_media SET idqso = ?, type = ?, url = ?, datasize = ?, datetime ' +
-                    '= ?, description=?, height=?, width=?',
-            [
-                qso,
-                type,
-                url,
-                datasize,
-                datetime,
-                description,
-                height,
-                width
-            ], function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                } else {
-                    resolve(JSON.parse(JSON.stringify(info)));
-                }
-                // console.log(info);
-            });
+                '= ?, description=?, height=?, width=?', [
+                    qso,
+                    type,
+                    url,
+                    datasize,
+                    datetime,
+                    description,
+                    height,
+                    width
+                ],
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    else {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    // console.log(info);
+                });
         });
     }
+
     function triggerSNS(qso, insertID, idqra_owner, qra_owner) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("triggerSNS");
@@ -149,12 +166,48 @@ exports.handler = async(event, context, callback) => {
                 Payload: JSON.stringify(payload)
             };
 
-            lambda.invoke(params, function (err, data) {
+            lambda.invoke(params, function(err, data) {
                 console.log("lambda");
                 if (err) {
                     return reject(err);
-                } else {
+                }
+                else {
                     resolve();
+                }
+            });
+
+        });
+    }
+
+    function checkImageNSFW(url) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log(" checkImage(url)");
+
+            //PUSH Notification
+            var payload = {
+                "body": {
+                    "url": url
+                }
+            };
+            var params = {
+                FunctionName: 'image-check-nsfw', // the lambda function we are going to invoke
+                InvocationType: 'RequestResponse',
+                LogType: 'Tail',
+                Payload: JSON.stringify(payload)
+            };
+
+            lambda.invoke(params, function(err, data) {
+                console.log("lambda");
+                if (err) {
+                    console.log("error");
+                    console.log(err);
+                    return reject(err);
+                }
+                else {
+                    console.log(data.Payload);
+                    resolve(data.Payload);
                 }
             });
 
