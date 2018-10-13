@@ -24,6 +24,7 @@ exports.handler = async(event, context, callback) => {
     var url = event.body.url;
     var url_avatar = event.body.url_avatar;
     var sub = event.context.sub;
+    var mode = event.body.mode;
 
 
     //***********************************************************
@@ -35,32 +36,44 @@ exports.handler = async(event, context, callback) => {
     });
 
     try {
-        let image_nsfw = await checkImageNSFW(url);
-        if (image_nsfw === 'true') {
-            console.log("Image is NSFW");
-            conn.destroy();
-            response.body.error = 1;
-            response.body.message = "NSFW";
-            // callback("User does not exist");
-            return callback(null, response);
+        if (mode === 'NSFW') {
+            let image_nsfw = await checkImageNSFW(url);
+            if (image_nsfw === 'true') {
+                console.log("Image is NSFW");
+                conn.destroy();
+                response.body.error = 1;
+                response.body.message = "NSFW";
+                // callback("User does not exist");
+                return callback(null, response);
+            }
+            else {
+                console.log("Image is not NSFW");
+                conn.destroy();
+                response.body.error = 0;
+                response.body.message = "OK";
+                // callback("User does not exist");
+                return callback(null, response);
+            }
         }
-        let info = await updatePic(url, sub, url_avatar);
+        else if (mode === 'PERSIST') {
+            let info = await updatePic(url, sub, url_avatar);
 
-        if (info.affectedRows) {
+            if (info.affectedRows) {
 
-            console.log("QRA Profile Pic updated", info.affectedRows);
-            conn.destroy();
-            response.body.error = 0;
-            response.body.message = info;
-            return callback(null, response);
+                console.log("QRA Profile Pic updated", info.affectedRows);
+                conn.destroy();
+                response.body.error = 0;
+                response.body.message = info;
+                return callback(null, response);
+            }
+            else {
+                console.log("QRA not found");
+                conn.destroy();
+                response.body.error = 1;
+                response.body.message = "QRA not found";
+                return callback(null, response);
+            } //ENDIF
         }
-        else {
-            console.log("QRA not found");
-            conn.destroy();
-            response.body.error = 1;
-            response.body.message = "QRA not found";
-            return callback(null, response);
-        } //ENDIF
     }
     catch (e) {
         console.log("Error executing QRA set Profile PIC");
