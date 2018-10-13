@@ -37,7 +37,8 @@ SELECT
     t_qsos1.*,
     qras.idqras,
     qras.qra,
-    qras.profilepic    
+    qras.profilepic,
+	qras.avatarpic
 FROM
     qras
         INNER JOIN
@@ -50,7 +51,7 @@ order by idqso desc;
 
 #QRAS
 (SELECT 
-    idqso, qras.idqras, qras.qra, qras.profilepic
+    idqso, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 FROM
     qras
         INNER JOIN
@@ -60,7 +61,7 @@ FROM
 WHERE
     isOwner = 0
 order by idqsos) UNION (SELECT 
-    idqso, qras.idqras, qras.qra, qras.profilepic
+    idqso, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 FROM
     qras
         INNER JOIN
@@ -73,7 +74,7 @@ order by idqsos);
 
     #Comments
 (SELECT 
-    qsos_comments . *, qras.idqras, qras.qra, qras.profilepic
+    qsos_comments . *, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 from
     qsos_comments
         inner join
@@ -83,7 +84,7 @@ from
 where
     qsos_comments.deleted = 0
 order by idqso) UNION (SELECT 
-    qsos_comments . *, qras.idqras, qras.qra, qras.profilepic
+    qsos_comments . *, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 from
     qsos_comments
         inner join
@@ -134,7 +135,8 @@ SELECT
     qsos.*,
     qras.idqras,
     qras.qra,
-    qras.profilepic
+    qras.profilepic, 
+	qras.avatarpic
  
 FROM
     qras
@@ -153,7 +155,8 @@ order by idqsos;
 		qsos.*,
 		qras.idqras,
 		qras.qra,
-		qras.profilepic    
+		qras.profilepic, 
+		qras.avatarpic
 			from
 		qsos_links
 		inner join 
@@ -171,7 +174,8 @@ order by idqsos;
 		qsos.*,
 		qras.idqras,
 		qras.qra,
-		qras.profilepic    
+		qras.profilepic, 
+		qras.avatarpic
 			from
 		qsos_links
 		inner join 

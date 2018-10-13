@@ -186,7 +186,7 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log(idqra_owner)
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
                     "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
                     " ?",
             idqra_owner, function (err, info) {

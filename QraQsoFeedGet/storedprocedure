@@ -4,25 +4,36 @@
 -- --------------------------------------------------------------------------------
 DELIMITER $$
 
-CREATE DEFINER=`sqso`@`%` PROCEDURE `qsopubliclistget2`()
+CREATE DEFINER=`sqso`@`%` PROCEDURE `qraqsofeedget2`(IN QRA varchar(45))
 BEGIN
-  
-#GET QSOS AND QRA of QSO_OWNER
-CREATE TEMPORARY TABLE IF NOT EXISTS t_qsos (SELECT *
-						from qsos 
-						where deleted =0		
-						order by qsos.datetime desc limit 50 );
+
+
+DROP TEMPORARY TABLE IF EXISTS t_qsos;
+
+CREATE TEMPORARY TABLE t_qsos (
+select * from 
+#Get all the post where the current user is owner.  
+(SELECT qsos.* from qsos
+				inner join qras 
+				on qras.idqras = qsos.idqra_owner
+				WHERE qsos.datetime <=NOW() 
+					and qras.qra= QRA			
+					and deleted = 0 order by datetime desc LIMIT 50 ) 
+ as t_qsos
+	 );
+
 DROP TEMPORARY TABLE IF EXISTS t_qsos1;
 DROP TEMPORARY TABLE IF EXISTS t_qsos2;
 CREATE TEMPORARY TABLE t_qsos1 (select * from t_qsos);
 CREATE TEMPORARY TABLE t_qsos2 (select * from t_qsos);
+
 #Get QSO Data and QRA Owner Detail
 SELECT 	
     t_qsos1.*,
     qras.idqras,
     qras.qra,
-    qras.profilepic,
-	qras.avatarpic    
+    qras.profilepic,    
+	qras.avatarpic
 FROM
     qras
         INNER JOIN
@@ -67,7 +78,8 @@ from
     qras ON qsos_comments.idqra = qras.idqras
 where
     qsos_comments.deleted = 0
-order by idqso) UNION (SELECT 
+order by idqso) UNION (
+	SELECT 
     qsos_comments . *, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 from
     qsos_comments
@@ -113,12 +125,13 @@ where
     qsos_media.deleted = 0
 order by idqso)
 ;
+
 #QSO Original with QRA Owner Data
 SELECT 	
     qsos.*,
     qras.idqras,
     qras.qra,
-    qras.profilepic, 
+    qras.profilepic,
 	qras.avatarpic
  
 FROM
@@ -132,48 +145,20 @@ FROM
 WHERE
     isOwner = 1
 order by idqsos;
-             
 #Links
 (SELECT 
-		qsos_links.*,
-		qsos.*,
-		qras.idqras,
-		qras.qra,
-		qras.profilepic, 
-		qras.avatarpic
-			from
-		qsos_links
-		inner join 
-			qsos on qsos.idqsos = qsos_links.idqso_rel
-		INNER JOIN
-			qsos_qras ON qsos.idqsos = qsos_qras.idqso
-		inner join 
-			qras on qsos_qras.idqra = qras.idqras
+    qsos_links.*
+from
+    qsos_links
         inner join
-			t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso  
-		where qsos_qras.isOwner = 1
-		order by idqso) UNION (
-	SELECT 
-		   qsos_links.*,
-		qsos.*,
-		qras.idqras,
-		qras.qra,
-		qras.profilepic, 
-		qras.avatarpic
-			from
-		qsos_links
-		inner join 
-			qsos on qsos.idqsos = qsos_links.idqso_rel
-		INNER JOIN
-			qsos_qras ON qsos.idqsos = qsos_qras.idqso
-		inner join 
-			qras on qsos_qras.idqra = qras.idqras        
+    t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso  
+order by idqso) UNION (SELECT 
+   qsos_links.*
+from
+    qsos_links
         inner join
-			t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
-		where qsos_qras.isOwner = 1
-		order by idqso)
-;
- 
-   
+    t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
+order by idqso)
+;                
 
 END

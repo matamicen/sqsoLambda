@@ -96,7 +96,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, avatarpic  from qra_followers inner joi" +
                         "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
                         " ?",
                 idqra, function (err, info) {
@@ -114,7 +114,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, avatarpic  from qra_followers inner joi" +
                         "n qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed =" +
                         " ?",
                 idqra, function (err, info) {

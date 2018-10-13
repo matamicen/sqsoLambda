@@ -59,7 +59,9 @@ exports.handler = async(event, context, callback) => {
         }
         if (type === 'image') {
             let image_nsfw = await checkImageNSFW(url);
-            if (image_nsfw) {
+
+            console.log(image_nsfw)
+            if (image_nsfw === 'true') {
                 console.log("Image is NSFW");
                 conn.destroy();
                 response.body.error = 1;
@@ -214,4 +216,4 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-}
+};

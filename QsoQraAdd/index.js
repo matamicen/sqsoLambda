@@ -181,36 +181,13 @@ exports.handler = (event, context, callback) => {
                                 } //End If
                                 if (info.insertId) {
                                     console.log("QSOQRA inserted", info.insertId);
-                                    qras_output.push({qra: json[0].qra, url: json[0].profilepic});
+                                    qras_output.push({qra: json[0].qra, url: json[0].profilepic, url_avatar: json[0].avatarpic});
                                     console.log("qras" + qras_output);
 
                                     count++;
                                     callback();
 
-                                    // conn.query('SELECT * FROM qra_followers where idqra=? and idqra_followed=?', [
-                                    //     idqras_owner, idqras
-                                    // ], function (error, info) {
-                                    //     if (error) {
-                                    //         console.log("Error when select qra_followers");
-                                    //         console.log(error.message);
-                                    //         conn.destroy();
-                                    //         callback(error.message);
-                                    //         return callback.fail(error);
-                                    //     } //End If
-                                    //     if (info.length) {
-                                    //         qras_output.push({qra: json[0].qra, url: json[0].profilepic, following: 'TRUE'});
-                                    //         console.log("qras" + qras_output);
-
-                                    //         count++;
-                                    //         callback();
-                                    //     } else {
-                                    //         qras_output.push({qra: json[0].qra, url: json[0].profilepic, following: 'FALSE'});
-                                    //         console.log("qras" + qras_output);
-
-                                    //         count++;
-                                    //         callback();
-                                    //     }
-                                    // }); //End Insert
+                                  
 
                                 }
                             }); //End Insert

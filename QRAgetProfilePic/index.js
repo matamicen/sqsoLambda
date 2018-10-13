@@ -3,8 +3,6 @@ var mysql = require('mysql');
 exports.handler = (event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    console.log('Received context:', JSON.stringify(context, null, 2));
 
     var qra;
     var qra_res;
@@ -13,7 +11,8 @@ exports.handler = (event, context, callback) => {
     if (event.qra) {
         qra = event.qra;
         sub = event.sub;
-    } else {
+    }
+    else {
         qra = event.body.qra;
         sub = event.context.sub;
     }
@@ -29,7 +28,7 @@ exports.handler = (event, context, callback) => {
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
 
-    conn.query("SELECT qras.idcognito, qras.idqras from qras where qras.idcognito=?", [sub], function (error, info) {
+    conn.query("SELECT qras.idcognito, qras.idqras from qras where qras.idcognito=?", [sub], function(error, info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
@@ -44,10 +43,10 @@ exports.handler = (event, context, callback) => {
         }
 
         var idqras_owner = JSON.parse(JSON.stringify(info))[0].idqras;
-        console.log(idqras_owner)
+        console.log(idqras_owner);
         //QRA FOUND => Update QRA with ID Cognito
 
-        conn.query("SELECT * FROM qras where qra=? LIMIT 1", qra.toUpperCase(), function (error, info) { // querying the database
+        conn.query("SELECT * FROM qras where qra=? LIMIT 1", qra.toUpperCase(), function(error, info) { // querying the database
             if (error) {
                 console.log(error.message);
                 // context.done(null,event);
@@ -57,7 +56,8 @@ exports.handler = (event, context, callback) => {
                     "message": "Could not get profile picture"
                 };
                 return context.fail(msg);
-            } else if (info.length > 0) {
+            }
+            else if (info.length > 0) {
                 console.log("QRA FOUND");
 
                 qra_res = JSON.parse(JSON.stringify(info));
@@ -65,7 +65,7 @@ exports.handler = (event, context, callback) => {
 
                 conn.query('SELECT * FROM qra_followers where idqra=? and idqra_followed=?', [
                     idqras_owner, qra_res[0].idqras
-                ], function (error, info) {
+                ], function(error, info) {
                     if (error) {
                         console.log("Error when select qra_followers");
                         console.log(error.message);
@@ -73,24 +73,28 @@ exports.handler = (event, context, callback) => {
                         callback(error.message);
                         return callback.fail(error);
                     } //End If
-                    console.log(info)if (info.length) {
+                    console.log(info);
+                    if (info.length) {
 
                         msg = {
                             "error": "0",
                             "message": {
                                 "qra": qra,
                                 "url": qra_res[0].profilepic,
+                                "url_avatar": qra_res[0].avatarpic,
                                 "following": 'TRUE'
                             }
                         };
 
-                    } else {
+                    }
+                    else {
 
                         msg = {
                             "error": "0",
                             "message": {
                                 "qra": qra,
                                 "url": qra_res[0].profilepic,
+                                "url_avatar": qra_res[0].avatarpic,
                                 "following": 'FALSE'
                             }
                         };
@@ -99,7 +103,8 @@ exports.handler = (event, context, callback) => {
                     context.succeed(msg);
                 }); //End Insert
 
-            } else {
+            }
+            else {
                 //context.done(null,event);
                 conn.destroy();
                 msg = {
@@ -107,6 +112,7 @@ exports.handler = (event, context, callback) => {
                     "message": {
                         "qra": qra,
                         "url": null,
+                        "url_avatar": null,
                         "following": 'NOT_EXIST'
                     }
                 };

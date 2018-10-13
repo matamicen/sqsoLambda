@@ -22,6 +22,7 @@ exports.handler = async(event, context, callback) => {
     };
 
     var url = event.body.url;
+    var url_avatar = event.body.url_avatar;
     var sub = event.context.sub;
 
 
@@ -35,7 +36,7 @@ exports.handler = async(event, context, callback) => {
 
     try {
         let image_nsfw = await checkImageNSFW(url);
-        if (image_nsfw) {
+        if (image_nsfw === 'true') {
             console.log("Image is NSFW");
             conn.destroy();
             response.body.error = 1;
@@ -43,7 +44,7 @@ exports.handler = async(event, context, callback) => {
             // callback("User does not exist");
             return callback(null, response);
         }
-        let info = await updatePic(url, sub);
+        let info = await updatePic(url, sub, url_avatar);
 
         if (info.affectedRows) {
 
@@ -72,14 +73,14 @@ exports.handler = async(event, context, callback) => {
         return context.fail(response);
     }
 
-    function updatePic(url, sub) {
+    function updatePic(url, sub, url_avatar) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("updatePic");
 
             //***********************************************************
-            conn.query('UPDATE qras SET profilepic=? WHERE idcognito=?', [url, sub],
+            conn.query('UPDATE qras SET profilepic=?, avatarpic=? WHERE idcognito=?', [url, url_avatar, sub],
                 function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {

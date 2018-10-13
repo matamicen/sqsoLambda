@@ -28,7 +28,7 @@ exports.handler = (event, context, callback) => {
     //QRA FOUND => Update QRA with ID Cognito
 
     conn.query("SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
-            "astname,'')) AS name, profilepic  FROM qras where qra LIKE ?",
+            "astname,'')) AS name, profilepic, avatarpic  FROM qras where qra LIKE ?",
     qra.toUpperCase() + '%', function (error, info) { // querying the database
         if (error) {
             console.log(error.message);

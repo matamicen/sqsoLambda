@@ -121,7 +121,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRAs");
             conn.query("SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
-                    "astname,'')) AS name, profilepic, idqras  FROM qras where qra LIKE ?",
+                    "astname,'')) AS name, profilepic, avatarpic, idqras  FROM qras where qra LIKE ?",
             qra + '%', function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {

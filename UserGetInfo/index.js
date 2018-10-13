@@ -105,7 +105,7 @@ exports.handler = async(event, context, callback) => {
             // this tick. Alternately, try/catch and reject(err) on catch.
             console.log("get Followings");
             
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", qra.idqras, function(err, info) {
+            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra = ?", qra.idqras, function(err, info) {
                 // Call reject on error states,
                 // call resolve with results
                 if (err) {
@@ -123,7 +123,7 @@ exports.handler = async(event, context, callback) => {
             // this tick. Alternately, try/catch and reject(err) on catch.
             console.log("get Followers");
             
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed = ?", qra.idqras, function(err, info) {
+            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed = ?", qra.idqras, function(err, info) {
                 // Call reject on error states,
                 // call resolve with results
                 if (err) {

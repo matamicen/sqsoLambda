@@ -50,7 +50,7 @@ exports.handler = async(event, context, callback) =>
         var qra = await getQsoOwnerData(qso);
         qso.qra = qra.qra;
         qso.profilepic = qra.profilepic;
-       
+        qso.avatarpic = qra.avatarpic;
         qso.qras = await getQsoQras(qso);
         qso.likes = await getQsoLikes(qso);
         qso.comments = await getQsoComments(qso);
@@ -95,7 +95,7 @@ exports.handler = async(event, context, callback) =>
             // Alternately, try/catch and reject(err) on catch.
             // console.log("get QRA info from Congito ID");            
             //***********************************************************
-            conn.query('SELECT qra, profilepic from qras WHERE idqras = ?',qso.idqra_owner, function (err, info) {
+            conn.query('SELECT qra, profilepic, avatarpic from qras WHERE idqras = ?',qso.idqra_owner, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -110,7 +110,7 @@ exports.handler = async(event, context, callback) =>
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.             
             //***********************************************************
-            conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", qso.idqsos, function (err, info) {
+            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", qso.idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -140,7 +140,7 @@ exports.handler = async(event, context, callback) =>
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.             
             //***********************************************************
-            conn.query("SELECT qra, profilepic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", qso.idqsos, function (err, info) {
+            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", qso.idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
