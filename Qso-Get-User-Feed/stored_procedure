@@ -23,7 +23,7 @@ UNION
 	INNER JOIN qra_followers on qra_followers.idqra_followed = qsos_qras.idqra
 	WHERE qsos.datetime <=NOW() 
 		and qra_followers.idqra = IDQRA 		
-		and deleted = 0  order by datetime desc LIMIT 100)
+		and deleted = 0  order by datetime desc LIMIT 50)
 	order by datetime desc) as t_qsos
 	 );
 
