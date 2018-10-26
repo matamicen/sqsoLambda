@@ -24,7 +24,8 @@ exports.handler = async(event, context, callback) => {
         qso = event.qso;
         qsos_rel = event.qsos_rel;
         sub = event.sub;
-    } else {
+    }
+    else {
         qso = event.body.qso;
         qsos_rel = event.body.qsos_rel;
         sub = event.context.sub;
@@ -43,11 +44,11 @@ exports.handler = async(event, context, callback) => {
             console.log("Caller is not QSO Owner");
             conn.destroy();
             response.body.error = 1;
-            response.body.message = "User does not exist";
-            callback("User does not exist");
-            return context.fail(response);
+            response.body.message = "You are not the Owner of the main QSO";
+
+            return callback(null, response);
         }
-      
+
         await UpdateLinksInQso(qso, qsos_rel.length);
         await UpdateLinksInQraOwner(idqras_owner, qsos_rel.length);
         let info = await addQSOlinks(qso, qsos_rel);
@@ -59,38 +60,41 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         } //ENDIF
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing Qso link add");
         console.log(e);
         conn.destroy();
-     
+
         response.body.error = 1;
         response.body.message = e;
-        callback(null, response);
-        return context.fail(response);
+
+        return callback(null, response);
     }
+
     function checkOwnerInQso(idqso, sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
-                        "here qsos.idqsos=? and qras.idcognito=?",
-                [
-                    idqso, sub
-                ], function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
+                    "here qsos.idqsos=? and qras.idcognito=?", [
+                        idqso, sub
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    if (info.length > 0) {
-                        resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                    } else {
-                        resolve();
-                    }
-                });
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
         });
     }
     async function addQSOlinks(qso, qsos_rel) {
@@ -100,20 +104,22 @@ exports.handler = async(event, context, callback) => {
         }
         return info;
     }
+
     function addQSOlink(qso, idqso_rel) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("addQSOlink" + idqso_rel);
 
 
             //***********************************************************
-            conn.query('INSERT INTO qsos_links SET idqso=?, idqso_rel=?, datetime=NOW()', [qso, idqso_rel], function (err, info) {
+            conn.query('INSERT INTO qsos_links SET idqso=?, idqso_rel=?, datetime=NOW()', [qso, idqso_rel], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
-                   return reject(err);
-                } else {
-                resolve(JSON.parse(JSON.stringify(info)));
+                    return reject(err);
+                }
+                else {
+                    resolve(JSON.parse(JSON.stringify(info)));
                 }
                 // console.log(info);
             });
@@ -121,35 +127,36 @@ exports.handler = async(event, context, callback) => {
     }
 
     function UpdateLinksInQso(qso, counter) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("UpdateLinksInQso" +qso+ counter);
+            console.log("UpdateLinksInQso" + qso + counter);
             conn.query('UPDATE sqso.qsos SET links_counter = links_counter+? WHERE idqsos=?', [
-                counter,qso 
-            ], function (err, info) {
+                counter, qso
+            ], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
-               
+
                 resolve(JSON.parse(JSON.stringify(info)));
             });
         });
     }
+
     function UpdateLinksInQraOwner(idqras, counter) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("UpdateLinksInQraOwner" +idqras+ counter);
+            console.log("UpdateLinksInQraOwner" + idqras + counter);
             conn.query('UPDATE sqso.qras SET links_created = qsos_counter+? WHERE idqras=?', [
                 counter, idqras
-            ], function (err, info) {
+            ], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
-                
+
                 resolve(JSON.parse(JSON.stringify(info)));
 
             });
