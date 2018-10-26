@@ -130,8 +130,7 @@ exports.handler = async(event, context, callback) => {
                 }
                 else {
                     resolve(JSON.parse(JSON.stringify(info)));
-                }
-                // console.log(info);
+                }                
             });
         });
     }
