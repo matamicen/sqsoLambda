@@ -1,54 +1,28 @@
-var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
 
-exports.handler = (event, context, callback) => {
+exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    console.log('Received context:', JSON.stringify(context, null, 2));
 
-    var sub;
-    var Name;
-    var post;
-    var qra;
-    var qras;
 
-    var qra_output = {};
-    var qras_output = [];
-    var json;
-    var idqras;
-    var idqras_owner;
-    var qso;
-    var msg;
-    var count;
-    if (process.env.TEST) {
-        var test = {
-            "qso": "1400",
-            "qras": ["lu7ach", "lu7aaa", "lu999aaes"]
-        };
-        qso = test.qso;
-        qras = test.qras;
-    } else {
-        qso = event.body.qso;
-        qras = event.body.qras;
-        console.log("QRAS", qras);
-    }
 
-    if (process.env.TEST) {
-        sub = "ccd403e3-06ae-4996-bb70-3aacf32a86df";
-    } else if (event.context.sub) {
-        sub = event.context.sub;
-    }
-    console.log("sub =", sub);
+    var response = {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
+    };
 
-    if (process.env.TEST) {
-        Name = "test";
-    } else if (event.context.nickname) {
-        Name = event.context.nickname;
-    }
+    var idqso = event.body.qso;
+    var qras = event.body.qras;
+    var sub = event.context.sub;
+    var datetime = new Date();
 
-    console.log('userName =', Name);
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -58,154 +32,219 @@ exports.handler = (event, context, callback) => {
         database: 'sqso' // Enter your  MySQL database name.
     });
 
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-    console.log(qso);
-    conn.query("SELECT qras.idcognito, qras.idqras from qras inner join qsos on qras.idqras = qs" +
-            "os.idqra_owner where qsos.idqsos =? and qras.idcognito=?",
-    [
-        qso, sub
-    ], function (error, info) {
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
+    try {
+        let idqras_owner = await checkOwnerInQso(idqso, sub);
+        if (!idqras_owner) {
+            console.log("Caller is not QSO Owner");
             conn.destroy();
-            callback(error.message);
-            msg = {
-                "error": "1",
-                "message": "Error when select QRA to get ID of Owner"
-            };
-            return context.fail(msg);
+            response.body.error = 1;
+            response.body.message = "Caller is not QSO Owner";
+            return callback(null, response);
+        }
+        var qras_output = await saveQrasInQso(qras, idqso);
 
+        let followers = await getFollowers(idqras_owner);
+
+        let idActivity = await saveActivity(idqras_owner, idqso, datetime);
+        if (idActivity) {
+
+            await createNotifications(idActivity, followers);
+        }
+        if (qras_output) {
+            console.log("QSOQRA inserted", idqso);
+            conn.destroy();
+            response.body.error = 0;
+            response.body.message = qras_output;
+            return callback(null, response);
         }
 
-        idqras_owner = JSON.parse(JSON.stringify(info))[0].idqras;
+    }
+    catch (e) {
+        console.log("Error executing QsoQraAdd");
+        console.log(e);
+        conn.destroy();
+        callback(e.message);
+        response.body.error = 1;
+        response.body.message = e.message;
+        return callback(null, response);
+    }
 
-        if (info.length === 0) {
-            console.log("Caller user is not the QSO Owner");
-            console.log('error select: ' + error);
-            callback(error);
 
-            msg = {
-                "error": 1,
-                "message": "Caller user is not the QSO Owner"
-            };
-            return context.fail(msg);
-        } else {
 
-            // 1st para in async.each() is the array of items
+    function checkOwnerInQso(idqso, sub) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("checkOwnerInQso");
+            conn
+                .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
+                    "here qsos.idqsos=? and qras.idcognito=?", [
+                        idqso, sub
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+        });
+    }
+    async function saveQrasInQso(qras, idqso) {
+        console.log("saveQrasInQso");
+        let qras_output = [];
+        for (var i = 0; i < qras.length; i++) {
+            var qra = await getQra(qras[i]);
+            var idqra = qra.idqra;
+            if (!qra) {
+                await qras_output.push({ qra: qras[i], url: null });
+                idqra = await saveQra(qras[i]);
+            }
+            else {
+                qras_output.push({ "qra": qra.qra, "url": qra.profilepic, "url_avatar": qra.avatarpic });
+            }
+            await saveQraInQso(idqra, idqso);
+
+        }
+        return qras_output;
+    }
+
+    function saveQra(qra) {
+        console.log("saveQra");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+
+            //***********************************************************
+            conn.query('INSERT INTO qras SET qra=?', qra.toUpperCase(), function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                else {
+                    resolve(JSON.parse(JSON.stringify(info)));
+                }
+                // console.log(info);
+            });
+        });
+    }
+
+
+    function getQra(qra) {
+        console.log("getQra");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn.query("SELECT * FROM qras where qra=? LIMIT 1", qra.toUpperCase(), function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info))[0]);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    function saveQraInQso(idqra, idqso) {
+        console.log("saveQraInQso");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+
+            //***********************************************************
+            conn.query('INSERT INTO qsos_qras SET idqso=?, idqra=?, isOwner=?', [
+                idqso, idqra, false
+            ], function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                else {
+                    resolve(JSON.parse(JSON.stringify(info)));
+                }
+            });
+        });
+
+    }
+
+    function saveActivity(idqras_owner, idqso, datetime) {
+        console.log("saveActivity");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
-            async
-                .mapSeries(qras,
-                // 2nd param is the function that each item is passed to
-                function (Name, callback) {
+            conn
+                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='12', ref_idqso=?, datet" +
+                    "ime=?", [
+                        idqras_owner, idqso, datetime
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    console.log("GET QRA", Name.toUpperCase());
-                    //***********************************************************
-                    conn.query("SELECT * FROM qras where qra=? LIMIT 1", Name.toUpperCase(), function (error, info) { // querying the database
-                        console.log("info=", info);
-                        if (error) {
-                            console.log("Error When GET QRA");
-                            console.log('error select: ' + error);
-                            callback(error);
-                            return context.fail(error);
-                        } else if (!info.length) {
-
-                            qras_output.push({qra: Name, url: null});
-                            console.log("qras" + qras_output);
-
-                            //QRA Not Found => INSERT
-                            console.log("QRA not found, Insert new QRA");
-                            post = {
-                                "qra": Name.toUpperCase()
-                              
-                            };
-                            // console.log('POST' + post);
-                            // ***********************************************************
-                            conn.query('INSERT INTO qras SET ?', post, function (error, info) { // querying the database
-                                if (error) {
-                                    console.log("Error When INSERT QRA");
-                                    console.log(error.message);
-                                    conn.destroy();
-                                    callback(error.message);
-                                    //  return context.fail(error);
-                                } else {
-
-                                    console.log("qra inserted");
-                                    // console.log(info);  qra = JSON.stringify(info);
-                                    json = JSON.parse(JSON.stringify(info));
-                                    idqras = json.insertId;
-                                    post = {
-                                        "idqso": qso,
-                                        "idqra": idqras,
-                                        "isOwner": false
-                                    };
-
-                                    //***********************************************************
-                                    conn.query('INSERT INTO qsos_qras SET ?', post, function (error, info) {
-                                        if (error) {
-                                            console.log("Error when Insert QSO QRA");
-                                            console.log(error.message);
-                                            conn.destroy();
-                                            callback(error.message);
-                                            return callback.fail(error);
-                                        } //End If
-                                        console.log(info);
-                                        if (info.insertId) {
-                                            console.log("QSOQRA inserted", info.insertId);
-                                            count++;
-                                            callback();
-                                        }
-                                    }); //End Insert QSOQRA
-                                } //end Else
-                            }) //end if; //end Insert QRA
-                        } else {
-
-                            qra = JSON.stringify(info);
-                            json = JSON.parse(qra);
-                            idqras = json[0].idqras;
-                            post = {
-                                "idqso": qso,
-                                "idqra": idqras,
-                                "isOwner": false
-                            };
-
-                            //***********************************************************
-                            conn.query('INSERT INTO qsos_qras SET ?', post, function (error, info) {
-                                if (error) {
-                                    console.log("Error when Insert QSO QRA");
-                                    console.log(error.message);
-                                    conn.destroy();
-                                    callback(error.message);
-                                    return callback.fail(error);
-                                } //End If
-                                if (info.insertId) {
-                                    console.log("QSOQRA inserted", info.insertId);
-                                    qras_output.push({qra: json[0].qra, url: json[0].profilepic, url_avatar: json[0].avatarpic});
-                                    console.log("qras" + qras_output);
-
-                                    count++;
-                                    callback();
-
-                                  
-
-                                }
-                            }); //End Insert
-                        } //endelse
-                    }); //End Select
-                },
-                // *********************************************************** 3rd param is the
-                // function to call when everything's done
-                function (err) {
-                    console.log("All tasks are done now");
-                    // doSomethingOnceAllAreDone();
-                    var msg = {
-                        "error": 0,
-                        "message": qras_output
-                    };
-                    conn.destroy();
-                    context.succeed(msg);
-                }); //end async
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    });
+        });
+    }
+    async function createNotifications(idActivity, followers) {
+        console.log("createNotifications");
+        for (let i = 0; i < followers.length; i++) {
+            await insertNotification(idActivity, followers[i]);
         }
-    }); //end validation of qso owner and cognito sub
+    }
+
+    function insertNotification(idActivity, follower) {
+        console.log("insertNotification");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?", [
+                    follower.idqra_followed, idActivity
+                ], function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                });
+        });
+    }
+
+    function getFollowers(idqra_owner) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra = ?", idqra_owner, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
+
 };
