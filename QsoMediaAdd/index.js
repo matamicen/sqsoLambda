@@ -47,20 +47,26 @@ exports.handler = async(event, context, callback) => {
         password: 'parquepatricios', // Enter your  MySQL password
         database: 'sqso' // Enter your  MySQL database name.
     });
+    if (!qso) {
+        response.body.error = 1;
+        response.body.message = "QSO parameter missing";
+
+        return callback(null, response);
+    }
     try {
         let idqras_owner = await checkOwnerInQso(qso, sub);
         if (!idqras_owner) {
             console.log("Caller is not QSO Owner");
             conn.destroy();
             response.body.error = 1;
-            response.body.message = "User does not exist";
-            callback("User does not exist");
-            return context.fail(response);
+            response.body.message = "Caller is not QSO Owner";
+
+            return callback(null, response);
         }
         if (type === 'image') {
             let image_nsfw = await checkImageNSFW(url);
 
-            console.log(image_nsfw)
+
             if (image_nsfw === 'true') {
                 console.log("Image is NSFW");
                 conn.destroy();
