@@ -41,16 +41,9 @@ exports.handler = async(event, context, callback) => {
             response.body.message = "Caller is not QSO Owner";
             return callback(null, response);
         }
-        var qras_output = await saveQrasInQso(qras, idqso);
-
-        let followers = await getFollowers(idqras_owner);
-
-        let idActivity = await saveActivity(idqras_owner, idqso, datetime);
-        if (idActivity) {
-
-            await createNotifications(idActivity, followers);
-        }
+        var qras_output = await saveQrasInQso(qras, idqso, idqras_owner, datetime);
         if (qras_output) {
+
             console.log("QSOQRA inserted", idqso);
             conn.destroy();
             response.body.error = 0;
@@ -63,7 +56,7 @@ exports.handler = async(event, context, callback) => {
         console.log("Error executing QsoQraAdd");
         console.log(e);
         conn.destroy();
-        callback(e.message);
+        // callback(e.message);
         response.body.error = 1;
         response.body.message = e.message;
         return callback(null, response);
@@ -96,21 +89,26 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function saveQrasInQso(qras, idqso) {
+    async function saveQrasInQso(qras, idqso, idqras_owner, datetime) {
         console.log("saveQrasInQso");
         let qras_output = [];
+        let idqra;
         for (var i = 0; i < qras.length; i++) {
             var qra = await getQra(qras[i]);
-            var idqra = qra.idqra;
             if (!qra) {
                 await qras_output.push({ qra: qras[i], url: null });
                 idqra = await saveQra(qras[i]);
             }
             else {
                 qras_output.push({ "qra": qra.qra, "url": qra.profilepic, "url_avatar": qra.avatarpic });
+                idqra = qra.idqras;
             }
-            await saveQraInQso(idqra, idqso);
 
+            await saveQraInQso(idqra, idqso);
+            let idActivity = await saveActivity(idqras_owner, idqso, idqra, datetime);
+            if (idActivity) {
+                await saveNotification(idActivity, idqra);
+            }
         }
         return qras_output;
     }
@@ -129,8 +127,10 @@ exports.handler = async(event, context, callback) => {
                     return reject(err);
                 }
                 else {
-                    resolve(JSON.parse(JSON.stringify(info)));
-                }                
+                    console.log(info);
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                }
+                // console.log(info);
             });
         });
     }
@@ -181,16 +181,16 @@ exports.handler = async(event, context, callback) => {
 
     }
 
-    function saveActivity(idqras_owner, idqso, datetime) {
+    function saveActivity(idqras_owner, idqso, ref_idqra, datetime) {
         console.log("saveActivity");
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
-                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='12', ref_idqso=?, datet" +
+                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='12', ref_idqso=?, ref_idqra=?, datet" +
                     "ime=?", [
-                        idqras_owner, idqso, datetime
+                        idqras_owner, idqso, ref_idqra, datetime
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
@@ -202,14 +202,9 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function createNotifications(idActivity, followers) {
-        console.log("createNotifications");
-        for (let i = 0; i < followers.length; i++) {
-            await insertNotification(idActivity, followers[i]);
-        }
-    }
 
-    function insertNotification(idActivity, follower) {
+
+    function saveNotification(idActivity, idqra) {
         console.log("insertNotification");
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -217,7 +212,7 @@ exports.handler = async(event, context, callback) => {
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?", [
-                    follower.idqra_followed, idActivity
+                    idqra, idActivity
                 ], function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
