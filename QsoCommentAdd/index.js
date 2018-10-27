@@ -9,10 +9,6 @@ exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var sub;
-    var qso;
-    var datetime;
-    var comment;
     var payload;
     var response = {
         statusCode: 200,
@@ -26,17 +22,10 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    if (event.qso) {
-        qso = event.qso;
-        comment = event.comment;
-        datetime = event.datetime;
-        sub = event.sub;
-    } else {
-        qso = event.body.qso;
-        comment = event.body.comment;
-        datetime = event.body.datetime;
-        sub = event.context.sub;
-    }
+    var qso = event.body.qso;
+    var comment = event.body.comment;
+    var datetime = event.body.datetime;
+    var sub = event.context.sub;
 
     //***********************************************************
     var conn = mysql.createConnection({
@@ -56,6 +45,19 @@ exports.handler = async(event, context, callback) => {
         }
         let insertId = await insertComment(qso, idqras_owner, datetime, comment);
         if (insertId) {
+
+            console.log("saveActivity");
+            let idActivity = await saveActivity(idqras_owner, qso, insertId, datetime);
+            if (idActivity) {
+                console.log("getFollowing Me");
+                let followers = await getFollowingMe(idqras_owner);
+                console.log("Get Stakeholders of QSO");
+                let stakeholders = await getQsoStakeholders(qso, idqras_owner);
+                console.log("get Other Comment Writters");
+                let commentWriters = await getQsoCommentWriters(qso, idqras_owner);
+                console.log("createNotifications");
+                await createNotifications(idActivity, followers, stakeholders, commentWriters);
+            }
             await UpdateCommentCounterInQso(qso);
             await pushNotification(qso, insertId);
             let info = await getComments(qso);
@@ -67,7 +69,8 @@ exports.handler = async(event, context, callback) => {
                 return callback(null, response);
             }
         }
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing QRA Comment Add");
         console.log(e);
         conn.destroy();
@@ -78,13 +81,14 @@ exports.handler = async(event, context, callback) => {
         };
         return context.fail(msg);
     }
+
     function UpdateCommentCounterInQso(qso) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateCommentCounterInQso");
             //***********************************************************
-            conn.query('UPDATE sqso.qsos SET comments_counter = comments_counter+1  WHERE idqsos=?', qso, function (err, info) {
+            conn.query('UPDATE sqso.qsos SET comments_counter = comments_counter+1  WHERE idqsos=?', qso, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -94,14 +98,15 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
+
     function insertComment(idqso, idqra, datetime, comment) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("insertComment");
             conn.query('INSERT INTO qsos_comments SET idqso = ?, idqra=?, datetime=?, comment=?', [
                 qso, idqra, datetime, comment
-            ], function (err, info) {
+            ], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -111,42 +116,47 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
+
     function checkQraCognito(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQraCognito");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
                 if (info.length > 0) {
                     resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                } else {
+                }
+                else {
                     resolve();
                 }
             });
         });
     }
+
     function getComments(qso) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getComments");
             conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-                    "ents.idqra = qras.idqras where  idqso=?",
-            qso, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
+                "ents.idqra = qras.idqras where  idqso=?",
+                qso,
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
         });
     }
+
     function pushNotification(qso, commentID) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("pushNotification");
@@ -161,11 +171,12 @@ exports.handler = async(event, context, callback) => {
                 Payload: JSON.stringify(payload)
             };
 
-            lambda.invoke(params, function (err, data) {
+            lambda.invoke(params, function(err, data) {
                 if (err) {
                     console.log(err);
                     return reject(err);
-                } else {
+                }
+                else {
                     console.log("push OK");
                     resolve();
                 }
@@ -173,4 +184,119 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
+    function saveActivity(idqras_owner, newqso, idcomment, datetime) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='18', ref_idqso=?, ref_i" +
+                    "dqso_comment=?, datetime=?", [
+                        idqras_owner, newqso, idcomment, datetime
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    });
+        });
+    }
+    async function createNotifications(idActivity, followers, stakeholders, commentWriters) {
+
+        for (let i = 0; i < followers.length; i++) {
+            await insertNotification(idActivity, followers[i].idqra);
+        }
+
+        for (let i = 0; i < stakeholders.length; i++) {
+            if (!followers.some(elem => elem.idqra === stakeholders[i].idqra)) {
+                await insertNotification(idActivity, stakeholders[i].idqra);
+            }
+        }
+
+
+        for (let i = 0; i < commentWriters.length; i++) {
+            if (!followers.some(elem => elem.idqra === commentWriters[i].idqra) && !stakeholders.some(elem => elem.idqra === commentWriters[i].idqra)) {
+
+                await insertNotification(idActivity, commentWriters[i].idqra);
+            }
+        }
+    }
+
+    function insertNotification(idActivity, idqra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?", [
+                    idqra, idActivity
+                ], function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                });
+        });
+    }
+
+    function getFollowingMe(idqra_owner) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
+
+    function getQsoStakeholders(idqso, idqraCommentOwner) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("Select distinct idqra from qsos_qras where idqso=? and idqra!=?", [idqso,
+                        idqraCommentOwner
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    });
+        });
+
+    }
+
+    function getQsoCommentWriters(idqso, idqraCommentOwner) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("Select distinct idqra from qsos_comments where idqso=? and idqra!=?", [idqso, idqraCommentOwner], function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+
+    }
 };

@@ -224,21 +224,6 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    function getFollowers(idqra_owner) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-
-            conn
-                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra = ?", idqra_owner, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
-        });
-    }
+    
 
 };

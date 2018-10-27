@@ -72,14 +72,16 @@ exports.handler = async(event, context, callback) => {
         if (insertId) {
             console.log("UpdateFollowersCounterInQra");
             await updateFollowersCounterInQra(idqra_follower);
-            console.log("getFollowers");
-            let followers = await getFollowers(idqras_owner);
+            console.log("getFollowingMe")
+            let following = getFollowingMe(idqras_owner);
             console.log("saveActivity");
             let idActivity = await saveActivity(idqras_owner, idqra_follower, datetime);
             if (idActivity) {
                 console.log("createNotifications");
-                await createNotifications(idActivity, followers);
+                await createNotifications(idActivity, following);
             }
+            console.log("getFollowers");
+            let followers = await getFollowers(idqras_owner);
             if (followers) {
                 conn.destroy();
                 response.body.error = 0;
@@ -190,7 +192,22 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+    function getFollowingMe(idqra_owner) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
 
+            conn
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
     function saveActivity(idqras_owner, idqra_follower, datetime) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -223,7 +240,7 @@ exports.handler = async(event, context, callback) => {
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?", [
-                    follower.idqra_followed, idActivity, datetime
+                    follower.idqra, idActivity, datetime
                 ], function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
