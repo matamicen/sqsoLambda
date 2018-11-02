@@ -63,7 +63,7 @@ exports.handler = async(event, context, callback) => {
         if (info.length > 0) {
             console.log("already followed");
             //like already exist => do not insert again
-            response.body.error = 400;
+            response.body.error = 0;
             response.body.message = info;
             return callback(null, response);
         }
@@ -192,6 +192,7 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
     function getFollowingMe(idqra_owner) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -208,6 +209,7 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
     function saveActivity(idqras_owner, idqra_follower, datetime) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -233,7 +235,7 @@ exports.handler = async(event, context, callback) => {
         }
     }
 
-    function insertNotification(idActivity, follower ) {
+    function insertNotification(idActivity, follower) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
