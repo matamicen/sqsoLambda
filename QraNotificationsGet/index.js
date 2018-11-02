@@ -36,26 +36,27 @@ exports.handler = async(event, context, callback) => {
         }
 
         response.body.error = 0;
-        response.body.message = getNotifications(idqras_owner);
+        response.body.message = await getNotifications(idqras_owner);
         conn.destroy();
         return callback(null, response);
 
-    } catch (e) {
-        console.log("Error executing QsoShare");
+    }
+    catch (e) {
+        console.log("Error executing GetNotifications");
         console.log(e);
         conn.destroy();
         response.body.error = 1;
-        response.body.message = "Error executing QsoShare";
+        response.body.message = "Error executing GetNotifications";
         callback(null, response);
         return context.fail(response);
     }
 
     function getQRA(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRA");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -65,24 +66,25 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
+
     function getNotifications(idqra) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("getQRA");
-            conn.query("SELECT qra_activities.*, qra_notifications.*, qras.* FROM sqso.qra_activities in" +
-                    "ner join qra_notifications on qra_activities.idqra_activities = qra_notification" +
-                    "s.idqra_activity inner join qras on qras.idqras = qra_activities.idqras where qr" +
-                    "a_notifications.idqra = ? and qra_notifications.read is null order by qra_activi" +
-                    "ties.datetime DESC LIMIT 50",
-            idqra, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
+            console.log("getNotifications");
+            console.log(idqra);
+            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? and qra_notifications.read IS NU" +
+                "LL order by qra_notifications.datetime DESC",
+                idqra,
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
 
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
         });
     }
 };
