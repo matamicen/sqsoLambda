@@ -1,21 +1,9 @@
-var fs = require('fs');
 var mysql = require('mysql');
+const uuidv4 = require('uuid/v4');
 
 exports.handler = async(event, context, callback) => {
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var post;
-    // var qra_owner;
-    var idqras;
-    var newqso;
-    var mode;
-    var band;
-    var location;
-    var latitude;
-    var longitude;
-    var datetime;
-    var type;
-    var sub;
     var response = {
         statusCode: 200,
         headers: {
@@ -28,27 +16,17 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    if (event.qra_owner) {
-
-        mode = event.mode;
-        band = event.band;
-        latitude = event.latitude;
-        longitude = event.longitude;
-        datetime = event.datetime;
-        type = event.type;
-        sub = event.sub;
-    } else {
-        mode = event.body.mode;
-        band = event.body.band;
-        latitude = event.body.latitude;
-        longitude = event.body.longitude;
-        datetime = event.body.datetime;
-        // qras = event.body.qras;
-        type = event.body.type;
-        // qra_owner = event.body.qra_owner.toUpperCase();
-        sub = event.context.sub;
-    }
-    console.log(sub);
+    let mode = event.body.mode;
+    let band = event.body.band;
+    let latitude = event.body.latitude;
+    let longitude = event.body.longitude;
+    let datetime = event.body.datetime;
+    let type = event.body.type;
+    let sub = event.context.sub;
+    let uuid_QR = uuidv4();
+    console.log(uuid_QR)
+    let uuid_URL = uuidv4();
+    console.log(uuid_URL)
 
     //***********************************************************
     var conn = await mysql.createConnection({
@@ -58,25 +36,25 @@ exports.handler = async(event, context, callback) => {
         database: 'sqso' // Enter your  MySQL database name.
     });
     try {
-        let idqras_owner = await getQRA(sub);
-        if (!idqras_owner) {
+        let qra_owner = await getQRA(sub);
+        if (!qra_owner) {
             console.log("User does not exist");
             conn.destroy();
             response.body.error = 1;
             response.body.message = "User does not exist";
             return callback(null, response);
         }
-        newqso = await saveQSO(idqras_owner, mode, band, datetime, type, longitude, latitude);
+        let newqso = await saveQSO(qra_owner.idqras, mode, band, datetime, type, longitude, latitude);
         console.log("getFollowing Me");
-        let followers = await getFollowingMe(idqras_owner);
+        let followers = await getFollowingMe(qra_owner.idqras);
         console.log("saveActivity");
-        let idActivity = await saveActivity(idqras_owner, newqso, datetime);
+        let idActivity = await saveActivity(qra_owner, newqso, datetime);
         if (idActivity) {
             console.log("createNotifications");
-            await createNotifications(idActivity, followers);
+            await createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL);
         }
-        await UpdateQsosCounterInQra(idqras_owner);
-        var info = await saveQRA(newqso, idqras_owner);
+        await UpdateQsosCounterInQra(qra_owner.idqras);
+        var info = await saveQRA(newqso, qra_owner.idqras);
 
         if (info.insertId) {
 
@@ -86,7 +64,8 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing QsoNew");
         console.log(e);
         conn.destroy();
@@ -96,61 +75,63 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getQRA(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
             conn
-                .query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                .query("SELECT idqras, qra, avatarpic FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
                     }
 
-                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                    resolve(JSON.parse(JSON.stringify(info))[0]);
                 });
         });
     }
 
     function saveQSO(idqras, mode, band, datetime, type, longitude, latitude) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
-            location = "POINT(" + longitude + " " + latitude + ")";
+            let location = "POINT(" + longitude + " " + latitude + ")";
             conn.query("INSERT INTO qsos  SET idqra_owner=?, location = GeomFromText(?), mode = ?, band " +
-                    "= ?, datetime = ?, type = ?, GUID_QR = UUID(), GUID_URL = UUID()",
-            [
-                idqras,
-                location,
-                mode,
-                band,
-                datetime,
-                type
-            ], function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)).insertId);
-                // console.log(info);
-            });
+                "= ?, datetime = ?, type = ?, GUID_QR = ?, GUID_URL = ?", [
+                    idqras,
+                    location,
+                    mode,
+                    band,
+                    datetime,
+                    type,
+                    uuid_QR,
+                    uuid_URL
+                ],
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    // console.log(info);
+                });
         });
     }
 
     function saveQRA(newqso, idqras) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
-            post = {
+            let post = {
                 "idqso": newqso,
                 "idqra": idqras,
                 "isOwner": true
             };
 
             //***********************************************************
-            conn.query('INSERT INTO qsos_qras SET ?', post, function (err, info) {
+            conn.query('INSERT INTO qsos_qras SET ?', post, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -162,78 +143,89 @@ exports.handler = async(event, context, callback) => {
     }
 
     function UpdateQsosCounterInQra(idqras) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
-            // from Congito ID");
+            // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
                 .query('UPDATE sqso.qras SET qsos_counter = qsos_counter+1, last_created_qso=NOW() WHERE' +
-                        ' idqras=?',
-                idqras, function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info)));
-                    // console.log(info);
-                });
+                    ' idqras=?',
+                    idqras,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(JSON.parse(JSON.stringify(info)));
+                        // console.log(info);
+                    });
         });
     }
 
-    function saveActivity(idqras_owner, newqso, datetime) {
-        return new Promise(function (resolve, reject) {
+    function saveActivity(qra_owner, newqso, datetime) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
                 .query("INSERT INTO qra_activities SET idqra = ?, activity_type='10', ref_idqso=?, datet" +
-                        "ime=?",
-                [
-                    idqras_owner, newqso, datetime
-                ], function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
+                    "ime=?", [
+                        qra_owner.idqras, newqso, datetime
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    resolve(JSON.parse(JSON.stringify(info)).insertId);
-                });
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    });
         });
     }
-    async function createNotifications(idActivity, followers) {
-        console.log(followers);
+    async function createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL) {
+
         for (let i = 0; i < followers.length; i++) {
-            await insertNotification(idActivity, followers[i]);
+            await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL);
         }
     }
 
-    function insertNotification(idActivity, follower) {
-        return new Promise(function (resolve, reject) {
+    function insertNotification(idActivity, qra_owner, follower, datetime, band, mode, type, uuid_URL) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?", [
-                    follower.idqra, idActivity
-                ], function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
+                .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?, datetime=?, activ" +
+                    "ity_type='10', qra=?,  qra_avatarpic=?, qso_band=?, qso_mode=?, qso_ty" +
+                    "pe=?, qso_guid=?", [
+                        follower.idqra,
+                        idActivity,
+                        datetime,
+                        qra_owner.qra,
+                        qra_owner.avatarpic,
+                        band,
+                        mode,
+                        type,
+                        uuid_URL
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    resolve(JSON.parse(JSON.stringify(info)).insertId);
-                });
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    });
         });
     }
 
     function getFollowingMe(idqra_owner) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function (err, info) {
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
