@@ -139,7 +139,8 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQraCognito");
-            conn.query("SELECT qsos.idqsos, qsos.guid_URL FROM qsos where idqsos=? ", idqsos, function (err, info) {
+            conn.query("SELECT qsos.idqsos, qsos.guid_URL, qras.qra FROM qsos inner join qras on qras.id" +
+            "qras = qsos.idqra_owner FROM qsos where idqsos=? ", idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -245,14 +246,15 @@ exports.handler = async(event, context, callback) => {
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-                        "vity_type='18', qra=?,  qra_avatarpic=?, QSO_GUID=? ",
+                        "vity_type='18', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=? ",
                 [
                     idqra,
                     idActivity,
                     datetime,
                     qra_owner.qra,
                     qra_owner.avatarpic,
-                    qso.guid_URL
+                    qso.guid_URL, 
+                    qso.qra
                 ], function (err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
