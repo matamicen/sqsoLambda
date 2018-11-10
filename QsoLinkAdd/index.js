@@ -43,7 +43,8 @@ exports.handler = async(event, context, callback) => {
 
         await UpdateLinksInQso(idqso, qsos_rel.length);
         await UpdateLinksInQraOwner(qra_owner.idqras, qsos_rel.length);
-        let info = await addQSOlinks(idqso, qsos_rel, qra_owner, datetime);
+        let qso = await getQsoInfo(idqso);
+        let info = await addQSOlinks(idqso, qsos_rel, qra_owner, datetime, qso);
         if (info.affectedRows) {
 
             console.log("QSOLink Added");
@@ -65,13 +66,36 @@ exports.handler = async(event, context, callback) => {
         return callback(null, response);
     }
 
+    function getQsoInfo(idqsos) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("checkQraCognito");
+            conn.query("SELECT qsos.idqsos, qsos.guid_URL, qras.qra FROM qsos inner join qras on qras.id" +
+                "qras = qsos.idqra_owner where idqsos=? ",
+                idqsos,
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info))[0]);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+        });
+    }
+
     function checkOwnerInQso(idqso, sub) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qras.idqras, qras.qra, qras.avatarpic, qsos.guid_URL from qras inner join" +
+                .query("SELECT qras.idqras, qras.qra, qras.avatarpic from qras inner join" +
                     " qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos=? and qras.idcognito=?", [
                         idqso, sub
                     ],
@@ -90,7 +114,7 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function addQSOlinks(idqso, qsos_rel, qra_owner, datetime) {
+    async function addQSOlinks(idqso, qsos_rel, qra_owner, datetime, qso) {
         let info;
         let qrasAll = [];
         console.log("addQSOlink");
@@ -100,12 +124,12 @@ exports.handler = async(event, context, callback) => {
             console.log("Get Stakeholders of QSO");
             let qras = await getQsoStakeholders(idqso);
 
-            qrasAll = await createNotifications(idActivity, qrasAll, qras, qra_owner, datetime);
+            qrasAll = await createNotifications(idActivity, qrasAll, qras, qra_owner, datetime, qso);
 
             console.log("getFollowing Me");
             let followingMe = await getFollowingMe(qra_owner.idqras);
 
-            qrasAll = await createNotifications(idActivity, qrasAll, followingMe, qra_owner, datetime);
+            qrasAll = await createNotifications(idActivity, qrasAll, followingMe, qra_owner, datetime, qso);
 
         }
 
@@ -115,7 +139,7 @@ exports.handler = async(event, context, callback) => {
             let stakeholders = await getQsoStakeholders(qsos_rel[i].qso);
 
             console.log("createNotifications");
-            qrasAll = await createNotifications(idActivity, qrasAll, stakeholders, qra_owner, datetime);
+            qrasAll = await createNotifications(idActivity, qrasAll, stakeholders, qra_owner, datetime, qso);
 
         }
 
@@ -238,32 +262,33 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function createNotifications(idActivity, qrasAll, qras, qra_owner, datetime) {
+    async function createNotifications(idActivity, qrasAll, qras, qra_owner, datetime, qso) {
 
         for (let i = 0; i < qras.length; i++) {
 
             if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) && (qras[i].idqra !== qra_owner.idqras)) {
-                await insertNotification(idActivity, qras[i].idqra, qra_owner, datetime);
+                await insertNotification(idActivity, qras[i].idqra, qra_owner, datetime, qso);
                 qrasAll.push({ idqra: qras[i].idqra });
             }
         }
         return qrasAll;
     }
 
-    function insertNotification(idActivity, idqra, qra_owner, datetime) {
+    function insertNotification(idActivity, idqra, qra_owner, datetime, qso) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-                    "vity_type='20', qra=?,  qra_avatarpic=?, QSO_GUID=? ", [
+                    "vity_type='20', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=? ", [
                         idqra,
                         idActivity,
                         datetime,
                         qra_owner.qra,
                         qra_owner.avatarpic,
-                        qra_owner.guid_URL
+                        qso.guid_URL,
+                        qso.qra
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
