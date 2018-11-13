@@ -56,9 +56,8 @@ exports.handler = async(event, context, callback) => {
             //like already exist => do not insert again
 
             response.body.error = 1;
-
             response.body.message = info;
-
+            conn.destroy();
             return callback(null, response);
 
         }
@@ -66,7 +65,7 @@ exports.handler = async(event, context, callback) => {
         let insertId = await insertFollower(qra_owner.idqras, qra_follower.idqras, datetime);
         if (insertId) {
             console.log("UpdateFollowersCounterInQra");
-            await updateFollowersCounterInQra(qra_owner.idqras);
+            await updateFollowersCounterInQra(qra_follower.idqras);
             console.log("getFollowingMe");
             let followingMe = await getFollowingMe(qra_owner.idqras);
             console.log("saveActivity");
@@ -90,12 +89,10 @@ exports.handler = async(event, context, callback) => {
         console.log("Error executing QRA Follower Add");
         console.log(e);
         conn.destroy();
-        callback(e.message);
-        var msg = {
-            "error": 1,
-            "message": e.message
-        };
-        return context.fail(msg);
+        response.body.error = 1;
+        response.body.message = e;
+        
+        return callback(null, response);
     }
 
     function updateFollowersCounterInQra(idqras) {
