@@ -1,5 +1,6 @@
 var mysql = require('mysql');
-
+var AWS = require("aws-sdk");
+var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
 exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
@@ -102,9 +103,118 @@ exports.handler = async(event, context, callback) => {
             let idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
             if (idActivity) {
                 await saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qras[i]);
+                let qra_devices = await getDeviceInfo(idqra);
+                if (qra_devices)
+                    await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i]);
             }
         }
         return qras_output;
+    }
+
+    function getDeviceInfo(idqra) {
+        console.log("getDeviceInfo");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getDeviceInfo");
+            conn.query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info)));
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra) {
+        console.log("sendPushNotification");
+        let channel;
+        let title = qra_owner.qra + " included you on his new QSO";
+        let url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qra_owner.guid_URL;
+        let addresses = {};
+        console.log(qra_devices)
+        for (let i = 0; i < qra_devices.length; i++) {
+
+            qra_devices[i].device_type === 'android' ?
+                channel = 'GCM' :
+                channel = 'APNS';
+
+
+            addresses[qra_devices[i].token] = {
+                ChannelType: channel
+            };
+            var params = {
+                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+                /* required */
+                MessageRequest: { /* required */
+                    Addresses: addresses,
+
+                    MessageConfiguration: {
+
+                        DefaultPushNotificationMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            Data: {
+
+                                /*
+                                               '<__string>': ... */
+                            },
+                            SilentPush: false,
+                            Title: title,
+                            Url: url
+                        },
+                        GCMMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            CollapseKey: 'STRING_VALUE',
+
+                            // IconReference: 'STRING_VALUE',
+                            ImageIconUrl: qra_owner.avatarpic,
+                            ImageUrl: qra_owner.avatarpic,
+                            // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
+                            // 'STRING_VALUE',
+                            SilentPush: false,
+                            SmallImageIconUrl: qra_owner.avatarpic,
+                            Sound: 'STRING_VALUE',
+                            // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
+                            // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
+                            Title: title,
+                            Url: url
+                        }
+                    },
+                    TraceId: 'STRING_VALUE'
+                }
+            };
+
+            await sendMessages(params);
+        }
+    }
+
+    function sendMessages(params) {
+        console.log("sendMessages");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            pinpoint.sendMessages(params, function(err, data) {
+
+                console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]]);
+                if (err)
+                    return reject(err);
+
+                else
+                    resolve(data.MessageResponse.Result);
+
+            });
+        });
+
     }
 
     function saveQra(qra) {
