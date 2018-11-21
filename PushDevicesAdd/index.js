@@ -45,8 +45,8 @@ exports.handler = async(event, context, callback) => {
             response.body.message = "User does not exist";
             return callback(null, response);
         }
-
-        let info = await insertDevice(idqras_owner, token, device_type);
+        let idqra = await getQraInfo(qra);
+        let info = await insertDevice(idqra, token, device_type);
 
         console.log("Push_Devices Add Done");
         response.body.error = 0;
@@ -66,14 +66,15 @@ exports.handler = async(event, context, callback) => {
     }
 
 
-    function insertDevice(idqra_owner, token, device_type) {
+    function insertDevice(idqra, token, device_type) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("insertDevice")
+
             conn.query("INSERT INTO push_devices ( token, qra, device_type, datetime) VALUES( ?, ?, ?, NOW" +
                 "()) ON DUPLICATE KEY UPDATE qra = ?, datetime=NOW()", [
-                    token, idqra_owner, device_type, idqra_owner
+                    token, idqra, device_type, idqra
                 ],
                 function(err, info) {
                     // Call reject on error states, call resolve with results
@@ -83,6 +84,26 @@ exports.handler = async(event, context, callback) => {
 
                     resolve(JSON.parse(JSON.stringify(info)));
                 });
+        });
+    }
+
+    function getQraInfo(qra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getQRA");
+            conn.query("SELECT idqras FROM qras where qra=? LIMIT 1", qra, function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                }
+                else {
+                    resolve();
+                }
+            });
         });
     }
 
