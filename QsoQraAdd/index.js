@@ -23,11 +23,19 @@ exports.handler = async(event, context, callback) => {
     var datetime = new Date();
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
 
     try {
@@ -112,11 +120,12 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getDeviceInfo(idqra) {
-        console.log("getDeviceInfo");
+        console.log("getDeviceInfo " +
+            idqra);
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("getDeviceInfo");
+
             conn.query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
@@ -136,52 +145,68 @@ exports.handler = async(event, context, callback) => {
     async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra) {
         console.log("sendPushNotification");
         let channel;
+        let params;
         let title = qra_owner.qra + " included you on his new QSO";
         let url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qra_owner.guid_URL;
         let addresses = {};
-        console.log(qra_devices)
+
         for (let i = 0; i < qra_devices.length; i++) {
 
             qra_devices[i].device_type === 'android' ?
                 channel = 'GCM' :
                 channel = 'APNS';
 
-
+            addresses = {};
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-            var params = {
+            params = {
                 ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
                 /* required */
                 MessageRequest: { /* required */
                     Addresses: addresses,
 
                     MessageConfiguration: {
-
-                        DefaultPushNotificationMessage: {
-                            Action: 'URL',
+                        APNSMessage: {
                             Body: title,
+                            Title: title,
+                            Action: 'URL',
+                            Url: url,
+                            SilentPush: false,
                             Data: {
 
                                 /*
                                                '<__string>': ... */
                             },
-                            SilentPush: false,
-                            Title: title,
-                            Url: url
+                            MediaUrl: qra_owner.avatarpic,
+
+
+
                         },
+                        // DefaultPushNotificationMessage: {
+                        //     Action: 'URL',
+                        //     Body: title,
+                        //     Data: {
+
+                        //         /*
+                        //                       '<__string>': ... */
+                        //     },
+                        //     SilentPush: false,
+                        //     Title: title,
+                        //     Url: url
+                        // },
                         GCMMessage: {
                             Action: 'URL',
                             Body: title,
                             CollapseKey: 'STRING_VALUE',
 
                             // IconReference: 'STRING_VALUE',
-                            ImageIconUrl: qra_owner.avatarpic,
+                            ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
                             ImageUrl: qra_owner.avatarpic,
                             // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
                             // 'STRING_VALUE',
                             SilentPush: false,
-                            SmallImageIconUrl: qra_owner.avatarpic,
+                            SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
                             Sound: 'STRING_VALUE',
                             // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
                             // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
@@ -192,9 +217,35 @@ exports.handler = async(event, context, callback) => {
                     TraceId: 'STRING_VALUE'
                 }
             };
+            console.log(qra_devices[i]);
+            let status = await sendMessages(params);
+            console.log(status);
+            if (status !== 200) {
+                await deleteDevice(qra_devices[i].token);
 
-            await sendMessages(params);
+            }
         }
+    }
+
+    function deleteDevice(token) {
+        console.log("deleteDevice");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    else {
+
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+
+                });
+        });
     }
 
     function sendMessages(params) {
@@ -205,13 +256,15 @@ exports.handler = async(event, context, callback) => {
             // ***********************************************************
             pinpoint.sendMessages(params, function(err, data) {
 
-                console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]]);
+
                 if (err)
                     return reject(err);
 
-                else
-                    resolve(data.MessageResponse.Result);
+                else {
+                    var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
 
+                    resolve(status);
+                }
             });
         });
 
@@ -332,5 +385,6 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
+
 
 };
