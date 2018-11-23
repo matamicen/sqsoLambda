@@ -30,7 +30,7 @@ exports.handler = async(event, context, callback) => {
         response.body.message = "Stage Variables Missing";
         return callback(null, response);
     }
-
+    var url = event['stage-variables'].url;
     var conn = await mysql.createConnection({
         host: event['stage-variables'].db_host, // give your RDS endpoint  here
         user: event['stage-variables'].db_user, // Enter your  MySQL username
@@ -106,8 +106,8 @@ exports.handler = async(event, context, callback) => {
                 qras_output.push({ "qra": qra.qra, "url": qra.profilepic, "url_avatar": qra.avatarpic });
                 idqra = qra.idqras;
             }
-
             await saveQraInQso(idqra, idqso);
+
             let idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
             if (idActivity) {
                 await saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qras[i]);
@@ -147,7 +147,7 @@ exports.handler = async(event, context, callback) => {
         let channel;
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
-        let url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qra_owner.guid_URL;
+        let url = url + qra_owner.guid_URL;
         let addresses = {};
 
         for (let i = 0; i < qra_devices.length; i++) {
