@@ -8,17 +8,6 @@ exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var sub;
-    var datetime;
-    var type;
-    var url;
-    var datasize;
-    var qra_owner;
-    var qso;
-    var description;
-    var height;
-    var width;
-
     var response = {
         statusCode: 200,
         headers: {
@@ -30,22 +19,30 @@ exports.handler = async(event, context, callback) => {
             "message": null
         }
     };
-    sub = event.context.sub;
-    qso = event.body.qso;
-    type = event.body.type;
-    url = event.body.url;
-    datasize = event.body.datasize;
-    datetime = event.body.datetime;
-    description = event.body.description;
-    height = event.body.height;
-    width = event.body.width;
+    var sub = event.context.sub;
+    var qso = event.body.qso;
+    var type = event.body.type;
+    var url = event.body.url;
+    var datasize = event.body.datasize;
+    var datetime = event.body.datetime;
+    var description = event.body.description;
+    var height = event.body.height;
+    var width = event.body.width;
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     if (!qso) {
         response.body.error = 1;
@@ -76,10 +73,17 @@ exports.handler = async(event, context, callback) => {
                 return callback(null, response);
             }
         }
-        let info = await addQSOMedia(qso, type, url, datasize, datetime, description, height, width);
+        let info;
+        try {
+            info = await addQSOMedia(qso, type, url, datasize, datetime, description, height, width);
+        }
+        catch (e) {
+            console.log(e.code);
+            info = { affectedRows: 1 };
 
+        }
         if (info.affectedRows) {
-            await triggerSNS(qso, info.insertID, idqras_owner, qra_owner);
+            // await triggerSNS(qso, info.insertID, idqras_owner, qra_owner);
             console.log("QSOMEDIA inserted", info.insertId);
             conn.destroy();
             response.body.error = 0;
@@ -125,6 +129,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function addQSOMedia(qso, type, url, datasize, datetime, description, height, width) {
+
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -152,40 +157,11 @@ exports.handler = async(event, context, callback) => {
                     }
                     // console.log(info);
                 });
-        });
-    }
-
-    function triggerSNS(qso, insertID, idqra_owner, qra_owner) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            console.log("triggerSNS");
-
-            //PUSH Notification
-            var payload = {
-                "commentID": insertID,
-                "qso": qso,
-                "owner": idqra_owner
-            };
-            var params = {
-                FunctionName: 'SNS-Media-Add', // the lambda function we are going to invoke
-                InvocationType: 'RequestResponse',
-                LogType: 'Tail',
-                Payload: JSON.stringify(payload)
-            };
-
-            lambda.invoke(params, function(err, data) {
-                console.log("lambda");
-                if (err) {
-                    return reject(err);
-                }
-                else {
-                    resolve();
-                }
-            });
 
         });
     }
+
+
 
     function checkImageNSFW(url) {
         return new Promise(function(resolve, reject) {
