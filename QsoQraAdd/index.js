@@ -147,7 +147,7 @@ exports.handler = async(event, context, callback) => {
         let channel;
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
-        let url = url + qra_owner.guid_URL;
+        let final_url = url + qra_owner.guid_URL;
         let addresses = {};
 
         for (let i = 0; i < qra_devices.length; i++) {
@@ -171,7 +171,7 @@ exports.handler = async(event, context, callback) => {
                             Body: title,
                             Title: title,
                             Action: 'URL',
-                            Url: url,
+                            Url: final_url,
                             SilentPush: false,
                             Data: {
 
@@ -211,7 +211,7 @@ exports.handler = async(event, context, callback) => {
                             // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
                             // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
                             Title: title,
-                            Url: url
+                            Url: final_url
                         }
                     },
                     TraceId: 'STRING_VALUE'
