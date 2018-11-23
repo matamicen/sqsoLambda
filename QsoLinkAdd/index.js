@@ -1,5 +1,6 @@
 var mysql = require('mysql');
-
+var AWS = require("aws-sdk");
+var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
 exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
@@ -23,12 +24,28 @@ exports.handler = async(event, context, callback) => {
     var sub = event.context.sub;
     var datetime = new Date();
 
-    // ***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+
+    //***********************************************************
+    //   "stage-variables": {
+    //     "db_host": "sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com",
+    //     "db_user": "sqso",
+    //     "db_password": "parquepatricios",
+    //     "db_database": "sqso",
+    //     "url": "http://d3cevjpdxmn966.cloudfront.net/"
+    //   }
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
         let qra_owner = await checkOwnerInQso(idqso, sub);
@@ -117,7 +134,7 @@ exports.handler = async(event, context, callback) => {
     async function addQSOlinks(idqso, qsos_rel, qra_owner, datetime, qso) {
         let info;
         let qrasAll = [];
-        console.log("addQSOlink");
+        console.log("addQSOlink" + idqso);
 
         let idActivity = await saveActivity(qra_owner.idqras, idqso, datetime);
         if (idActivity) {
@@ -131,17 +148,24 @@ exports.handler = async(event, context, callback) => {
 
             qrasAll = await createNotifications(idActivity, qrasAll, followingMe, qra_owner, datetime, qso);
 
+
+
+            for (let i = 0; i < qsos_rel.length; i++) {
+                info = await addQSOlink(idqso, qsos_rel[i].qso);
+                console.log("Get Stakeholders of QSO");
+                let stakeholders = await getQsoStakeholders(qsos_rel[i].qso);
+
+                console.log("createNotifications");
+                qrasAll = await createNotifications(idActivity, qrasAll, stakeholders, qra_owner, datetime, qso);
+                for (var s = 0; s < stakeholders.length; s++) {
+                    let qra_devices = await getDeviceInfo(stakeholders[s].idqra);
+                    if (qra_devices)
+                        await sendPushNotification(qra_devices, qra_owner);
+                }
+            }
         }
 
-        for (let i = 0; i < qsos_rel.length; i++) {
-            info = await addQSOlink(idqso, qsos_rel[i].qso);
-            console.log("Get Stakeholders of QSO");
-            let stakeholders = await getQsoStakeholders(qsos_rel[i].qso);
 
-            console.log("createNotifications");
-            qrasAll = await createNotifications(idActivity, qrasAll, stakeholders, qra_owner, datetime, qso);
-
-        }
 
         return info;
     }
@@ -241,7 +265,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function saveActivity(idqras_owner, newqso, datetime) {
-        console.log("SaveActivity");
+        console.log("SaveActivity" + newqso);
 
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -299,6 +323,112 @@ exports.handler = async(event, context, callback) => {
                         resolve(JSON.parse(JSON.stringify(info)).insertId);
                     });
         });
+    }
+
+    function getDeviceInfo(idqra) {
+        console.log("getDeviceInfo" + idqra);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn.query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info)));
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra) {
+        console.log("sendPushNotification");
+        let channel;
+        let title = qra_owner.qra + " linked a QSO you have participated";
+        let final_url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qra_owner.guid_URL;
+        let addresses = {};
+        console.log(qra_devices);
+        for (let i = 0; i < qra_devices.length; i++) {
+
+            qra_devices[i].device_type === 'android' ?
+                channel = 'GCM' :
+                channel = 'APNS';
+
+
+            addresses[qra_devices[i].token] = {
+                ChannelType: channel
+            };
+            var params = {
+                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+                /* required */
+                MessageRequest: { /* required */
+                    Addresses: addresses,
+
+                    MessageConfiguration: {
+
+                        DefaultPushNotificationMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            Data: {
+
+                                /*
+                                               '<__string>': ... */
+                            },
+                            SilentPush: false,
+                            Title: title,
+                            Url: final_url
+                        },
+                        GCMMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            CollapseKey: 'STRING_VALUE',
+
+                            // IconReference: 'STRING_VALUE',
+                            ImageIconUrl: qra_owner.avatarpic,
+                            ImageUrl: qra_owner.avatarpic,
+                            // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
+                            // 'STRING_VALUE',
+                            SilentPush: false,
+                            SmallImageIconUrl: qra_owner.avatarpic,
+                            Sound: 'STRING_VALUE',
+                            // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
+                            // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
+                            Title: title,
+                            Url: final_url
+                        }
+                    },
+                    TraceId: 'STRING_VALUE'
+                }
+            };
+
+            await sendMessages(params);
+        }
+    }
+
+    function sendMessages(params) {
+        console.log("sendMessages");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            pinpoint.sendMessages(params, function(err, data) {
+
+                console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]]);
+                if (err)
+                    return reject(err);
+
+                else
+                    resolve(data.MessageResponse.Result);
+
+            });
+        });
+
     }
 
 };
