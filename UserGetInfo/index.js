@@ -1,12 +1,9 @@
-var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
 
 exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var result = {};
     var response = {
         statusCode: 200,
         headers: {
@@ -19,123 +16,158 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    let sub = event.context.sub;
+    let qra = event.body.qra;
 
     //***********************************************************
-    var conn = await mysql.createConnection({
+    var conn = mysql.createConnection({
         host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
         user: 'sqso', // Enter your  MySQL username
         password: 'parquepatricios', // Enter your  MySQL password
         database: 'sqso' // Enter your  MySQL database name.
     });
+
     try {
-
-        result.qra = await getQRAinfo(sub);
-
-        if (!result.qra) {
-            console.log("User does not exist");
+        let idqras_owner = await getQRA(qra);
+        if (!idqras_owner) {
+            console.log("QRA does not exist");
             conn.destroy();
             response.body.error = 1;
-            response.body.message = "User does not exist";
-            return callback(null, response);
+            response.body.message = "QRA does not exist";
 
+            callback("User does not exist");
+            return context.fail(response);
         }
-
-        result.following = await getFollowings(result.qra);
-
-        result.followers = await getFollowers(result.qra);
-        result.notifications = await getNotifications(result.qra);
-
+        let qra_output = await getQRAinfo(idqras_owner);
+        console.log(qra_output);
         conn.destroy();
         response.body.error = 0;
-        response.body.message = result;
-        console.log("User Info " + response.body.message);
-        return callback(null, response);
+        response.body.message = qra_output;
+        context.succeed(response);
+
     }
     catch (e) {
-        console.log("Error when select QRA to get ID of Owner");
+        console.log("Error when select QRA");
         console.log(e);
         conn.destroy();
-        response.body.error = 8;
-        response.body.message = e;
-
-        return callback(null, response);
+        response.body.error = 1;
+        response.body.message = "Error when select QRA"
+        return context.fail(response);
     }
 
-    function getQRAinfo(sub) {
+    function getQRA(qra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+            // from Congito ID");
+            conn
+                .query("SELECT idqras FROM qras where qras.qra=? LIMIT 1", qra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                });
+        });
+    }
+    async function getQRAinfo(idqra) {
+        let qra_output = {};
+        qra_output.qra = await getQRAdata(idqra);
+        qra_output.following = await getQRAfollowing(idqra);
+        qra_output.followers = await getQRAfollowers(idqra);
+        qra_output.qsos = await getQRAqsos(idqra);
+        return (qra_output);
+    }
+
+    function getQRAdata(idqra) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("get QRA info from Congito ID");
-            conn.query("SELECT * FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
 
-                resolve(JSON.parse(JSON.stringify(info))[0]);
-            });
+            conn
+                .query("SELECT * from qras where qras.idqras=?", idqra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info))[0]);
+                });
         });
     }
 
-    function getFollowings(qra) {
+    function getQRAfollowing(idqra) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("get Followings");
 
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_fol" +
-                "lowers inner join qras on qra_followers.idqra_followed = qras.idqras WHERE qra_f" +
-                "ollowers.idqra = ?",
-                qra.idqras,
-                function(err, info) {
+            conn
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
+                    "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
+                    " ?",
+                    idqra,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    });
+        });
+    }
+
+    function getQRAfollowers(idqra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
+                    "n qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed =" +
+                    " ?",
+                    idqra,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    });
+        });
+    }
+
+    function getQRAqsos(idqra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+            // from Congito ID");
+            conn
+                .query("CALL qraqsofeedget2(?)", qra, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
                     }
 
-                    resolve(JSON.parse(JSON.stringify(info)));
+                    let qsos = JSON.parse(JSON.stringify(info))[0];
+                    let qso_qras = JSON.parse(JSON.stringify(info))[1];
+                    let qso_comments = JSON.parse(JSON.stringify(info))[2];
+                    let qso_likes = JSON.parse(JSON.stringify(info))[3];
+                    let qso_media = JSON.parse(JSON.stringify(info))[4];
+                    let qso_orig = JSON.parse(JSON.stringify(info))[5];
+                    let qso_links = JSON.parse(JSON.stringify(info))[6];
+
+                    qsos.map(qso => {
+                        qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                        qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                        qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                        qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                        qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
+                        qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    });
+
+                    resolve(qsos);
+
                 });
         });
+
     }
 
-    function getFollowers(qra) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            console.log("get Followers");
-
-            conn.query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_fol" +
-                "lowers inner join qras on qra_followers.idqra = qras.idqras WHERE qra_followers." +
-                "idqra_followed = ?",
-                qra.idqras,
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
-        });
-    }
-
-    function getNotifications(qra) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            console.log("getNotifications");
-            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? and qra_notifications.read IS NU" +
-            "LL order by qra_notifications.datetime DESC",
-                qra.idqras,
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
-        });
-    }
 };
