@@ -1,67 +1,91 @@
-var fs = require('fs');
 var mysql = require('mysql');
 
-exports.handler = (event, context, callback) => {
+exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    // console.log('Received context:', JSON.stringify(context, null, 2));
 
-    var qra;
-    var qra_res;
-    var msg;
-    
-    if (event.qra) {
-        qra = event.qra;
-    } else {
-        qra = event.params.querystring.qra;
-    }
+
+    var response = {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
+    };
+
+    var qra = event.params.querystring.qra;
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
 
-    //QRA FOUND => Update QRA with ID Cognito
 
-    conn.query("SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
-            "astname,'')) AS name, profilepic, avatarpic  FROM qras where qra LIKE ?",
-    qra.toUpperCase() + '%', function (error, info) { // querying the database
-        if (error) {
-            console.log(error.message);
-            // context.done(null,event);
-            conn.destroy();
-            msg = {
-                "error": "1",
-                "message": "Could not get profile picture"
-            };
-            return context.fail(msg);
-        } else if (info.length > 0) {
-            console.log("data updated");
-            console.log(info);
-            conn.destroy();
-            qra_res = JSON.parse(JSON.stringify(info));
-            msg = {
-                "error": "0",
-                "message": qra_res
-            };
+    try {
+        var qras = await getQRAs(qra);
 
-            context.succeed(msg);
-        } else {
-            //context.done(null,event);
+        if (qras) {
+            console.log("Push_Devices Add Done");
             conn.destroy();
-            msg = {
-                "error": "0",
-                "message": {
-                    "qra": qra,
-                    "url": null
-                }
-            };
-            return context.succeed(msg);
+            response.body.error = 0;
+            response.body.message = qras;
+            return callback(null, response);
         }
-    });
+        else {
+            conn.destroy();
+            console.log("Push_Devices Add Done");
+            response.body.error = 0;
+            response.body.message = [];
+            return callback(null, response);
+        }
 
+    }
+    catch (e) {
+        console.log("Error executing QRAlistGet");
+        console.log(e);
+        conn.destroy();
+
+        response.body.error = 1;
+        response.body.message = e;
+        callback(null, response);
+        return context.fail(response);
+    }
+
+    function getQRAs(qra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getQRA");
+            conn.query("SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
+                "astname,'')) AS name, profilepic, avatarpic  FROM qras where qra LIKE ?",
+                qra.toUpperCase() + '%',
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+        });
+    }
 };
