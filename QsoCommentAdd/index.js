@@ -66,10 +66,13 @@ exports.handler = async(event, context, callback) => {
             if (idActivity) {
                 console.log("getFollowing Me");
                 let followers = await getFollowingMe(qra_owner.idqras);
+                console.log(followers);
                 console.log("Get Stakeholders of QSO");
                 let stakeholders = await getQsoStakeholders(idqso, qra_owner.idqras);
+                console.log(stakeholders);
                 console.log("get Other Comment Writters");
                 let commentWriters = await getQsoCommentWriters(idqso, qra_owner.idqras);
+                console.log(commentWriters)
                 console.log("createNotifications");
                 await createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime);
             }
@@ -214,26 +217,31 @@ exports.handler = async(event, context, callback) => {
     }
     async function createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime) {
 
-        for (let i = 0; i < followers.length; i++) {
-            await insertNotification(idActivity, followers[i].idqra, qra_owner, qso, datetime);
-        }
+
 
         for (let i = 0; i < stakeholders.length; i++) {
-            if (!followers.some(elem => elem.idqra === stakeholders[i].idqra)) {
-                await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime);
-                let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
-                if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner);
-            }
+
+            await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime);
+            let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
+            if (qra_devices)
+                await sendPushNotification(qra_devices, qra_owner);
+
         }
 
         for (let i = 0; i < commentWriters.length; i++) {
-            if (!followers.some(elem => elem.idqra === commentWriters[i].idqra) && !stakeholders.some(elem => elem.idqra === commentWriters[i].idqra)) {
+            if (!stakeholders.some(elem => elem.idqra === commentWriters[i].idqra)) {
 
                 await insertNotification(idActivity, commentWriters[i].idqra, qra_owner, qso, datetime);
                 let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
                 if (qra_devices)
                     await sendPushNotification(qra_devices, qra_owner);
+            }
+        }
+
+        for (let i = 0; i < followers.length; i++) {
+            if (!commentWriters.some(elem => elem.idqra === followers[i].idqra) && !stakeholders.some(elem => elem.idqra === followers[i].idqra)) {
+                await insertNotification(idActivity, followers[i].idqra, qra_owner, qso, datetime);
+
             }
         }
     }
