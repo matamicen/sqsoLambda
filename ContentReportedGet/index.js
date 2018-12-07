@@ -67,8 +67,8 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getContentReported");
-            conn.query("SELECT *, qras.qra FROM content_reported inner join qras on content_reported.idq" +
-                "ra  = qras.idqras where deleted is null",
+            conn.query("SELECT content_reported.*, qras.qra, qsos.datetime as qso_datetime, qsos.GUID_URL, qr.qra as qso_owner  FROM content_reported inner join qras on content_reported.idq" +
+                "ra  = qras.idqras inner join qsos on content_reported.idqso = qsos.idqsos inner join qras as qr on qsos.idqra_owner = qr.idqras where content_reported.deleted is null order by datetime desc",
                 function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
