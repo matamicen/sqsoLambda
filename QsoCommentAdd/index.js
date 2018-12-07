@@ -381,7 +381,6 @@ exports.handler = async(event, context, callback) => {
                             Action: 'URL',
                             Body: title,
                             Data: {
-
                                 /*
                                                '<__string>': ... */
                             },
@@ -392,16 +391,16 @@ exports.handler = async(event, context, callback) => {
                         GCMMessage: {
                             Action: 'URL',
                             Body: title,
-                            CollapseKey: 'STRING_VALUE',
+                            // CollapseKey: 'STRING_VALUE',
 
                             // IconReference: 'STRING_VALUE',
-                            ImageIconUrl: qra_owner.avatarpic,
-                            ImageUrl: qra_owner.avatarpic,
+                            // ImageIconUrl: qra_owner.avatarpic,
+                            // ImageUrl: qra_owner.avatarpic,
                             // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
                             // 'STRING_VALUE',
-                            SilentPush: false,
-                            SmallImageIconUrl: qra_owner.avatarpic,
-                            Sound: 'STRING_VALUE',
+                            // SilentPush: false,
+                            // SmallImageIconUrl: qra_owner.avatarpic,
+                            // Sound: 'STRING_VALUE',
                             // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
                             // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
                             Title: title,
