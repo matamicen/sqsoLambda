@@ -1,7 +1,12 @@
 var mysql = require('mysql');
 var AWS = require("aws-sdk");
 var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+const warmer = require('lambda-warmer');
+
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
 
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -147,7 +152,8 @@ exports.handler = async(event, context, callback) => {
         let channel;
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
-        let final_url = url + qra_owner.guid_URL;
+        let final_url = url + 'qso/' +
+            qra_owner.guid_URL;
         let addresses = {};
 
         for (let i = 0; i < qra_devices.length; i++) {
@@ -172,11 +178,11 @@ exports.handler = async(event, context, callback) => {
                             Title: title,
                             Action: 'URL',
                             Url: final_url,
-                            SilentPush: false,
+                            // SilentPush: false,
                             Data: {
 
-                                /*
-                                               '<__string>': ... */
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic
                             },
                             MediaUrl: qra_owner.avatarpic,
 
@@ -198,16 +204,21 @@ exports.handler = async(event, context, callback) => {
                         GCMMessage: {
                             Action: 'URL',
                             Body: title,
-                            CollapseKey: 'STRING_VALUE',
+                            Data: {
+
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic
+                            },
+                            // CollapseKey: 'STRING_VALUE',
 
                             // IconReference: 'STRING_VALUE',
-                            ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            ImageUrl: qra_owner.avatarpic,
+                            // ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
+                            // ImageUrl: qra_owner.avatarpic,
                             // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
                             // 'STRING_VALUE',
-                            SilentPush: false,
-                            SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            Sound: 'STRING_VALUE',
+                            // SilentPush: false,
+                            // SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
+                            // Sound: 'STRING_VALUE',
                             // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
                             // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
                             Title: title,
