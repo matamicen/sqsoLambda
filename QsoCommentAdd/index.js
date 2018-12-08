@@ -3,9 +3,12 @@ var mysql = require('mysql');
 // var async = require('async');
 var AWS = require("aws-sdk");
 var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
-
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
 
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -352,11 +355,11 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra) {
+    async function sendPushNotification(qra_devices, qra_owner) {
         console.log("sendPushNotification");
         let channel;
         let title = qra_owner.qra + " commented a QSO you have participated";
-        let final_url = "http://d3cevjpdxmn966.cloudfront.net/qso/" + qra_owner.guid_URL;
+        let final_url = url + "qso/" + qra_owner.guid_URL;
         let addresses = {};
         console.log(qra_devices);
         for (let i = 0; i < qra_devices.length; i++) {
@@ -411,8 +414,34 @@ exports.handler = async(event, context, callback) => {
                 }
             };
 
-            await sendMessages(params);
+            let status = await sendMessages(params);
+            console.log(status);
+            if (status !== 200) {
+                await deleteDevice(qra_devices[i].token);
+
+            }
         }
+    }
+
+    function deleteDevice(token) {
+        console.log("deleteDevice");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    else {
+
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+
+                });
+        });
     }
 
     function sendMessages(params) {
@@ -421,16 +450,18 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
-            pinpoint.sendMessages(params, function(err, data) {
+            pinpoint
+                .sendMessages(params, function(err, data) {
 
-                console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]]);
-                if (err)
-                    return reject(err);
+                    if (err)
+                        return reject(err);
 
-                else
-                    resolve(data.MessageResponse.Result);
+                    else {
+                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
 
-            });
+                        resolve(status);
+                    }
+                });
         });
 
     }
