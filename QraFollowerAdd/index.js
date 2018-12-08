@@ -2,8 +2,12 @@
 var mysql = require('mysql');
 var AWS = require("aws-sdk");
 var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
 
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -70,16 +74,18 @@ exports.handler = async(event, context, callback) => {
         if (insertId) {
             console.log("UpdateFollowersCounterInQra");
             await updateFollowersCounterInQra(qra_follower.idqras);
-            console.log("getFollowingMe");
             let followingMe = await getFollowingMe(qra_owner.idqras);
             console.log("saveActivity");
             let idActivity = await saveActivity(qra_owner, qra_follower, datetime);
             if (idActivity) {
                 console.log("createNotifications");
                 await createNotifications(idActivity, qra_owner, qra_follower, datetime, followingMe);
+                //inform the new follower the action
+                console.log("createNotification4Follower");
+                let idnotif = await insertNotification(idActivity, qra_follower, qra_owner, qra_follower, datetime);
                 let qra_devices = await getDeviceInfo(qra_follower.idqras);
                 if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner);
+                    await sendPushNotification(qra_devices, qra_owner, idnotif);
             }
             console.log("getFollowers");
             let followers = await getFollowers(qra_owner.idqras);
@@ -193,6 +199,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getFollowingMe(idqra_owner) {
+        console.log("getFollowingMe " + idqra_owner)
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -233,25 +240,40 @@ exports.handler = async(event, context, callback) => {
 
     async function createNotifications(idActivity, qra_owner, qra_follower, datetime, followers) {
 
+        //inform followings the action
         for (var i = 0; i < followers.length; i++) {
-            await insertNotification(idActivity, followers[i], qra_owner, qra_follower, datetime);
+            if (followers[i].idqra !== qra_follower.idqras)
+                await insertNotification(idActivity, followers[i], qra_owner, qra_follower, datetime);
         }
+
+
     }
 
     function insertNotification(idActivity, follower, qra_owner, qra_follower, datetime) {
+        console.log("InsertNotification ", follower.idqra);
+
+        let message;
+        if (follower.idqras === qra_follower.idqras) {
+            message = qra_owner.qra + " now follows you";
+            follower.idqra = follower.idqras;
+        }
+        else
+            message = qra_owner.qra + " started to follow " + qra_follower.qra;
+        let final_url = url + qra_follower.qra;
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?, datetime=?, activ" +
-                    "ity_type='1', qra=?, ref_qra=?, qra_avatarpic=?", [
+                    "ity_type='1', qra=?, ref_qra=?, qra_avatarpic=?, message=?, url=?", [
                         follower.idqra,
                         idActivity,
                         datetime,
                         qra_owner.qra,
                         qra_follower.qra,
-                        qra_owner.avatarpic
+                        qra_owner.avatarpic,
+                        message,
+                        final_url
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
@@ -259,7 +281,7 @@ exports.handler = async(event, context, callback) => {
                             return reject(err);
                         }
 
-                        resolve();
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
                     });
         });
     }
@@ -286,35 +308,36 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getDeviceInfo(idqra) {
-        console.log("getDeviceInfo " +
-            idqra);
+        console.log("getDeviceInfo " + idqra);
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
-            conn.query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
+            conn
+                .query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
 
-                if (info.length > 0) {
-                    resolve(JSON.parse(JSON.stringify(info)));
-                }
-                else {
-                    resolve();
-                }
-            });
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner) {
+    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
         console.log("sendPushNotification");
         let channel;
         let params;
         let title = qra_owner.qra + " started to follow you ";
         let final_url = url + qra_owner.qra;
         let addresses = {};
+        let notif = JSON.stringify(idnotif);
 
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -338,41 +361,47 @@ exports.handler = async(event, context, callback) => {
                             Title: title,
                             Action: 'URL',
                             Url: final_url,
-                            SilentPush: false,
+                            // SilentPush: false,
                             Data: {
 
-                                /*
-                                               '<__string>': ... */
-                            },
-                            MediaUrl: qra_owner.avatarpic,
-
-
-
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            }
+                            // MediaUrl: qra_owner.avatarpic
                         },
 
                         GCMMessage: {
                             Action: 'URL',
                             Body: title,
-                            CollapseKey: 'STRING_VALUE',
+                            Data: {
+
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            },
+                            // CollapseKey: 'STRING_VALUE',
 
                             // IconReference: 'STRING_VALUE',
-                            ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            ImageUrl: qra_owner.avatarpic,
+                            // ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon' +
+                            //         '_25.png',
+                            // ImageUrl: qra_owner.avatarpic,
                             // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
                             // 'STRING_VALUE',
-                            SilentPush: false,
-                            SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            Sound: 'STRING_VALUE',
+                            // SilentPush: false,
+                            // SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon' +
+                            //         '_25.png',
+                            // Sound: 'STRING_VALUE',
                             // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
                             // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
                             Title: title,
                             Url: final_url
                         }
                     },
-                    TraceId: 'STRING_VALUE'
+                    // TraceId: 'STRING_VALUE'
                 }
             };
-            console.log(qra_devices[i]);
+            // console.log(qra_devices[i]);
             let status = await sendMessages(params);
             console.log(status);
             if (status !== 200) {
@@ -409,21 +438,20 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
-            pinpoint.sendMessages(params, function(err, data) {
+            pinpoint
+                .sendMessages(params, function(err, data) {
 
+                    if (err)
+                        return reject(err);
 
-                if (err)
-                    return reject(err);
+                    else {
+                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
 
-                else {
-                    var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
-
-                    resolve(status);
-                }
-            });
+                        resolve(status);
+                    }
+                });
         });
 
     }
-
 
 };
