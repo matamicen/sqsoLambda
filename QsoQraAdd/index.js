@@ -115,10 +115,11 @@ exports.handler = async(event, context, callback) => {
 
             let idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
             if (idActivity) {
-                await saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qras[i]);
+                let idnotif = await saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qras[i]);
+                console.log(idnotif);
                 let qra_devices = await getDeviceInfo(idqra);
                 if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i]);
+                    await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i], idnotif);
             }
         }
         return qras_output;
@@ -147,7 +148,7 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra) {
+    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra, idnotif) {
         console.log("sendPushNotification");
         let channel;
         let params;
@@ -155,6 +156,7 @@ exports.handler = async(event, context, callback) => {
         let final_url = url + 'qso/' +
             qra_owner.guid_URL;
         let addresses = {};
+        let notif = JSON.stringify(idnotif);
 
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -182,9 +184,10 @@ exports.handler = async(event, context, callback) => {
                             Data: {
 
                                 'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic
-                            },
-                            MediaUrl: qra_owner.avatarpic,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            }
+                            // MediaUrl: qra_owner.avatarpic,
 
 
 
@@ -207,7 +210,8 @@ exports.handler = async(event, context, callback) => {
                             Data: {
 
                                 'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
                             },
                             // CollapseKey: 'STRING_VALUE',
 
@@ -371,20 +375,25 @@ exports.handler = async(event, context, callback) => {
 
     function saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qra) {
         console.log("insertNotification");
+        let message = qra_owner.qra + " included " + qra + " on his new QSO";
+        let final_url = url + 'qso/' +
+            qra_owner.guid_URL;
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-                    "vity_type='12', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=? ", [
+                    "vity_type='12', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?, message=?, url=? ", [
                         idqra,
                         idActivity,
                         datetime,
                         qra_owner.qra,
                         qra_owner.avatarpic,
                         qra_owner.guid_URL,
-                        qra
+                        qra,
+                        message,
+                        final_url
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
