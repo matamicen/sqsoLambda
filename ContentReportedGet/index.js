@@ -1,7 +1,10 @@
 var mysql = require('mysql');
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
-
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -67,8 +70,13 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getContentReported");
-            conn.query("SELECT content_reported.*, qras.qra, qsos.datetime as qso_datetime, qsos.GUID_URL, qr.qra as qso_owner  FROM content_reported inner join qras on content_reported.idq" +
-                "ra  = qras.idqras inner join qsos on content_reported.idqso = qsos.idqsos inner join qras as qr on qsos.idqra_owner = qr.idqras where content_reported.deleted is null order by datetime desc",
+            conn.query("SELECT cr.*, qras.qra, qsos.datetime as qso_datetime, qsos.GUID_URL, qr.qra as q" +
+            "so_owner, cmt.comment, qrcmt.qra as cmtqra, m.url  FROM content_reported as cr i" +
+            "nner join qras on cr.idqra  = qras.idqras inner join qsos on cr.idqso = qsos.idq" +
+            "sos inner join qras as qr on qsos.idqra_owner = qr.idqras LEFT OUTER JOIN qsos_c" +
+            "omments as cmt on cr.idcomment = cmt.idqsos_comments LEFT OUTER JOIN qras as qrc" +
+            "mt on cmt.idqra = qrcmt.idqras LEFT OUTER JOIN qsos_media as m on cr.idmedia = m" +
+            ".idqsos_media   where cr.deleted is null order by datetime desc",
                 function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
