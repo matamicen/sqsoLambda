@@ -65,7 +65,7 @@ exports.handler = async(event, context, callback) => {
         let idActivity = await saveActivity(qra_owner, newqso, datetime);
         if (idActivity) {
             console.log("createNotifications");
-            await createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL);
+            await createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL, newqso);
         }
         await UpdateQsosCounterInQra(qra_owner.idqras);
         var info = await saveQRA(newqso, qra_owner.idqras);
@@ -196,10 +196,10 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL) {
+    async function createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL, idqsos) {
 
         for (let i = 0; i < followers.length; i++) {
-            let idnotif = await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL);
+            let idnotif = await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL, idqsos);
             let qra_devices = await getDeviceInfo(followers[i].idqra);
             if (qra_devices)
                 await sendPushNotification(qra_devices, qra_owner, datetime, band, mode, type, uuid_URL, idnotif);
@@ -229,7 +229,7 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    function insertNotification(idActivity, qra_owner, follower, datetime, band, mode, type, uuid_URL) {
+    function insertNotification(idActivity, qra_owner, follower, datetime, band, mode, type, uuid_URL, idqsos) {
         console.log("insertNotification");
         var date = new Date(datetime);
         let message;
@@ -248,7 +248,7 @@ exports.handler = async(event, context, callback) => {
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?, datetime=?, activ" +
                     "ity_type='10', qra=?,  qra_avatarpic=?, qso_band=?, qso_mode=?, qso_type=?, qso_" +
-                    "guid=?, message=?, url=? ", [
+                    "guid=?, message=?, url=?, idqsos=? ", [
                         follower.idqra,
                         idActivity,
                         datetime,
@@ -259,7 +259,8 @@ exports.handler = async(event, context, callback) => {
                         type,
                         uuid_URL,
                         message,
-                        final_url
+                        final_url,
+                        idqsos
 
                     ],
                     function(err, info) {
