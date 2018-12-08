@@ -101,7 +101,9 @@ exports.handler = async(event, context, callback) => {
         console.log("saveQrasInQso");
         let qras_output = [];
         let idqra;
+        // let qsoNotifications = await getQSONotifications(idqso);
         for (var i = 0; i < qras.length; i++) {
+            console.log(qras[i]);
             var qra = await getQra(qras[i]);
             if (!qra) {
                 await qras_output.push({ qra: qras[i], url: null });
@@ -111,50 +113,96 @@ exports.handler = async(event, context, callback) => {
                 qras_output.push({ "qra": qra.qra, "url": qra.profilepic, "url_avatar": qra.avatarpic });
                 idqra = qra.idqras;
             }
+            console.log(idqra);
+
             await saveQraInQso(idqra, idqso);
 
             let idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
             if (idActivity) {
-                let idnotif = await saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qras[i]);
-                console.log(idnotif);
+                //Notify QRA added to the QSO
+                let idnotif = await saveNotification(idActivity, idqra, qra_owner, datetime, qras[i], idqso, idqra);
+                // if (!qsoNotifications.some(elem => elem.idqra === idqra)) {
                 let qra_devices = await getDeviceInfo(idqra);
                 if (qra_devices)
                     await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i], idnotif);
+                // }
+                //Notify Followers
+                let followers = await getQRAFollowers(idqra);
+                //if the follower is not a QRA nor following other QRAS nor following QSO_OWNER
+                for (let i = 0; i < followers.length; i++) {
+                    if ((idqra !== followers[i].idqra)) {
+                        await saveNotification(idActivity, followers[i].idqra, qra_owner, datetime, qras[i], idqso, idqra);
+                    }
+                }
             }
         }
         return qras_output;
     }
 
-    function getDeviceInfo(idqra) {
-        console.log("getDeviceInfo " +
-            idqra);
+    function getQSONotifications(idqsos) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
-            conn.query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
+            conn
+                .query("SELECT * from qra_notifications WHERE idqsos = ?", idqsos, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
 
-                if (info.length > 0) {
                     resolve(JSON.parse(JSON.stringify(info)));
-                }
-                else {
-                    resolve();
-                }
-            });
+                });
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qra, idnotif) {
+    function getQRAFollowers(idqras) {
+        console.log("getQRAFollowers" + idqras);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqras, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
+
+    function getDeviceInfo(idqra) {
+        console.log("getDeviceInfo " + idqra);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+        });
+    }
+
+    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
         console.log("sendPushNotification");
         let channel;
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
-        let final_url = url + 'qso/' +
-            qra_owner.guid_URL;
+        let final_url = url + 'qso/' + qra_owner.guid_URL;
         let addresses = {};
         let notif = JSON.stringify(idnotif);
 
@@ -189,21 +237,10 @@ exports.handler = async(event, context, callback) => {
                             }
                             // MediaUrl: qra_owner.avatarpic,
 
-
-
                         },
-                        // DefaultPushNotificationMessage: {
-                        //     Action: 'URL',
-                        //     Body: title,
-                        //     Data: {
-
-                        //         /*
-                        //                       '<__string>': ... */
-                        //     },
-                        //     SilentPush: false,
-                        //     Title: title,
-                        //     Url: url
-                        // },
+                        // DefaultPushNotificationMessage: {     Action: 'URL',     Body: title, Data: {
+                        //         /*                       '<__string>': ... */     }, SilentPush:
+                        // false,     Title: title,     Url: url },
                         GCMMessage: {
                             Action: 'URL',
                             Body: title,
@@ -213,18 +250,15 @@ exports.handler = async(event, context, callback) => {
                                 'AVATAR': qra_owner.avatarpic,
                                 'IDNOTIF': notif
                             },
-                            // CollapseKey: 'STRING_VALUE',
-
-                            // IconReference: 'STRING_VALUE',
-                            // ImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            // ImageUrl: qra_owner.avatarpic,
-                            // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
-                            // 'STRING_VALUE',
-                            // SilentPush: false,
-                            // SmallImageIconUrl: 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_icon_25.png',
-                            // Sound: 'STRING_VALUE',
-                            // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
-                            // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
+                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
+                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
+                            // i con_25.png', ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
+                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
+                            // SilentPush: false, SmallImageIconUrl:
+                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
+                            // i con_25.png', Sound: 'STRING_VALUE', Substitutions: {//     '<__string>': [
+                            //   'STRING_VALUE',         /* more items */     ],     /* '<__string>': ... */
+                            // }, TimeToLive: 10,
                             Title: title,
                             Url: final_url
                         }
@@ -269,18 +303,18 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
-            pinpoint.sendMessages(params, function(err, data) {
+            pinpoint
+                .sendMessages(params, function(err, data) {
 
+                    if (err)
+                        return reject(err)
 
-                if (err)
-                    return reject(err);
+                    else {
+                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
 
-                else {
-                    var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
-
-                    resolve(status);
-                }
-            });
+                        resolve(status);
+                    }
+                });
         });
 
     }
@@ -373,18 +407,22 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    function saveNotification(idActivity, idqra, idqso, qra_owner, datetime, qra) {
-        console.log("insertNotification");
-        let message = qra_owner.qra + " included " + qra + " on his new QSO";
-        let final_url = url + 'qso/' +
-            qra_owner.guid_URL;
+    function saveNotification(idActivity, idqra, qra_owner, datetime, qra, idqso, idqra_added) {
+        console.log("insertNotification" + idqra + idqra_added);
+        let message;
+        if (idqra_added === idqra)
+            message = qra_owner.qra + " included you on his new QSO";
+        else
+            message = qra_owner.qra + " included " + qra + " on his new QSO";
+        let final_url = url + 'qso/' + qra_owner.guid_URL;
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-                    "vity_type='12', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?, message=?, url=? ", [
+                    "vity_type='12', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?, message=?, url=?, idqsos=?" +
+                    " ", [
                         idqra,
                         idActivity,
                         datetime,
@@ -393,7 +431,8 @@ exports.handler = async(event, context, callback) => {
                         qra_owner.guid_URL,
                         qra,
                         message,
-                        final_url
+                        final_url,
+                        idqso
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
@@ -405,6 +444,5 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-
 
 };

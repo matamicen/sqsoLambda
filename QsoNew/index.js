@@ -30,9 +30,9 @@ exports.handler = async(event, context, callback) => {
     let type = event.body.type;
     let sub = event.context.sub;
     let uuid_QR = uuidv4();
-    console.log(uuid_QR)
+
     let uuid_URL = uuidv4();
-    console.log(uuid_URL)
+
 
     //***********************************************************
     if (!event['stage-variables']) {
@@ -106,6 +106,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function saveQSO(idqras, mode, band, datetime, type, longitude, latitude) {
+        console.log("saveQSO");
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
@@ -230,7 +231,8 @@ exports.handler = async(event, context, callback) => {
     }
 
     function insertNotification(idActivity, qra_owner, follower, datetime, band, mode, type, uuid_URL, idqsos) {
-        console.log("insertNotification");
+        console.log("insertNotification" + idActivity + ' ' +
+            follower.idqra);
         var date = new Date(datetime);
         let message;
         if (type === 'QSO')
@@ -275,6 +277,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getFollowingMe(idqra_owner) {
+        console.log("getFollowingMe" + idqra_owner);
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -307,8 +310,8 @@ exports.handler = async(event, context, callback) => {
         let notif = JSON.stringify(idnotif);
         for (let i = 0; i < qra_devices.length; i++) {
 
-            qra_devices[i].device_type === 'androi ?d' ?
-                channel = 'GC :M' :
+            qra_devices[i].device_type === 'android' ?
+                channel = 'GCM' :
                 channel = 'APNS';
 
             addresses[qra_devices[i].token] = {
