@@ -1,7 +1,13 @@
 var mysql = require('mysql');
 const uuidv4 = require('uuid/v4');
+var AWS = require("aws-sdk");
+var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -29,11 +35,19 @@ exports.handler = async(event, context, callback) => {
     console.log(uuid_URL)
 
     //***********************************************************
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
     var conn = await mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
         let qra_owner = await getQRA(sub);
@@ -185,19 +199,56 @@ exports.handler = async(event, context, callback) => {
     async function createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL) {
 
         for (let i = 0; i < followers.length; i++) {
-            await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL);
+            let idnotif = await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL);
+            let qra_devices = await getDeviceInfo(followers[i].idqra);
+            if (qra_devices)
+                await sendPushNotification(qra_devices, qra_owner, datetime, band, mode, type, uuid_URL, idnotif);
         }
     }
 
+    function getDeviceInfo(idqra) {
+        console.log("getDeviceInfo " + idqra);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+        });
+    }
+
     function insertNotification(idActivity, qra_owner, follower, datetime, band, mode, type, uuid_URL) {
+        console.log("insertNotification");
+        var date = new Date(datetime);
+        let message;
+        if (type === 'QSO')
+            message = qra_owner.qra + " worked a QSO on Mode: " + mode + ' Band: ' + band + " QTR(UTC): " + date.getUTCHours() + ':' + date.getMinutes();
+        if (type === 'LISTEN')
+            message = qra_owner.qra + " listened a QSO on Mode: " + mode + ' Band: ' + band + " QTR(UTC): " + date.getUTCHours() + ':' + date.getMinutes();
+
+        let final_url = url + "qso/" + uuid_URL;
+
+
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?, datetime=?, activ" +
-                    "ity_type='10', qra=?,  qra_avatarpic=?, qso_band=?, qso_mode=?, qso_ty" +
-                    "pe=?, qso_guid=?", [
+                    "ity_type='10', qra=?,  qra_avatarpic=?, qso_band=?, qso_mode=?, qso_type=?, qso_" +
+                    "guid=?, message=?, url=? ", [
                         follower.idqra,
                         idActivity,
                         datetime,
@@ -206,7 +257,10 @@ exports.handler = async(event, context, callback) => {
                         band,
                         mode,
                         type,
-                        uuid_URL
+                        uuid_URL,
+                        message,
+                        final_url
+
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
@@ -225,14 +279,127 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?",
+                    idqra_owner,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    });
+        });
+    }
+    async function sendPushNotification(qra_devices, qra_owner, datetime, band, mode, type, uuid_URL, idnotif) {
+        console.log("sendPushNotification");
+        var date = new Date(datetime);
+        let channel;
+        let title;
+        if (type === 'QSO')
+            title = qra_owner.qra + " worked a QSO";
+        if (type === 'LISTEN')
+            title = qra_owner.qra + " listened a QSO";
+        let body = 'Mode: ' + mode + ' Band: ' + band + " QTR (UTC): " + date.getUTCHours() + ':' + date.getMinutes();
+        let final_url = url + "qso/" + uuid_URL;
+        let addresses = {};
+        let notif = JSON.stringify(idnotif);
+        for (let i = 0; i < qra_devices.length; i++) {
+
+            qra_devices[i].device_type === 'androi ?d' ?
+                channel = 'GC :M' :
+                channel = 'APNS';
+
+            addresses[qra_devices[i].token] = {
+                ChannelType: channel
+            };
+            var params = {
+                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+                /* required */
+                MessageRequest: { /* required */
+                    Addresses: addresses,
+
+                    MessageConfiguration: {
+
+                        DefaultPushNotificationMessage: {
+                            Action: 'URL',
+                            Body: body,
+                            Data: {
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            },
+                            // SilentPush: false,
+                            Title: title,
+                            Url: final_url
+                        },
+                        GCMMessage: {
+                            Action: 'URL',
+                            Body: body,
+                            Data: {
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            },
+                            Title: title,
+                            Url: final_url
+                        }
+                    },
+                    // TraceId: 'STRING_VALUE'
+                }
+            };
+
+            let status = await sendMessages(params);
+            console.log(status);
+            if (status !== 200) {
+                await deleteDevice(qra_devices[i].token);
+
+            }
+        }
+    }
+
+    function deleteDevice(token) {
+        console.log("deleteDevice");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
+
+                    }
+                    else {
+
+                        resolve(JSON.parse(JSON.stringify(info)));
                     }
 
-                    resolve(JSON.parse(JSON.stringify(info)));
                 });
         });
+    }
+
+    function sendMessages(params) {
+        console.log("sendMessages");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            pinpoint
+                .sendMessages(params, function(err, data) {
+
+                    if (err)
+                        return reject(err);
+
+
+                    else {
+                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
+
+                        resolve(status);
+                    }
+                });
+        });
+
     }
 };
