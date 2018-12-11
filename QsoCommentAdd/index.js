@@ -69,12 +69,15 @@ exports.handler = async(event, context, callback) => {
             if (idActivity) {
                 console.log("getFollowing Me" + qra_owner.idqras);
                 let followers = await getFollowingMe(qra_owner.idqras);
+                console.log(followers);
                 console.log("Get Stakeholders of QSO" + idqso);
                 let stakeholders = await getQsoStakeholders(idqso, qra_owner.idqras);
+                console.log(stakeholders);
                 console.log("get Other Comment Writters");
                 let commentWriters = await getQsoCommentWriters(idqso, qra_owner.idqras);
+                console.log(commentWriters);
                 console.log("createNotifications");
-                await createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime);
+                await createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime, comment);
             }
             await UpdateCommentCounterInQso(idqso);
 
@@ -215,16 +218,15 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime) {
+    async function createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime, comment) {
         console.log("createNotifications");
         let idnotif;
 
         for (let i = 0; i < stakeholders.length; i++) {
-
             idnotif = await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime, stakeholders[i].qra);
             let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
             if (qra_devices)
-                await sendPushNotification(qra_devices, qra_owner, idnotif);
+                await sendPushNotification(qra_devices, qra_owner, idnotif, comment);
 
         }
 
@@ -250,7 +252,7 @@ exports.handler = async(event, context, callback) => {
         console.log("insertNotification" + idqra + qra_owner.idqras);
         let message;
         if (qso.qra === qra_dest)
-            message = qra_owner.qra + " commented a QSO where you are participating";
+            message = qra_owner.qra + " commented a QSO you are participating";
         else
             message = qra_owner.qra + " commented a QSO created by " + qso.qra;
 
@@ -307,7 +309,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("Select distinct idqra, qra from qsos_qras as q inner join qras on q.idqso = qras.idqras where idqso=? and idqra!=?", [
+                .query("Select distinct idqra, qra from qsos_qras as q inner join qras on q.idqra = qras.idqras where idqso=? and idqra!=?", [
                     idqso, idqraCommentOwner
                 ], function(err, info) {
                     // Call reject on error states, call resolve with results
@@ -362,10 +364,11 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
+    async function sendPushNotification(qra_devices, qra_owner, idnotif, comment) {
         console.log("sendPushNotification");
         let channel;
         let title = qra_owner.qra + " commented a QSO you have participated";
+        let body = comment;
         let final_url = url + "qso/" + qra_owner.guid_URL;
         let addresses = {};
         let notif = JSON.stringify(idnotif);
@@ -390,7 +393,7 @@ exports.handler = async(event, context, callback) => {
 
                         DefaultPushNotificationMessage: {
                             Action: 'URL',
-                            Body: title,
+                            Body: body,
                             Data: {
 
                                 'QRA': qra_owner.qra,
@@ -403,7 +406,7 @@ exports.handler = async(event, context, callback) => {
                         },
                         GCMMessage: {
                             Action: 'URL',
-                            Body: title,
+                            Body: body,
                             Data: {
 
                                 'QRA': qra_owner.qra,
