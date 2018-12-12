@@ -313,7 +313,7 @@ exports.handler = async(event, context, callback) => {
             qra_devices[i].device_type === 'android' ?
                 channel = 'GCM' :
                 channel = 'APNS';
-
+            addresses = {};
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };

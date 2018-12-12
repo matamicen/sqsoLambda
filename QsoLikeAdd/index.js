@@ -1,6 +1,12 @@
 var mysql = require('mysql');
+var AWS = require("aws-sdk");
+var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
 
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -20,12 +26,19 @@ exports.handler = async(event, context, callback) => {
     var sub = event.context.sub;
     var datetime = new Date();
     let qrasAll = [];
-    //***********************************************************
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
     var conn = await mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
 
@@ -49,17 +62,32 @@ exports.handler = async(event, context, callback) => {
         }
 
         let info = await insertLike(qra_owner.idqras, idqso);
+
         if (info) {
             let qso = await getQsoInfo(idqso);
             console.log("saveActivity");
             let idActivity = await saveActivity(qra_owner.idqras, idqso, datetime);
             if (idActivity) {
-                console.log("getFollowing Me");
-                let qras = await getFollowingMe(qra_owner.idqras);
-                console.log("createNotifications");
-                qrasAll = await createNotifications(idActivity, qrasAll, qras, qra_owner, qso, datetime);
+                let qras;
+
                 console.log("Get Stakeholders of QSO");
                 qras = await getQsoStakeholders(idqso);
+                console.log(qras);
+                console.log("createNotifications");
+                for (let i = 0; i < qras.length; i++) {
+
+                    if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) && (qras[i].idqra !== qra_owner.idqras)) {
+                        let idnotif = await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qra);
+                        qrasAll.push({ idqra: qras[i].idqra });
+                        let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
+
+                        if (qra_devices)
+                            await sendPushNotification(qra_devices, qra_owner, idnotif);
+
+                    }
+                }
+                console.log("getFollowing Me " + qra_owner.idqras);
+                qras = await getFollowingMe(qra_owner.idqras);
                 console.log("createNotifications");
                 qrasAll = await createNotifications(idActivity, qrasAll, qras, qra_owner, qso, datetime);
             }
@@ -83,6 +111,29 @@ exports.handler = async(event, context, callback) => {
         response.body.message = e.message;
         callback(null, response);
         return context.fail(response);
+    }
+
+    function getDeviceInfo(idqra, qra) {
+        console.log("getDeviceInfo " + idqra + " " + qra);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT * FROM push_devices where qra=?", idqra, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
+        });
     }
 
     function getQsoInfo(idqsos) {
@@ -161,7 +212,7 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("insertLike");
-            conn.query("INSERT INTO qsos_likes SET idqso = ?, idqra=?", [
+            conn.query("INSERT INTO qsos_likes SET idqso = ?, idqra=?, timestamp=NOW()", [
                 qso, idqra_owner
             ], function(err, info) {
                 // Call reject on error states, call resolve with results
@@ -201,7 +252,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("Select distinct idqra from qsos_qras where idqso=?", idqso, function(err, info) {
+                .query("Select distinct q.idqra, r.qra from qsos_qras as q inner join qras as r on q.idqra = r.idqras where q.idqso=?", idqso, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -217,28 +268,40 @@ exports.handler = async(event, context, callback) => {
         for (let i = 0; i < qras.length; i++) {
 
             if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) && (qras[i].idqra !== qra_owner.idqras)) {
-                await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime);
+                await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qras);
                 qrasAll.push({ idqra: qras[i].idqra });
             }
         }
         return qrasAll;
     }
 
-    function insertNotification(idActivity, idqra, qra_owner, qso, datetime) {
+    function insertNotification(idActivity, idqra, qra_owner, qso, datetime, qra_dest) {
+        console.log("insertNotification " + idqra + " " + qra_dest + qso.qra);
+        let message;
+        if (qso.qra === qra_dest)
+            message = qra_owner.qra + " liked your QSO";
+        else
+            message = qra_owner.qra + " liked a QSO created by " + qso.qra;
+
+        let final_url = url + 'qso/' + qso.guid_URL;
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
                 .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-                    "vity_type='23', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?", [
+                    "vity_type='23', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?, message=?, url=?" +
+                    ", idqsos=? ", [
                         idqra,
                         idActivity,
                         datetime,
                         qra_owner.qra,
                         qra_owner.avatarpic,
                         qso.guid_URL,
-                        qso.qra
+                        qso.qra,
+                        message,
+                        final_url,
+                        idqso
                     ],
                     function(err, info) {
                         // Call reject on error states, call resolve with results
@@ -257,7 +320,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
+                .query("SELECT f.*, r.qra from qra_followers as f inner join qras as r on f.idqra_followed = r.idqras  WHERE f.idqra_followed = ?", idqra_owner, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -266,5 +329,119 @@ exports.handler = async(event, context, callback) => {
                     resolve(JSON.parse(JSON.stringify(info)));
                 });
         });
+    }
+    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
+        console.log("sendPushNotification");
+        let channel;
+        let title = qra_owner.qra + " liked a QSO you are participating";
+        let final_url = url + "qso/" + qra_owner.guid_URL;
+        let addresses = {};
+        let notif = JSON.stringify(idnotif);
+
+        for (let i = 0; i < qra_devices.length; i++) {
+
+            qra_devices[i].device_type === 'android' ?
+                channel = 'GCM' :
+                channel = 'APNS';
+            addresses = {};
+            addresses[qra_devices[i].token] = {
+                ChannelType: channel
+            };
+            var params = {
+                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+                /* required */
+                MessageRequest: { /* required */
+                    Addresses: addresses,
+
+                    MessageConfiguration: {
+
+                        DefaultPushNotificationMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            Data: {
+
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            },
+                            // SilentPush: false,
+                            Title: title,
+                            Url: final_url
+                        },
+                        GCMMessage: {
+                            Action: 'URL',
+                            Body: title,
+                            Data: {
+
+                                'QRA': qra_owner.qra,
+                                'AVATAR': qra_owner.avatarpic,
+                                'IDNOTIF': notif
+                            },
+                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
+                            // qra_owner.avatarpic, ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
+                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
+                            // SilentPush: false, SmallImageIconUrl: qra_owner.avatarpic, Sound:
+                            // 'STRING_VALUE', Substitutions: {//     '<__string>': [
+                            // 'STRING_VALUE',         /* more items */     ],     /* '<__string>': ... */
+                            // }, TimeToLive: 10,
+                            Title: title,
+                            Url: final_url
+                        }
+                    },
+                    TraceId: 'STRING_VALUE'
+                }
+            };
+
+            let status = await sendMessages(params);
+            console.log(qra_devices[i].idpush_devices + " " + qra_devices[i].qra + " " + status);
+            if (status !== 200) {
+                await deleteDevice(qra_devices[i].token);
+
+            }
+        }
+    }
+
+    function deleteDevice(token) {
+        console.log("deleteDevice");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    else {
+
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+
+                });
+        });
+    }
+
+    function sendMessages(params) {
+        // console.log("sendMessages");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+
+            pinpoint
+                .sendMessages(params, function(err, data) {
+
+                    if (err)
+                        return reject(err);
+
+                    else {
+                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
+
+                        resolve(status);
+                    }
+                });
+        });
+
     }
 };
