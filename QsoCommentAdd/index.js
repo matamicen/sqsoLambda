@@ -388,18 +388,19 @@ exports.handler = async(event, context, callback) => {
 
                     MessageConfiguration: {
 
-                        DefaultPushNotificationMessage: {
-                            Action: 'URL',
+                                             APNSMessage: {
                             Body: body,
+                            Title: title,
+                            Action: 'URL',
+                            Url: final_url,
+                            // SilentPush: false,
                             Data: {
 
                                 'QRA': qra_owner.qra,
                                 'AVATAR': qra_owner.avatarpic,
                                 'IDNOTIF': notif
-                            },
-                            // SilentPush: false,
-                            Title: title,
-                            Url: final_url
+                            }
+                            // MediaUrl: qra_owner.avatarpic
                         },
                         GCMMessage: {
                             Action: 'URL',
