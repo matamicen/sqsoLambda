@@ -82,7 +82,7 @@ exports.handler = async(event, context, callback) => {
                         let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
 
                         if (qra_devices)
-                            await sendPushNotification(qra_devices, qra_owner, idnotif);
+                            await sendPushNotification(qra_devices, qra_owner, idnotif, qso);
 
                     }
                 }
@@ -330,11 +330,12 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
-    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
+    async function sendPushNotification(qra_devices, qra_owner, idnotif, qso) {
         console.log("sendPushNotification");
         let channel;
         let title = qra_owner.qra + " liked a QSO you are participating";
-        let final_url = url + "qso/" + qra_owner.guid_URL;
+        let final_url = url + "qso/" + qso.guid_URL;
+        console.log(final_url);
         let addresses = {};
         let notif = JSON.stringify(idnotif);
 
