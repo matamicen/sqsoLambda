@@ -3,7 +3,7 @@ const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
-    if (await warmer(event)) 
+    if (await warmer(event))
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -45,8 +45,8 @@ exports.handler = async(event, context, callback) => {
             response.body.error = 1;
             response.body.message = "QRA does not exist";
 
-            callback("User does not exist");
-            return context.fail(response);
+
+            return callback(null, response);
         }
         let qra_output = await getQRAinfo(idqras_owner);
         conn.destroy();
@@ -54,7 +54,8 @@ exports.handler = async(event, context, callback) => {
         response.body.message = qra_output;
         context.succeed(response);
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error when select QRA");
         console.log(e);
         conn.destroy();
@@ -64,19 +65,26 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getAdmin(qra) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             conn
                 .query("SELECT qras.idqras FROM qras inner join users on qras.idqras = users.idqras wher" +
-                        "e qras.idcognito=? and users.admin=1 ",
-                sub, function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                });
+                    "e qras.idcognito=? and users.admin=1 ",
+                    sub,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                        }
+                        else {
+                            resolve();
+                        }
+
+                    });
         });
     }
     async function getQRAinfo(idqra) {
@@ -87,12 +95,12 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getQRAdata(idqra) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT * from qras where qras.idqras=?", idqra, function (err, info) {
+                .query("SELECT * from qras where qras.idqras=?", idqra, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -103,28 +111,29 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getContentReported() {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getContentReported");
             conn.query("SELECT cr.*, qras.qra, qsos.datetime as qso_datetime, qsos.GUID_URL, qr.qra as q" +
-                    "so_owner, cmt.comment, qrcmt.qra as cmtqra, m.url  FROM content_reported as cr i" +
-                    "nner join qras on cr.idqra  = qras.idqras inner join qsos on cr.idqso = qsos.idq" +
-                    "sos inner join qras as qr on qsos.idqra_owner = qr.idqras LEFT OUTER JOIN qsos_c" +
-                    "omments as cmt on cr.idcomment = cmt.idqsos_comments LEFT OUTER JOIN qras as qrc" +
-                    "mt on cmt.idqra = qrcmt.idqras LEFT OUTER JOIN qsos_media as m on cr.idmedia = m" +
-                    ".idqsos_media   where cr.deleted is null order by datetime desc",
-            function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                if (info.length > 0) {
-                    resolve(JSON.parse(JSON.stringify(info)));
-                } else {
-                    resolve();
-                }
-            });
+                "so_owner, cmt.comment, qrcmt.qra as cmtqra, m.url  FROM content_reported as cr i" +
+                "nner join qras on cr.idqra  = qras.idqras inner join qsos on cr.idqso = qsos.idq" +
+                "sos inner join qras as qr on qsos.idqra_owner = qr.idqras LEFT OUTER JOIN qsos_c" +
+                "omments as cmt on cr.idcomment = cmt.idqsos_comments LEFT OUTER JOIN qras as qrc" +
+                "mt on cmt.idqra = qrcmt.idqras LEFT OUTER JOIN qsos_media as m on cr.idmedia = m" +
+                ".idqsos_media   where cr.deleted is null order by datetime desc",
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info)));
+                    }
+                    else {
+                        resolve();
+                    }
+                });
         });
     }
 
