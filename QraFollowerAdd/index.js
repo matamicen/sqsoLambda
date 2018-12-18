@@ -199,7 +199,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getFollowingMe(idqra_owner) {
-        console.log("getFollowingMe " + idqra_owner)
+        console.log("getFollowingMe " + idqra_owner);
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -253,13 +253,17 @@ exports.handler = async(event, context, callback) => {
         console.log("InsertNotification ", follower.idqra);
 
         let message;
+        let final_url;
         if (follower.idqras === qra_follower.idqras) {
             message = qra_owner.qra + " now follows you";
             follower.idqra = follower.idqras;
+            final_url = url + qra_owner.qra;
         }
-        else
+        else {
             message = qra_owner.qra + " started to follow " + qra_follower.qra;
-        let final_url = url + qra_follower.qra;
+            final_url = url + qra_follower.qra;
+        }
+
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -357,7 +361,7 @@ exports.handler = async(event, context, callback) => {
 
                     MessageConfiguration: {
                         APNSMessage: {
-                            Body: title,
+                            Body: "",
                             Title: title,
                             Action: 'URL',
                             Url: final_url,
@@ -373,7 +377,7 @@ exports.handler = async(event, context, callback) => {
 
                         GCMMessage: {
                             Action: 'URL',
-                            Body: title,
+                            Body: "",
                             Data: {
 
                                 'QRA': qra_owner.qra,
@@ -403,7 +407,7 @@ exports.handler = async(event, context, callback) => {
             };
             // console.log(qra_devices[i]);
             let status = await sendMessages(params);
-            console.log(status);
+            console.log(qra_devices[i].idpush_devices, status);
             if (status !== 200) {
                 await deleteDevice(qra_devices[i].token);
 
@@ -445,6 +449,7 @@ exports.handler = async(event, context, callback) => {
                         return reject(err);
 
                     else {
+                        console.log(data.MessageResponse);
                         var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
 
                         resolve(status);
