@@ -78,8 +78,8 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkOwnerInQso");
-            conn.query("SELECT qras.idqras, qras.qra, qras.avatarpic, qsos.guid_URL from qras inner join" +
-                " qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos=? and qras.idcognito=?", [
+            conn.query("SELECT qras.idqras, qras.qra, qras.avatarpic, qsos.guid_URL, qsos.mode, qsos.band from qras inner join" +
+                " qsos on qras.idqras = qsos.idqra_owner  where qsos.idqsos=? and qras.idcognito=?", [
                     idqso, sub
                 ],
                 function(err, info) {
@@ -132,6 +132,7 @@ exports.handler = async(event, context, callback) => {
                 for (let i = 0; i < followers.length; i++) {
                     if ((idqra !== followers[i].idqra)) {
                         await saveNotification(idActivity, followers[i].idqra, qra_owner, datetime, qras[i], idqso, idqra);
+
                     }
                 }
             }
@@ -202,6 +203,7 @@ exports.handler = async(event, context, callback) => {
         let channel;
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
+        let body = "Mode: " + qra_owner.mode + " Band: " + qra_owner.band;
         let final_url = url + 'qso/' + qra_owner.guid_URL;
         let addresses = {};
         let notif = JSON.stringify(idnotif);
@@ -224,7 +226,7 @@ exports.handler = async(event, context, callback) => {
 
                     MessageConfiguration: {
                         APNSMessage: {
-                            Body: title,
+                            Body: body,
                             Title: title,
                             Action: 'URL',
                             Url: final_url,
@@ -243,7 +245,7 @@ exports.handler = async(event, context, callback) => {
                         // false,     Title: title,     Url: url },
                         GCMMessage: {
                             Action: 'URL',
-                            Body: title,
+                            Body: body,
                             Data: {
 
                                 'QRA': qra_owner.qra,
