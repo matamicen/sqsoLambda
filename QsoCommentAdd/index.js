@@ -12,7 +12,7 @@ exports.handler = async(event, context, callback) => {
 
     context.callbackWaitsForEmptyEventLoop = false;
 
-    var payload;
+
     var response = {
         statusCode: 200,
         headers: {
@@ -221,40 +221,41 @@ exports.handler = async(event, context, callback) => {
     async function createNotifications(idActivity, followers, stakeholders, commentWriters, qra_owner, qso, datetime, comment) {
         console.log("createNotifications");
         let idnotif;
+        let message;
 
+        console.log(stakeholders);
         for (let i = 0; i < stakeholders.length; i++) {
-            idnotif = await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime, stakeholders[i].qra);
+            message = qra_owner.qra + " commented a QSO you are participating";
+            idnotif = await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime, stakeholders[i].qra, message);
             let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
             if (qra_devices)
                 await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso);
 
         }
+        console.log(commentWriters);
 
         for (let i = 0; i < commentWriters.length; i++) {
             if (!stakeholders.some(elem => elem.idqra === commentWriters[i].idqra)) {
-
-                idnotif = await insertNotification(idActivity, commentWriters[i].idqra, qra_owner, qso, datetime, commentWriters[i].qra);
+                message = qra_owner.qra + " commented a QSO you are participating";
+                idnotif = await insertNotification(idActivity, commentWriters[i].idqra, qra_owner, qso, datetime, commentWriters[i].qra, message);
                 let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
                 if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner, idnotif);
+                    await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso);
             }
         }
-
+        console.log(followers);
         for (let i = 0; i < followers.length; i++) {
             if (!commentWriters.some(elem => elem.idqra === followers[i].idqra) && !stakeholders.some(elem => elem.idqra === followers[i].idqra)) {
-                await insertNotification(idActivity, followers[i].idqra, qra_owner, qso, datetime);
+                message = qra_owner.qra + " commented a QSO created by " + qso.qra;
+                await insertNotification(idActivity, followers[i].idqra, qra_owner, qso, datetime, "",
+                    message);
 
             }
         }
     }
 
-    function insertNotification(idActivity, idqra, qra_owner, qso, datetime, qra_dest) {
+    function insertNotification(idActivity, idqra, qra_owner, qso, datetime, qra_dest, message) {
         console.log("insertNotification" + idqra + qra_owner.idqras);
-        let message;
-        if (qso.qra === qra_dest)
-            message = qra_owner.qra + " commented a QSO you are participating";
-        else
-            message = qra_owner.qra + " commented a QSO created by " + qso.qra;
 
         let final_url = url + 'qso/' + qso.guid_URL;
         return new Promise(function(resolve, reject) {
@@ -368,7 +369,7 @@ exports.handler = async(event, context, callback) => {
         console.log("sendPushNotification");
 
         let channel;
-        let title = qra_owner.qra + " commented a QSO you have participated";
+        let title = qra_owner.qra + " commented a QSO you are participating";
         let body = comment;
         let final_url = url + "qso/" + qso.guid_URL;
 
