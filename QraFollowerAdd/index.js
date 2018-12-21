@@ -361,9 +361,9 @@ exports.handler = async(event, context, callback) => {
 
                     MessageConfiguration: {
                         APNSMessage: {
-                            Body: "",
+                            Body: " ",
                             Title: title,
-                            Action: 'URL',
+                            Action: 'OPEN_APP',
                             Url: final_url,
                             // SilentPush: false,
                             Data: {
@@ -376,8 +376,8 @@ exports.handler = async(event, context, callback) => {
                         },
 
                         GCMMessage: {
-                            Action: 'URL',
-                            Body: "",
+                            Action: 'OPEN_APP',
+                            Body: " ",
                             Data: {
 
                                 'QRA': qra_owner.qra,

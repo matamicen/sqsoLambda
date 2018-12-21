@@ -414,7 +414,7 @@ exports.handler = async(event, context, callback) => {
                         APNSMessage: {
                             Body: title,
                             Title: title,
-                            Action: 'URL',
+                            Action: 'OPEN_APP',
                             Url: final_url,
                             // SilentPush: false,
                             Data: {
@@ -426,7 +426,7 @@ exports.handler = async(event, context, callback) => {
                             // MediaUrl: qra_owner.avatarpic
                         },
                         GCMMessage: {
-                            Action: 'URL',
+                            Action: 'OPEN_APP',
                             Body: title,
                             Data: {
 
