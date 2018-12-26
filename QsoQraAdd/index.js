@@ -129,32 +129,15 @@ exports.handler = async(event, context, callback) => {
                 //Notify Followers
                 let followers = await getQRAFollowers(idqra);
                 //if the follower is not a QRA nor following other QRAS nor following QSO_OWNER
-                for (let i = 0; i < followers.length; i++) {
-                    if ((idqra !== followers[i].idqra)) {
-                        await saveNotification(idActivity, followers[i].idqra, qra_owner, datetime, qras[i], idqso, idqra);
+                for (let j = 0; j < followers.length; j++) {
+                    if ((idqra !== followers[j].idqra) && (qra_owner.idqras !== followers[j].idqra)) {
+                        await saveNotification(idActivity, followers[j].idqra, qra_owner, datetime, qras[i], idqso, idqra);
 
                     }
                 }
             }
         }
         return qras_output;
-    }
-
-    function getQSONotifications(idqsos) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-
-            conn
-                .query("SELECT * from qra_notifications WHERE idqsos = ?", idqsos, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
-        });
     }
 
     function getQRAFollowers(idqras) {
@@ -240,7 +223,7 @@ exports.handler = async(event, context, callback) => {
                             // MediaUrl: qra_owner.avatarpic,
 
                         },
-                    
+
                         GCMMessage: {
                             Action: 'OPEN_APP',
                             Body: body,
@@ -250,25 +233,15 @@ exports.handler = async(event, context, callback) => {
                                 'AVATAR': qra_owner.avatarpic,
                                 'IDNOTIF': notif
                             },
-                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
-                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
-                            // i con_25.png', ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
-                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
-                            // SilentPush: false, SmallImageIconUrl:
-                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
-                            // i con_25.png', Sound: 'STRING_VALUE', Substitutions: {//     '<__string>': [
-                            //   'STRING_VALUE',         /* more items */     ],     /* '<__string>': ... */
-                            // }, TimeToLive: 10,
                             Title: title,
                             Url: final_url
                         }
-                    },
-                    TraceId: 'STRING_VALUE'
+                    }
                 }
             };
-            console.log(qra_devices[i]);
             let status = await sendMessages(params);
-            console.log(status);
+            console.log(qra_devices[i].qra + ": " +
+                status);
             if (status !== 200) {
                 await deleteDevice(qra_devices[i].token);
 
@@ -307,7 +280,7 @@ exports.handler = async(event, context, callback) => {
                 .sendMessages(params, function(err, data) {
 
                     if (err)
-                        return reject(err)
+                        return reject(err);
 
                     else {
                         var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
@@ -408,7 +381,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     function saveNotification(idActivity, idqra, qra_owner, datetime, qra, idqso, idqra_added) {
-        console.log("insertNotification" + idqra + idqra_added);
+        console.log("insertNotification" + idqra + " " + idqra_added + " " + qra);
         let message;
         if (idqra_added === idqra)
             message = qra_owner.qra + " included you on his new QSO";
