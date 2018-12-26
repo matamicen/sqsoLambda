@@ -74,10 +74,11 @@ exports.handler = async(event, context, callback) => {
                 qras = await getQsoStakeholders(idqso);
                 console.log(qras);
                 console.log("createNotifications");
+                let message = qra_owner.qra + " liked a QSO you are participating";
                 for (let i = 0; i < qras.length; i++) {
 
                     if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) && (qras[i].idqra !== qra_owner.idqras)) {
-                        let idnotif = await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qra);
+                        let idnotif = await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qra, message);
                         qrasAll.push({ idqra: qras[i].idqra });
                         let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
 
@@ -264,24 +265,21 @@ exports.handler = async(event, context, callback) => {
 
     }
     async function createNotifications(idActivity, qrasAll, qras, qra_owner, qso, datetime) {
+        let message = qra_owner.qra + " liked a QSO created by " + qso.qra;
         console.log("createNotifications");
         for (let i = 0; i < qras.length; i++) {
 
             if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) && (qras[i].idqra !== qra_owner.idqras)) {
-                await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qras);
+                await insertNotification(idActivity, qras[i].idqra, qra_owner, qso, datetime, qras[i].qras, message);
                 qrasAll.push({ idqra: qras[i].idqra });
             }
         }
         return qrasAll;
     }
 
-    function insertNotification(idActivity, idqra, qra_owner, qso, datetime, qra_dest) {
+    function insertNotification(idActivity, idqra, qra_owner, qso, datetime, qra_dest, message) {
         console.log("insertNotification " + idqra + " " + qra_dest + qso.qra);
-        let message;
-        if (qso.qra === qra_dest)
-            message = qra_owner.qra + " liked your QSO";
-        else
-            message = qra_owner.qra + " liked a QSO created by " + qso.qra;
+
 
         let final_url = url + 'qso/' + qso.guid_URL;
         return new Promise(function(resolve, reject) {
@@ -357,7 +355,7 @@ exports.handler = async(event, context, callback) => {
                     MessageConfiguration: {
 
                         APNSMessage: {
-                            Body: title,
+                            Body: " ",
                             Title: title,
                             Action: 'OPEN_APP',
                             Url: final_url,
@@ -372,25 +370,18 @@ exports.handler = async(event, context, callback) => {
                         },
                         GCMMessage: {
                             Action: 'OPEN_APP',
-                            Body: title,
+                            Body: " ",
                             Data: {
 
                                 'QRA': qra_owner.qra,
                                 'AVATAR': qra_owner.avatarpic,
                                 'IDNOTIF': notif
                             },
-                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
-                            // qra_owner.avatarpic, ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
-                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
-                            // SilentPush: false, SmallImageIconUrl: qra_owner.avatarpic, Sound:
-                            // 'STRING_VALUE', Substitutions: {//     '<__string>': [
-                            // 'STRING_VALUE',         /* more items */     ],     /* '<__string>': ... */
-                            // }, TimeToLive: 10,
+
                             Title: title,
                             Url: final_url
                         }
-                    },
-                    TraceId: 'STRING_VALUE'
+                    }
                 }
             };
 
