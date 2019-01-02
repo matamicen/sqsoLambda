@@ -1,6 +1,10 @@
 var mysql = require('mysql');
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -15,23 +19,26 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    if (event.qso) {
-
-        qso = event.qso;
-    }
-    else {
-        qso = event.body.qso;
-    }
+    let guid = event.body.guid;
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
-        var qso = await getQso(qso);
+        var qso = {};
+        qso = await getQso(guid);
         if (!qso) {
             console.log("QSO does not exist");
             conn.destroy();
@@ -40,15 +47,6 @@ exports.handler = async(event, context, callback) => {
 
             return callback(null, response);
         }
-        var qra = await getQsoOwnerData(qso);
-        qso.qra = qra.qra;
-        qso.profilepic = qra.profilepic;
-        qso.avatarpic = qra.avatarpic;
-        qso.qras = await getQsoQras(qso);
-        qso.likes = await getQsoLikes(qso);
-        qso.comments = await getQsoComments(qso);
-        qso.media = await getQsoMedia(qso);
-        qso.links = await getQsoLinks(qso);
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
@@ -66,155 +64,30 @@ exports.handler = async(event, context, callback) => {
 
         return callback(null, response);
     }
-
-    function getQso(qso) {
-        console.log("getQso")
+    async function getQso(guid) {
+        let qso = {};
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
-            // from Congito ID");
-            // ***********************************************************
+            // Alternately, try/catch and reject(err) on catch.
             conn
-                .query('SELECT * from qsos WHERE GUID_URL = ?', qso, function(err, info) {
+                .query("CALL `qso-detail-get`(?)", guid, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
                     }
-                    resolve(JSON.parse(JSON.stringify(info))[0]);
-                    // console.log(info);
+
+                    qso = JSON.parse(JSON.stringify(info))[0][0];
+                    qso['qras'] = JSON.parse(JSON.stringify(info))[1];
+                    qso['comments'] = JSON.parse(JSON.stringify(info))[2];
+                    qso.likes = JSON.parse(JSON.stringify(info))[3];
+                    qso.media = JSON.parse(JSON.stringify(info))[4];
+                    qso.original = JSON.parse(JSON.stringify(info))[5];
+                    qso.links = JSON.parse(JSON.stringify(info))[6];
+
+                    resolve(qso);
                 });
         });
+
     }
 
-    function getQsoOwnerData(qso) {
-        console.log("getQsoOwnerData")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
-            // from Congito ID");
-            // ***********************************************************
-            conn
-                .query('SELECT qra, profilepic, avatarpic from qras WHERE idqras = ?', qso.idqra_owner, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info))[0]);
-                    // console.log(info);
-                });
-        });
-    }
-
-    function getQsoQras(qso) {
-        console.log("getQsoQras")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in ( SELECT idqra" +
-                    " FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ",
-                    qso.idqsos,
-                    function(err, info) {
-                        // Call reject on error states, call resolve with results
-                        if (err) {
-                            return reject(err);
-                        }
-                        resolve(JSON.parse(JSON.stringify(info)));
-                        // console.log(info);
-                    });
-        });
-    }
-
-    function getQsoMedia(qso) {
-        console.log("getQsoMedia")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query("SELECT * from qsos_media WHERE idqso =? ", qso.idqsos, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info)));
-                    // console.log(info);
-                });
-        });
-    }
-
-    function getQsoLikes(qso) {
-        console.log("getQsoLikes")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in (SELECT idqra " +
-                    "from qsos_likes WHERE idqso =? )",
-                    qso.idqsos,
-                    function(err, info) {
-                        // Call reject on error states, call resolve with results
-                        if (err) {
-                            return reject(err);
-                        }
-                        resolve(JSON.parse(JSON.stringify(info)));
-                        // console.log(info);
-                    });
-        });
-    }
-
-    function getQsoComments(qso) {
-        console.log("getQsoComments")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-                    "ents.idqra = qras.idqras where  idqso=?",
-                    qso.idqsos,
-                    function(err, info) {
-                        // Call reject on error states, call resolve with results
-                        if (err) {
-                            return reject(err);
-                        }
-                        resolve(JSON.parse(JSON.stringify(info)));
-                        // console.log(info);
-                    });
-        });
-    }
-
-    function getQsoLinks(qso) {
-        console.log("getQsoLinks")
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query("SELECT " +
-                    "qsos_links.*, " +
-                    "qsos.*, " +
-                    " qras.idqras, " +
-                    " qras.qra, " +
-                    " qras.profilepic, " +
-                    "qras.avatarpic " +
-                    "from qsos_links " +
-                    "inner join qsos on qsos.idqsos = qsos_links.idqso_rel " +
-                    "INNER JOIN qsos_qras ON qsos.idqsos = qsos_qras.idqso " +
-                    "inner join qras on qsos_qras.idqra = qras.idqras " +
-                    "where qsos_links.idqso = ? and qsos_qras.isOwner = 1"
-
-                    , qso.idqsos,
-                    function(err, info) {
-                        // Call reject on error states, call resolve with results
-                        if (err) {
-                            return reject(err);
-                        }
-                        resolve(JSON.parse(JSON.stringify(info)));
-                        // console.log(info);
-                    });
-        });
-    }
 };

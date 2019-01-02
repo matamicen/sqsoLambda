@@ -1,13 +1,12 @@
-var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
+const warmer = require('lambda-warmer');
 
+exports.handler = async(event, context, callback) => {
 
-exports.handler = async(event, context, callback) =>
-{
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
- 
     var response = {
         statusCode: 200,
         headers: {
@@ -20,176 +19,75 @@ exports.handler = async(event, context, callback) =>
         }
     };
 
-
-        qso = event.body.qso;
-
+    let guid = event.body.qso;
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com',  // give your RDS endpoint  here
-        user: 'sqso',  // Enter your  MySQL username
-        password: 'parquepatricios',  // Enter your  MySQL password
-        database: 'sqso'    // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
-        var qso = await getQso(qso);
-        if (!qso){
+        let qso = {};
+        qso = await getQso(guid);
+        if (!qso) {
             console.log("QSO does not exist");
             conn.destroy();
             response.body.error = 1;
             response.body.message = "QSO does not exist";
-            
-            
+
             return callback(null, response);
         }
-        var qra = await getQsoOwnerData(qso);
-        qso.qra = qra.qra;
-        qso.profilepic = qra.profilepic;
-        qso.avatarpic = qra.avatarpic;
-        qso.qras = await getQsoQras(qso);
-        qso.likes = await getQsoLikes(qso);
-        qso.comments = await getQsoComments(qso);
-        qso.media = await getQsoMedia(qso);
-        qso.links = await getQsoLinks(qso);
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
         console.log("new follower ");
         return callback(null, response);
-        
-    } catch (e) {
+
+    }
+    catch (e) {
         console.log("Error executing QSO Get Detail");
         console.log(e);
         conn.destroy();
-      
-                  response.body.error = 1;
-            response.body.message = e.message;
-            
-            
-            return callback(null, response);
+
+        response.body.error = 1;
+        response.body.message = e.message;
+
+        return callback(null, response);
+    }
+    async function getQso(guid) {
+        let lqso = {};
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            conn
+                .query("CALL `qso-detail-get-qr`(?)", guid, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    lqso = JSON.parse(JSON.stringify(info))[0][0];
+                    lqso['qras'] = JSON.parse(JSON.stringify(info))[1];
+                    lqso['comments'] = JSON.parse(JSON.stringify(info))[2];
+                    lqso.likes = JSON.parse(JSON.stringify(info))[3];
+                    lqso.media = JSON.parse(JSON.stringify(info))[4];
+                    lqso.original = JSON.parse(JSON.stringify(info))[5];
+                    lqso.links = JSON.parse(JSON.stringify(info))[6];
+
+                    resolve(lqso);
+                });
+        });
+
     }
 
-    function getQso(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info from Congito ID");            
-            //***********************************************************
-            conn.query('SELECT * from qsos WHERE GUID_QR = ?',qso, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info))[0]);
-                // console.log(info);
-            });
-        });
-    }
-    function getQsoOwnerData(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info from Congito ID");            
-            //***********************************************************
-            conn.query('SELECT qra, profilepic, avatarpic from qras WHERE idqras = ?',qso.idqra_owner, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info))[0]);
-                // console.log(info);
-            });
-        });
-    }
-    function getQsoQras(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.             
-            //***********************************************************
-            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? ) ", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
-        });
-    }
-    function getQsoMedia(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.             
-            //***********************************************************
-            conn.query("SELECT * from qsos_media WHERE idqso =? ", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
-        });
-    }
-    function getQsoLikes(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.             
-            //***********************************************************
-            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in (SELECT idqra from qsos_likes WHERE idqso =? )", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
-        });
-    }
-    function getQsoComments(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.             
-            //***********************************************************
-            conn.query("SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comments.idqra = qras.idqras where  idqso=?", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
-        });
-    }
-    async function getQsoLinks(qso) {        
-        let qsos = await getLinks(qso);
-        for (let i = 0; i < qsos.length; i++) {         
-            
-            var qra = await getQsoOwnerData(qsos[i]);
-            qsos[i].qra = qra.qra;
-            qsos[i].profilepic = qra.profilepic;
-            qsos[i].avatarpic = qra.avatarpic;
-            qsos[i].qras = await getQsoQras(qsos[i]);
-            qsos[i].likes = await getQsoLikes(qsos[i]);
-            qsos[i].comments = await getQsoComments(qsos[i]);
-            qsos[i].media = await getQsoMedia(qsos[i]);
-            
-        }
-        return qsos;        
-    }
-    function getLinks(qso) {
-        return new Promise(function (resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.             
-            //***********************************************************
-            conn.query("SELECT qsos.* from qsos_links inner join qsos on qsos_links.idqso_rel = qsos.idqsos  where  qsos_links.idqso=?", qso.idqsos, function (err, info) {
-                // Call reject on error states, call resolve with results
-                if (err) {
-                    return reject(err);
-                }
-                resolve(JSON.parse(JSON.stringify(info)));
-                // console.log(info);
-            });
-        });
-    }
 };
