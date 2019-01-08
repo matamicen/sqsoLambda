@@ -45,6 +45,7 @@ exports.handler = async(event, context, callback) => {
     });
     try {
         let qra_owner = await checkOwnerInQso(idqso, sub);
+
         if (!qra_owner) {
             console.log("Caller is not QSO Owner");
             conn.destroy();
@@ -62,7 +63,11 @@ exports.handler = async(event, context, callback) => {
 
             console.log("QSOLink Added");
             response.body.error = 0;
-            response.body.message = info;
+            response.body.message = {
+                info: info,
+                monthly_links: qra_owner.monthly_links + 1,
+                monthly_scans: qra_owner.monthly_scans
+            };
 
             return callback(null, response);
         } //ENDIF
@@ -108,7 +113,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qras.idqras, qras.qra, qras.avatarpic, qsos.guid_URL from qras inner join qsos on qras.i" +
+                .query("SELECT qras.idqras, qras.qra, qras.avatarpic, qsos.guid_URL, monthly_links, monthly_scans from qras inner join qsos on qras.i" +
                     "dqras = qsos.idqra_owner where qsos.idqsos=? and qras.idcognito=?", [
                         idqso, sub
                     ],
@@ -238,8 +243,8 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateLinksInQraOwner" + idqras + counter);
-            conn.query('UPDATE sqso.qras SET links_created = qsos_counter+? WHERE idqras=?', [
-                counter, idqras
+            conn.query('UPDATE sqso.qras SET links_created = qsos_counter+?, monthly_links = monthly_links+? WHERE idqras=?', [
+                counter, counter, idqras
             ], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
@@ -434,13 +439,7 @@ exports.handler = async(event, context, callback) => {
                                 'AVATAR': qra_owner.avatarpic,
                                 'IDNOTIF': notif
                             },
-                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
-                            // qra_owner.avatarpic, ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
-                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
-                            // SilentPush: false, SmallImageIconUrl: qra_owner.avatarpic, Sound:
-                            // 'STRING_VALUE', Substitutions: {//     '<__string>': [
-                            // 'STRING_VALUE',         /* more items */     ],     /* '<__string>': ... */
-                            // }, TimeToLive: 10,
+
                             Title: title,
                             Url: final_url
                         }
