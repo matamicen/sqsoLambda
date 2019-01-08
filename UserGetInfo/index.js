@@ -1,7 +1,11 @@
 var mysql = require('mysql');
 
+const warmer = require('lambda-warmer');
+
 exports.handler = async(event, context, callback) => {
 
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -16,18 +20,26 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    let qra = event.body.qra;
+
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
 
     try {
-        let idqras_owner = await getQRA(qra);
+        let idqras_owner = await getQRA(event.context.sub);
         if (!idqras_owner) {
             console.log("QRA does not exist");
             conn.destroy();
@@ -54,13 +66,12 @@ exports.handler = async(event, context, callback) => {
         return context.fail(response);
     }
 
-    function getQRA(qra) {
+    function getQRA(sub) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
-            // from Congito ID");
+            // Alternately, try/catch and reject(err) on catch. 
             conn
-                .query("SELECT idqras FROM qras where qras.qra=? LIMIT 1", qra, function(err, info) {
+                .query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -74,7 +85,7 @@ exports.handler = async(event, context, callback) => {
         qra_output.qra = await getQRAdata(idqra);
         qra_output.following = await getQRAfollowing(idqra);
         qra_output.followers = await getQRAfollowers(idqra);
-        qra_output.qsos = await getQRAqsos(idqra);
+        // qra_output.qsos = await getQRAqsos(idqra);
         return (qra_output);
     }
 
@@ -140,7 +151,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
             conn
-                .query("CALL qraqsofeedget2(?)", qra, function(err, info) {
+                .query("CALL qraqsofeedget2(?)", idqra, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
