@@ -83,7 +83,7 @@ exports.handler = async(event, context, callback) => {
                 if (err) {
                     return reject(err);
                 }
-                
+
                 let qsos = JSON.parse(JSON.stringify(info))[0];
                 let qso_qras = JSON.parse(JSON.stringify(info))[1];
                 let qso_comments = JSON.parse(JSON.stringify(info))[2];
@@ -91,16 +91,16 @@ exports.handler = async(event, context, callback) => {
                 let qso_media = JSON.parse(JSON.stringify(info))[4];
                 let qso_orig = JSON.parse(JSON.stringify(info))[5];
                 let qso_links = JSON.parse(JSON.stringify(info))[6];
-                
+
                 qsos.map(qso => {
                     qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
+                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos);
                     qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                     qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
                     qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
                 });
-                
+
                 resolve(qsos);
             });
         });

@@ -107,11 +107,12 @@ exports.handler = async(event, context, callback) => {
                     if (err) {
                         return reject(err);
                     }
-
+                    let qso_comments = JSON.parse(JSON.stringify(info))[2];
+                    let qso_likes = JSON.parse(JSON.stringify(info))[3];
                     lqso = JSON.parse(JSON.stringify(info))[0][0];
                     lqso['qras'] = JSON.parse(JSON.stringify(info))[1];
-                    lqso['comments'] = JSON.parse(JSON.stringify(info))[2];
-                    lqso.likes = JSON.parse(JSON.stringify(info))[3];
+                    lqso.comments = qso_comments.filter(obj => obj.idqso === lqso.idqsos);
+                    lqso.likes = qso_likes.filter(obj => obj.idqso === lqso.idqsos);
                     lqso.media = JSON.parse(JSON.stringify(info))[4];
                     lqso.original = JSON.parse(JSON.stringify(info))[5];
                     lqso.links = JSON.parse(JSON.stringify(info))[6];
