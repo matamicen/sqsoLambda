@@ -20,7 +20,7 @@ exports.handler = async(event, context, callback) => {
     };
 
     let guid = event.body.qso;
-
+    let isScan = event.body.scan;
     //***********************************************************
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
@@ -36,9 +36,11 @@ exports.handler = async(event, context, callback) => {
         password: event['stage-variables'].db_password, // Enter your  MySQL password
         database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
+    let scanCounter = 0;
     try {
         let qra = await checkQraCognito(event.context.sub);
-
+        if (isScan)
+            scanCounter = 1;
         if (!qra) {
             console.log("User does not exist");
             conn.destroy();
@@ -56,12 +58,12 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
 
-        await UpdateScansInQraOwner(qra.idqras);
+        await UpdateScansInQraOwner(qra.idqras, scanCounter);
         conn.destroy();
         response.body.error = 0;
         response.body.message = {
             qso: qso,
-            monthly_scans: qra.monthly_scans + 1,
+            monthly_scans: qra.monthly_scans + scanCounter,
             monthly_links: qra.monthly_links
         };
 
@@ -107,12 +109,10 @@ exports.handler = async(event, context, callback) => {
                     if (err) {
                         return reject(err);
                     }
-                    let qso_comments = JSON.parse(JSON.stringify(info))[2];
-                    let qso_likes = JSON.parse(JSON.stringify(info))[3];
                     lqso = JSON.parse(JSON.stringify(info))[0][0];
                     lqso['qras'] = JSON.parse(JSON.stringify(info))[1];
-                    lqso.comments = qso_comments.filter(obj => obj.idqso === lqso.idqsos);
-                    lqso.likes = qso_likes.filter(obj => obj.idqso === lqso.idqsos);
+                    lqso.comments = JSON.parse(JSON.stringify(info))[2];
+                    lqso.likes = JSON.parse(JSON.stringify(info))[3];
                     lqso.media = JSON.parse(JSON.stringify(info))[4];
                     lqso.original = JSON.parse(JSON.stringify(info))[5];
                     lqso.links = JSON.parse(JSON.stringify(info))[6];
@@ -120,15 +120,14 @@ exports.handler = async(event, context, callback) => {
                     resolve(lqso);
                 });
         });
-
     }
 
-    function UpdateScansInQraOwner(idqras) {
+    function UpdateScansInQraOwner(idqras, scanCounter) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateLinksInQraOwner" + idqras);
-            conn.query('UPDATE sqso.qras SET monthly_scans = monthly_scans+1 WHERE idqras=?', [idqras], function(err, info) {
+            conn.query('UPDATE sqso.qras SET monthly_scans = monthly_scans+? WHERE idqras=?', [scanCounter, idqras], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
