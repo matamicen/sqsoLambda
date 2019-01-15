@@ -6,7 +6,6 @@ exports.handler = (event, context, callback) => {
 
     const rekognition = new AWS.Rekognition();
 
-
     request({
         method: "GET",
         url: event.body.url,
