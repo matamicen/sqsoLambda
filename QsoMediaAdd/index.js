@@ -3,9 +3,12 @@ var mysql = require('mysql');
 var AWS = require('aws-sdk');
 AWS.config.region = 'us-east-1';
 var lambda = new AWS.Lambda();
+const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
-
+    // if a warming event
+    if (await warmer(event)) 
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -28,6 +31,7 @@ exports.handler = async(event, context, callback) => {
     var description = event.body.description;
     var height = event.body.height;
     var width = event.body.width;
+    var identityId = event.body.identityId;
 
     //***********************************************************
     if (!event['stage-variables']) {
@@ -51,8 +55,8 @@ exports.handler = async(event, context, callback) => {
         return callback(null, response);
     }
     try {
-        let idqras_owner = await checkOwnerInQso(qso, sub);
-        if (!idqras_owner) {
+        let qra_owner = await checkOwnerInQso(qso, sub);
+        if (!qra_owner) {
             console.log("Caller is not QSO Owner");
             conn.destroy();
             response.body.error = 1;
@@ -60,9 +64,12 @@ exports.handler = async(event, context, callback) => {
 
             return callback(null, response);
         }
+        
+        if (!qra_owner.identityId) 
+            await updateIdentityId(qra_owner, identityId);
+        
         if (type === 'image') {
             let image_nsfw = await checkImageNSFW(url);
-
 
             if (image_nsfw === 'true') {
                 console.log("Image is NSFW");
@@ -76,22 +83,21 @@ exports.handler = async(event, context, callback) => {
         let info;
         try {
             info = await addQSOMedia(qso, type, url, datasize, datetime, description, height, width);
-        }
-        catch (e) {
+        } catch (e) {
             console.log(e.code);
-            info = { affectedRows: 1 };
+            info = {
+                affectedRows: 1
+            };
 
         }
-        if (info.affectedRows) {
-            // await triggerSNS(qso, info.insertID, idqras_owner, qra_owner);
+        if (info.affectedRows) {            
             console.log("QSOMEDIA inserted", info.insertId);
             conn.destroy();
             response.body.error = 0;
             response.body.message = url;
             return callback(null, response);
         } //ENDIF
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing Qso Media add");
         console.log(e);
         conn.destroy();
@@ -101,70 +107,83 @@ exports.handler = async(event, context, callback) => {
         callback(null, response);
         return context.fail(response);
     }
-
-    function checkOwnerInQso(idqso, sub) {
+    function updateIdentityId(qra_owner, identityId) {
         return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("UpdateIdentityId");
+            //***********************************************************
+            conn.query('UPDATE qras SET identityId = ?  WHERE idqras=?', [
+                identityId, qra_owner.idqras
+            ], function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+                // console.log(info);
+            });
+        });
+    }
+    function checkOwnerInQso(idqso, sub) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
-                    "here qsos.idqsos=? and qras.idcognito=?", [
-                        idqso, sub
-                    ],
-                    function(err, info) {
-                        // Call reject on error states, call resolve with results
-                        if (err) {
-                            return reject(err);
-                        }
+                .query("SELECT qras.idqras, qras.identityId from qras inner join qsos on qras.idqras = q" +
+                        "sos.idqra_owner where qsos.idqsos=? and qras.idcognito=?",
+                [
+                    idqso, sub
+                ], function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
 
-                        if (info.length > 0) {
-                            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                        }
-                        else {
-                            resolve();
-                        }
-                    });
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info))[0]);
+                    } else {
+                        resolve();
+                    }
+                });
         });
     }
 
     function addQSOMedia(qso, type, url, datasize, datetime, description, height, width) {
 
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("addQSOMedia");
 
             //***********************************************************
             conn.query('INSERT INTO qsos_media SET idqso = ?, type = ?, url = ?, datasize = ?, datetime ' +
-                '= ?, description=?, height=?, width=?', [
-                    qso,
-                    type,
-                    url,
-                    datasize,
-                    datetime,
-                    description,
-                    height,
-                    width
-                ],
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    else {
-                        resolve(JSON.parse(JSON.stringify(info)));
-                    }
-                    // console.log(info);
-                });
+                    '= ?, description=?, height=?, width=?',
+            [
+                qso,
+                type,
+                url,
+                datasize,
+                datetime,
+                description,
+                height,
+                width
+            ], function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                } else {
+                    resolve(JSON.parse(JSON.stringify(info)));
+                }
+                // console.log(info);
+            });
 
         });
     }
 
-
-
     function checkImageNSFW(url) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log(" checkImage(url)");
@@ -182,14 +201,13 @@ exports.handler = async(event, context, callback) => {
                 Payload: JSON.stringify(payload)
             };
 
-            lambda.invoke(params, function(err, data) {
+            lambda.invoke(params, function (err, data) {
                 console.log("lambda");
                 if (err) {
                     console.log("error");
                     console.log(err);
                     return reject(err);
-                }
-                else {
+                } else {
                     console.log(data.Payload);
                     resolve(data.Payload);
                 }
