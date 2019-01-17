@@ -22,6 +22,7 @@ exports.handler = async(event, context, callback) => {
     };
 
     var bio = event.body.bio;
+    var datetime = new Date();
 
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
@@ -50,6 +51,13 @@ exports.handler = async(event, context, callback) => {
 
         let info = await updateBio(bio, qra_owner);
         if (info.affectedRows) {
+            let followingMe = await getFollowingMe(qra_owner.idqras);
+            console.log("saveActivity");
+            let idActivity = await saveActivity(qra_owner, datetime);
+            if (idActivity) {
+                console.log("createNotifications");
+                await createNotifications(idActivity, qra_owner, datetime, followingMe);
+            }
             qra_owner.bio = bio;
             response.body.message = qra_owner;
             response.body.error = 0;
@@ -80,7 +88,9 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateBIO");
             //***********************************************************
-            conn.query('UPDATE qras SET bio = ?  WHERE idqras=?', [bio, qra_owner.idqras], function(err, info) {
+            conn.query('UPDATE qras SET bio = ?  WHERE idqras=?', [
+                bio, qra_owner.idqras
+            ], function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -107,4 +117,85 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
+    function getFollowingMe(idqra_owner) {
+        console.log("getFollowingMe " + idqra_owner);
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qra_followers.* from qra_followers WHERE qra_followers.idqra_followed = ?", idqra_owner, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+
+                });
+        });
+    }
+
+    function saveActivity(qra_owner, datetime) {
+
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='50', datetime=?", [
+                    qra_owner.idqras, datetime
+                ], function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(JSON.parse(JSON.stringify(info)).insertId);
+                });
+        });
+    }
+
+    async function createNotifications(idActivity, qra_owner, datetime, followers) {
+
+        //inform followings the action
+        for (var i = 0; i < followers.length; i++) {
+
+            await insertNotification(idActivity, followers[i], qra_owner, datetime);
+
+        }
+    }
+
+    function insertNotification(idActivity, follower, qra_owner, datetime) {
+        console.log("InsertNotification ", follower.idqra);
+
+        let message;
+        let final_url;
+
+        message = qra_owner.qra + " updated his Biografy";
+        final_url = url + qra_owner.qra;
+
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            conn
+                .query("INSERT INTO qra_notifications SET idqra = ?, idqra_activity=?, datetime=?, activ" +
+                    "ity_type='50', qra=?,  qra_avatarpic=?, message=?, url=?", [
+                        follower.idqra,
+                        idActivity,
+                        datetime,
+                        qra_owner.qra,
+                        qra_owner.avatarpic,
+                        message,
+                        final_url
+                    ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(JSON.parse(JSON.stringify(info)).insertId);
+                    });
+        });
+    }
 };
