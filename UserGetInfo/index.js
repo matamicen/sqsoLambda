@@ -41,7 +41,8 @@ exports.handler = async(event, context, callback) => {
     try {
 
         result.qra = await getQRAinfo(event.context.sub);
-
+        const { bio, ...noBio } = result.qra;
+        result.qra = noBio;
         if (!result.qra) {
             console.log("User does not exist");
             conn.destroy();
