@@ -1,136 +1,136 @@
 var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
+const warmer = require('lambda-warmer');
 
-exports.handler = (event, context, callback) => {
+exports.handler = async(event, context, callback) => {
 
-    console.log('Received event:', JSON.stringify(event, null, 2));
-    console.log('Received context:', JSON.stringify(context, null, 2));
+    if (await warmer(event))
+        return 'warmed';
+
     context.callbackWaitsForEmptyEventLoop = false;
+    var response = {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
+    };
 
-    var Sub;
-    var post;
-    var json;
-    var qso;
-    var qras;
-    var qras_output = [];
-    var qra;
-    var msg;
-    // var count;
-    if (process.env.TEST) {
-        var test = {
-            "qso": "333",
-            "qras": [
-                "LU4fss",
-                "LU9do"
-            ]
-        };
-        qso = test.qso;
-        qras = test.qras;
-        Sub = '9970517e-ed39-4f0e-939e-930924dd7f73';
-    }
-    else {
-        qso = event.body.qso;
-        qras = event.body.qras;
-        Sub = event.context.sub;
-    }
+
+    var idqso = event.body.qso;
+    var qras = event.body.qras;
+    var sub = event.context.sub;
 
 
     //***********************************************************
-    var conn = mysql.createConnection({
-        host      :  'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com' ,  // give your RDS endpoint  here
-        user      :  'sqso' ,  // Enter your  MySQL username
-        password  :  'parquepatricios' ,  // Enter your  MySQL password
-        database  :  'sqso'    // Enter your  MySQL database name.
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
-
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-    console.log(qso);
-    conn.query ( "SELECT qras.idcognito from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos =? and qras.idcognito=?", [qso , Sub],   function(error,info) {
-        console.log("info" + JSON.stringify(info));
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
+    try {
+        let qra_owner = await checkOwnerInQso(idqso, sub);
+        if (!qra_owner) {
+            console.log("Caller is not QSO Owner");
             conn.destroy();
-            callback(error.message);
-            msg = { "error": "1",
-                "message": "Error when select QRA to get ID of Owner" };
-            return context.fail(msg);
-        } else if (info.lenght === 0){
-            console.log("Caller user is not the QSO Owner");
-            console.log('error select: ' + error);
-            callback(error);
-            msg = { "error": "1",
-                "message": "Error when select QRA to get ID of Owner" };
-            return context.fail(msg);
-        } else {
+            response.body.error = 1;
+            response.body.message = "Error when select QRA to get ID of Owner";
 
-            // 1st para in async.each() is the array of items
-            //***********************************************************
-            async.each(qras,
-                // 2nd param is the function that each item is passed to
-                function(qra, callback){
-                    console.log("GET QRA", qra.toUpperCase());
-                    //***********************************************************
-                    conn.query ( "SELECT * FROM qras where qra=? ", qra.toUpperCase(),   function(error,info) {  // querying the database
-                        console.log("info=",info);
-                        console.log(info.length);
-                        if (error) {
-                            console.log("Error When GET QRA");
-                            console.log('error select: ' + error);
-                            callback(error);
-                            return context.fail(error);
+            return callback(null, response);
+        }
+        let info = await delQsoQras(idqso, qras);
+        console.log(info)
+        if (info.affectedRows)
+            response.body.error = 0;
+        else
+            response.body.error = 1;
+
+        response.body.message = info;
+        conn.destroy();
+        console.log("qso qra deleted ");
+        return callback(null, response);
+
+    }
+    catch (e) {
+        console.log("Error executing Qso Qra Del");
+        console.log(e);
+        conn.destroy();
+
+        response.body.error = 1;
+        response.body.message = e;
+
+        return callback(null, response);
+    }
+
+    function checkOwnerInQso(idqso, sub) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
+                    "here qsos.idqsos=? and qras.idcognito=?", [
+                    idqso, sub
+                ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
                         }
-                        else if (info.length > 0) {
-                            console.log("found");
-                            json =  JSON.parse(JSON.stringify(info));
-                            idqras = json[0].idqras;
-                            post  = {"idqso": qso,
-                                "idqra": idqras};
-                            console.log("post" +  idqras + qso);
-                            //***********************************************************
-                            conn.query('DELETE FROM qsos_qras where idqso=? and idqra=?', [ qso, idqras ], function(error, info) {
-                                console.log("info" + JSON.stringify(info));
-                                if (error) {
-                                    console.log("Error when Delete QSO QRA");
-                                    console.log(error.message);
-                                    conn.destroy();
-                                    callback(error.message);
-                                    return context.fail(error);
-                                } else if (info.affectedRows > 0){
-                                    console.log("QSOQRA deleted", info.affectedRows);
-                                    // count++;
-                                    qras_output.push({"qra": qra});
-                                    callback();
-                                } else {
-                                    console.log("Error when Delete QSO QRA");
-                                    // count++;
-                                    qras_output.push({"qra": "Error when Delete QSO QRA"});
-                                    msg = { "error": "1",
-                                        "message": qras_output };
-                                    return context.succeed(msg);
-                                }
-                            }); //End Insert
-                        } else {
-                            console.log("not found");
-                            qras_output.push({"qra": "QRA not found"});
-                            msg = { "error": "1",
-                                "message": qras_output };
-                            return context.succeed(msg);
-                        }//end if
-                    }); //End Select
-                },
-                //***********************************************************
-                // 3rd param is the function to call when everything's done
-                function(err){
-                    console.log("All tasks are done now");
-                    // doSomethingOnceAllAreDone();
-                    var msg = { "error": "0",
-                        "message": qras_output  };
-                    context.succeed(msg);
-                }
-            ); //end async
-        }});
 
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0]);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+        });
+    }
+    async function delQsoQras(idqso, qras) {
+        let info;
+        for (var a = 0; a < qras.length; a++) {
+            info = await deleteQSOQRA(idqso, qras[a]);
+        }
+        return info;
+    }
+
+    function deleteQSOQRA(idqso, qra) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("DELETE q from qsos_qras as q inner join qras as r on q.idqra = r.idqras where q." +
+                    "idqso = ? and r.qra = ? ", [
+                    idqso, qra
+                ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        if (info) {
+                            resolve(JSON.parse(JSON.stringify(info)));
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+        });
+    }
 };
