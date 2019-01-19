@@ -49,7 +49,8 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
         let qso = {};
-        qso = await getQso(guid);
+        qso = await getQsoLinks(await getQso(guid));
+
         if (!qso) {
             console.log("QSO does not exist");
             conn.destroy();
@@ -98,8 +99,28 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+    async function getLink(GUID_QR) {
+        return new Promise(function(resolve, reject) {
+            let link = getQso(GUID_QR);
+
+            resolve(link);
+        });
+    }
+    async function getQsoLinks(qso) {
+        let links = qso.links;
+        const p2 = links.map(
+            async l => {
+                console.log(l.GUID_QR);
+                l = await getLink(l.GUID_QR);
+                return l;
+            });
+        qso.links = await Promise.all(p2);
+
+        return qso;
+    }
+
     async function getQso(guid) {
-        let lqso = {};
+
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -109,15 +130,30 @@ exports.handler = async(event, context, callback) => {
                     if (err) {
                         return reject(err);
                     }
-                    lqso = JSON.parse(JSON.stringify(info))[0][0];
-                    lqso['qras'] = JSON.parse(JSON.stringify(info))[1];
-                    lqso.comments = JSON.parse(JSON.stringify(info))[2];
-                    lqso.likes = JSON.parse(JSON.stringify(info))[3];
-                    lqso.media = JSON.parse(JSON.stringify(info))[4];
-                    lqso.original = JSON.parse(JSON.stringify(info))[5];
-                    lqso.links = JSON.parse(JSON.stringify(info))[6];
 
-                    resolve(lqso);
+                    let qso = JSON.parse(JSON.stringify(info))[0][0];
+                    let qso_qras = JSON.parse(JSON.stringify(info))[1];
+                    let qso_comments = JSON.parse(JSON.stringify(info))[2];
+                    let qso_likes = JSON.parse(JSON.stringify(info))[3];
+                    let qso_media = JSON.parse(JSON.stringify(info))[4];
+                    let qso_orig = JSON.parse(JSON.stringify(info))[5];
+                    let qso_links = JSON.parse(JSON.stringify(info))[6];
+
+
+                    qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+
+                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
+
+                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos);
+
+                    qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+
+                    qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
+
+                    qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+
+
+                    resolve(qso);
                 });
         });
     }
