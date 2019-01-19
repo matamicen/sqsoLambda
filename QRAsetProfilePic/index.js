@@ -22,7 +22,7 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    var url = event.body.url;
+    var url_profilepic = event.body.url;
     var url_avatar = event.body.url_avatar;
     var sub = event.context.sub;
     var mode = event.body.mode;
@@ -46,7 +46,7 @@ exports.handler = async(event, context, callback) => {
 
     try {
         if (mode === 'NSFW') {
-            let image_nsfw = await checkImageNSFW(url);
+            let image_nsfw = await checkImageNSFW(url_profilepic);
             if (image_nsfw === 'true') {
                 console.log("Image is NSFW");
                 conn.destroy();
@@ -63,7 +63,7 @@ exports.handler = async(event, context, callback) => {
                 return callback(null, response);
             }
         } else if (mode === 'PERSIST') {
-            let info = await updatePic(url, sub, url_avatar);
+            let info = await updatePic(url_profilepic, sub, url_avatar);
            
             await updateIdentityId(sub, identityId);
         
@@ -110,7 +110,7 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
-    function updatePic(url, sub, url_avatar) {
+    function updatePic(url_profilepic, sub, url_avatar) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -118,7 +118,7 @@ exports.handler = async(event, context, callback) => {
 
             //***********************************************************
             conn.query('UPDATE qras SET profilepic=?, avatarpic=? WHERE idcognito=?', [
-                url, url_avatar, sub
+                url_profilepic, url_avatar, sub
             ], function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
@@ -132,16 +132,16 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    function checkImageNSFW(url) {
+    function checkImageNSFW(url_profilepic) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log(" checkImage(url)");
+            console.log(" checkImage(url_profilepic)");
 
             //PUSH Notification
             var payload = {
                 "body": {
-                    "url": url
+                    "url": url_profilepic
                 }
             };
             var params = {
