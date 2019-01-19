@@ -1,142 +1,139 @@
-var fs = require('fs');
 var mysql = require('mysql');
-var async = require('async');
 
-exports.handler = (event, context, callback) => {
+const warmer = require('lambda-warmer');
 
+exports.handler = async(event, context, callback) => {
 
+    if (await warmer(event))
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
+    var response = {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
+    };
 
-    var sub;
-    var qso;
-    var Name;
-    var post;
-    var json;
-    var mode;
-    var band;
-    var type;
-    // var count;
-    if (process.env.TEST) {
-        var test = {  "qso": 327,
-            "mode": "mod1",
-            "band": "ba1",
-            "type": "Q1O"
-        };
-        qso = test.qso;
-        type = test.type;
-        mode = test.mode;
-        band = test.band;
-        sub = '9970517e-ed39-4f0e-939e-930924dd7f73';
+
+    var idqso = event.body.qso;
+    var type = event.body.type;
+    var mode = event.body.mode;
+    var band = event.body.band;
+    var sub = event.context.sub;
+
+
+
+
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
     }
-    else {
-        qso = event.body.qso;
-        type = event.body.type;
-        mode = event.body.mode;
-        band = event.body.band;
-        sub = event.context.sub;
-    }
-
-
-    //***********************************************************
-    var conn = mysql.createConnection({
-        host      :  'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com' ,  // give your RDS endpoint  here
-        user      :  'sqso' ,  // Enter your  MySQL username
-        password  :  'parquepatricios' ,  // Enter your  MySQL password
-        database  :  'sqso'    // Enter your  MySQL database name.
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
-
-    // GET QRA ID of OWNER
-    console.log("select QRA to get ID of Owner");
-    console.log(qso);
-    conn.query ( "SELECT qras.idcognito from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos =? and qras.idcognito=?", [qso , sub],   function(error,info) {
-        if (error) {
-            console.log("Error when select QRA to get ID of Owner");
-            console.log(error);
+    try {
+        let qra_owner = await checkOwnerInQso(idqso, sub);
+        if (!qra_owner) {
+            console.log("Caller is not QSO Owner");
             conn.destroy();
-            callback(error.message);
-            return context.fail(error);
+            response.body.error = 1;
+            response.body.message = "Error when select QRA to get ID of Owner";
+
+            return callback(null, response);
         }
+        let qso = {};
+        qso.idqsos = idqso;
+        type
+            ?
+            qso.type = type :
+            null;
+        mode
+            ?
+            qso.mode = mode :
+            null;
+        band
+            ?
+            qso.band = band :
+            null;
 
-        console.log("info" + info);
+        let info = await updateQso(qso);
+        if (info.affectedRows)
+            response.body.error = 0;
+        else
+            response.body.error = 1;
 
-        if (info.length === 0){
-            console.log("Caller user is not the QSO Owner");
-            console.log('error select: ' + error);
-            callback(error);
-            return context.fail(error);
-        }
-    });
+        response.body.message = info;
+        conn.destroy();
+        console.log("qso edit ");
+        return callback(null, response);
+    }
+    catch (e) {
+        console.log("Error executing Qso edit");
+        console.log(e);
+        conn.destroy();
 
-    async.series([
-        function(callback){
-            console.log("type" +  type);
-            if (type){
-                conn.query('update qsos set type=? where idqsos = ?',[type , qso], function(error, info) {
-                    if (error) {
-                        console.log("Error when Insert TYPE in QSO ");
-                        console.log(error.message);
-                        conn.destroy();
-                        callback(error.message);
-                        return callback.fail(error);
-                    } else{
-                        console.log("TYPE Updated inserted", type, qso);
-                        var msg = { "error": "0",
-                            "message": qso };
-                        //  context.succeed(msg);
-                        callback();
-                    }
-                }); //End Update
-            } else{
-                callback();//end type update
-            }
-        }, //end f1
-        function(callback){
-            console.log("mode" + mode);
-            if (mode){
-                conn.query('update qsos set mode=? where idqsos = ?',[mode , qso], function(error, info) {
-                    if (error) {
-                        console.log("Error when Insert MODE in QSO ");
-                        console.log(error.message);
-                        conn.destroy();
-                        callback(error.message);
-                        return callback.fail(error);
-                    } else{
-                        console.log("MODE Updated inserted", mode, qso);
-                        var msg = { "error": "0",
-                            "message": qso };
-                        callback();
-                    }
-                }); //End Update
-            } else{
-                callback();//end type update
-            }
-        }, // end f2
-        function(callback){
-            console.log("band" + band);
-            if (band){
-                conn.query('update qsos set band=? where idqsos = ?',[band , qso], function(error, info) {
-                    if (error) {
-                        console.log("Error when Insert band in QSO ");
-                        console.log(error.message);
-                        conn.destroy();
-                        callback(error.message);
-                        return callback.fail(error);
-                    } else{
-                        console.log("band Updated inserted", band, qso);
-                        var msg = { "error": "0",
-                            "message": qso };
-                        callback();
-                    }
-                }); //End Update
-            } else{
-                callback();//end type update
-            }
-        } //end f3
-        , function(err, results){
-            console.log("final task");
-            var msg = { "error": "0",
-                "message": qso };
-            context.succeed(msg);
-        }]);
+        response.body.error = 1;
+        response.body.message = e;
+
+        return callback(null, response);
+    }
+
+    function checkOwnerInQso(idqso, sub) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+
+            conn
+                .query("SELECT qras.idqras from qras inner join qsos on qras.idqras = qsos.idqra_owner w" +
+                    "here qsos.idqsos=? and qras.idcognito=?", [
+                    idqso, sub
+                ],
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        if (info.length > 0) {
+                            resolve(JSON.parse(JSON.stringify(info))[0]);
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+        });
+    }
+
+    function updateQso(qso) {
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("Update QSOS");
+            //***********************************************************
+            conn.query('UPDATE qsos SET ?  WHERE idqsos=?', [
+                qso, qso.idqsos
+            ], function(err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                resolve(JSON.parse(JSON.stringify(info)));
+
+            });
+        });
+    }
+
 
 };
