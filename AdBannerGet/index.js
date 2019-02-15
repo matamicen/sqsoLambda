@@ -30,7 +30,7 @@ exports.handler = async(event, context, callback) => {
         return callback(null, response);
     }
     let url = event['stage-variables'].url;
-    let conn = await mysql.createConnection({
+    var conn = await mysql.createConnection({
         host: event['stage-variables'].db_host, // give your RDS endpoint  here
         user: event['stage-variables'].db_user, // Enter your  MySQL username
         password: event['stage-variables'].db_password, // Enter your  MySQL password

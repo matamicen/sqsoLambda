@@ -1,75 +1,157 @@
 var mysql = require('mysql');
-
-
+var warmer = require('lambda-warmer');
+var AWS = require('aws-sdk');
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
 
 exports.handler = async(event, context, callback) => {
-
+    // if a warming event
+    if (await warmer(event))
+        return 'warmed';
 
     context.callbackWaitsForEmptyEventLoop = false;
-    console.log(event['stage-variables'].db_host);
 
-    var msg;
-    var conn = mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+    let response = {
+        statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true // Required for cookies, authorization headers with HTTPS
+        },
+        body: {
+            "error": null,
+            "message": null
+        }
+    };
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    let url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
 
-
-
-
     try {
-        let qsos_output = await getQsos();
-        console.log(qsos_output);
+        let qsos = await getQsos();
+
+        let qsos_output = await processQsos(qsos);
+
         conn.destroy();
-        context.succeed(qsos_output);
+        response.body.error = 0;
+        response.body.message = qsos_output;
+        return callback(null, response);
 
     }
     catch (e) {
         console.log("Error when select Public QSO Feed");
         console.log(e);
         conn.destroy();
-        callback(e.message);
-        msg = {
-            "error": "1",
-            "message": "Error when select Public QSO Feed"
-        };
-        return context.fail(msg);
+
+        response.body.error = 1;
+        response.body.message = e;
+        return callback(null, response);
     }
 
     async function getQsos() {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            // console.log("get QRA info from Congito ID");
-            conn.query("CALL qsopubliclistget2()", function(err, info) {
-                // Call reject on error states, call resolve with results
+
+            conn
+                .query("CALL qsopubliclistget2()", function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
+    async function processQsos(qsos) {
+        let qsos_aux = qsos[0];
+        console.log(qsos_aux)
+        let qso_qras = qsos[1];
+        let qso_comments = qsos[2];
+        let qso_likes = qsos[3];
+        let qso_media = qsos[4];
+        let qso_orig = qsos[5];
+        let qso_links = qsos[6];
+        let qsosOutput = [];
+
+
+
+        for (let i = 0; i < qsos_aux.length; i++) {
+            let qso = qsos_aux[i];
+            if (i % 2 === 0) {
+                console.log('Ad')
+                let banner = await getBanner();
+                console.log(banner);
+                qsosOutput.push({
+                    type: 'AD',
+                    source: 'FEED',
+                    qso: banner
+                });
+            }
+            qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+            qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
+            qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos);
+            qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+            qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
+            qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
+            qsosOutput.push(qso);
+        }
+
+
+        return (qsosOutput);
+
+
+
+
+    }
+
+    async function getBanner() {
+        return new Promise(function(resolve, reject) {
+
+
+            //PUSH Notification
+            let payload = {
+                "body": {
+                    "spot": 1
+                },
+                "stage-variables": {
+                    "db_host": event['stage-variables'].db_host,
+                    "db_user": event['stage-variables'].db_user,
+                    "db_password": event['stage-variables'].db_password,
+                    "db_database": event['stage-variables'].db_database,
+                    "url": event['stage-variables'].url
+                }
+            };
+            let params = {
+                FunctionName: 'ad-banner-get', // the lambda function we are going to invoke
+                InvocationType: 'RequestResponse',
+                LogType: 'Tail',
+                Payload: JSON.stringify(payload)
+            };
+
+            lambda.invoke(params, function(err, data) {
+
                 if (err) {
+                    console.log("error");
+                    console.log(err);
                     return reject(err);
                 }
-
-                let qsos = JSON.parse(JSON.stringify(info))[0];
-                let qso_qras = JSON.parse(JSON.stringify(info))[1];
-                let qso_comments = JSON.parse(JSON.stringify(info))[2];
-                let qso_likes = JSON.parse(JSON.stringify(info))[3];
-                let qso_media = JSON.parse(JSON.stringify(info))[4];
-                let qso_orig = JSON.parse(JSON.stringify(info))[5];
-                let qso_links = JSON.parse(JSON.stringify(info))[6];
-
-                qsos.map(qso => {
-                    qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                    qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
-                    qso.likes = qso_likes.filter(obj => obj.idqso === qso.idqsos);
-                    qso.media = qso_media.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                    qso.original = qso_orig.filter(obj => obj.idqsos === qso.idqso_shared);
-                    qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
-                });
-
-                resolve(qsos);
-
+                else {
+                    console.log(data.Payload);
+                    resolve(data.Payload);
+                }
             });
-        });
 
+        });
     }
 };
