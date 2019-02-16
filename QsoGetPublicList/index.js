@@ -89,16 +89,10 @@ exports.handler = async(event, context, callback) => {
             if (i % 2 === 0 && i !== 0) { //     console.log('Ad')
 
                 let banner = await getBanner(banners);
-
-
                 qsosOutput.push({
-
                     type: 'AD',
-
                     source: 'FEED',
-
                     ad: banner
-
                 });
 
             }
@@ -110,13 +104,7 @@ exports.handler = async(event, context, callback) => {
             qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
             qsosOutput.push(qso);
         }
-
-
         return (qsosOutput);
-
-
-
-
     }
 
     async function getBanner(banners) {
