@@ -1,8 +1,5 @@
 var mysql = require('mysql');
 var warmer = require('lambda-warmer');
-var AWS = require('aws-sdk');
-AWS.config.region = 'us-east-1';
-var lambda = new AWS.Lambda();
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
@@ -75,7 +72,7 @@ exports.handler = async(event, context, callback) => {
     }
     async function processQsos(qsos) {
         let qsos_aux = qsos[0];
-        console.log(qsos_aux)
+
         let qso_qras = qsos[1];
         let qso_comments = qsos[2];
         let qso_likes = qsos[3];
@@ -84,19 +81,26 @@ exports.handler = async(event, context, callback) => {
         let qso_links = qsos[6];
         let qsosOutput = [];
 
+        var banners = await getBannersInfo('1');
 
 
         for (let i = 0; i < qsos_aux.length; i++) {
             let qso = qsos_aux[i];
-            if (i % 2 === 0) {
-                console.log('Ad')
-                let banner = await getBanner();
-                console.log(banner);
+            if (i % 2 === 0 && i !== 0) { //     console.log('Ad')
+
+                let banner = await getBanner(banners);
+
+
                 qsosOutput.push({
+
                     type: 'AD',
+
                     source: 'FEED',
-                    qso: banner
+
+                    ad: banner
+
                 });
+
             }
             qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
             qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
@@ -115,43 +119,60 @@ exports.handler = async(event, context, callback) => {
 
     }
 
-    async function getBanner() {
+    async function getBanner(banners) {
+
+        let selBanner = await determineBanner(banners);
+        await updateImpressionCounter(selBanner.idad_banners);
+        return selBanner;
+
+    }
+
+    function getBannersInfo(spot) {
         return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("getBannerInfo");
+            conn.query('SELECT *' +
+                ' FROM ad_banners as b ' +
+                ' inner join ad_spots as s on b.idad_spots = s.idad_spots' +
+                ' inner join ad_customers as c on b.idad_customers = c.idad_customers ' +
+                ' where b.idad_spots=? ' +
+                ' order by percentage ASC', spot,
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
 
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
+        });
+    }
 
-            //PUSH Notification
-            let payload = {
-                "body": {
-                    "spot": 1
-                },
-                "stage-variables": {
-                    "db_host": event['stage-variables'].db_host,
-                    "db_user": event['stage-variables'].db_user,
-                    "db_password": event['stage-variables'].db_password,
-                    "db_database": event['stage-variables'].db_database,
-                    "url": event['stage-variables'].url
-                }
-            };
-            let params = {
-                FunctionName: 'ad-banner-get', // the lambda function we are going to invoke
-                InvocationType: 'RequestResponse',
-                LogType: 'Tail',
-                Payload: JSON.stringify(payload)
-            };
+    function determineBanner(banners) {
+        let max = 100;
+        let min = 1;
+        let random = Math.floor(Math.random() * (max - min)) + min;
 
-            lambda.invoke(params, function(err, data) {
+        for (let i = 0; i < banners.length; i++) {
+            if (random <= banners[i].percentage)
+                return banners[i];
+            random -= banners[i].percentage;
+        }
+    }
 
-                if (err) {
-                    console.log("error");
-                    console.log(err);
-                    return reject(err);
-                }
-                else {
-                    console.log(data.Payload);
-                    resolve(data.Payload);
-                }
-            });
+    function updateImpressionCounter(idad_banner) {
 
+        return new Promise(function(resolve, reject) {
+            conn
+                .query('UPDATE ad_banners SET impressions = impressions+1 WHERE idad_banners=?', idad_banner, function(err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
         });
     }
 };
