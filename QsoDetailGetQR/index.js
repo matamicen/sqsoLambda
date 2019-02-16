@@ -94,8 +94,12 @@ exports.handler = async(event, context, callback) => {
                     if (err) {
                         return reject(err);
                     }
-
-                    resolve(JSON.parse(JSON.stringify(info))[0]);
+                    if (info.length > 0) {
+                        resolve(JSON.parse(JSON.stringify(info))[0]);
+                    }
+                    else {
+                        resolve();
+                    }
                 });
         });
     }
@@ -107,6 +111,7 @@ exports.handler = async(event, context, callback) => {
         });
     }
     async function getQsoLinks(qso) {
+        if (!qso) return null;
         let links = qso.links;
         const p2 = links.map(
             async l => {
@@ -120,7 +125,7 @@ exports.handler = async(event, context, callback) => {
     }
 
     async function getQso(guid) {
-
+        console.log("getQso");
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -139,6 +144,7 @@ exports.handler = async(event, context, callback) => {
                     let qso_orig = JSON.parse(JSON.stringify(info))[5];
                     let qso_links = JSON.parse(JSON.stringify(info))[6];
 
+                    if (!qso) return resolve();
 
                     qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
 
