@@ -172,18 +172,17 @@ exports.handler = async(event, context, callback) => {
         let qso_links = qsos[6];
         let qsosOutput = [];
 
-        var banners = await getBannersInfo('1');
+        
                   
 
         for (let i = 0; i < qsos_aux.length; i++) {
             let qso = qsos_aux[i];
             if (i % 2 === 0 && i !== 0) { //     console.log('Ad')
 
-                let banner = await getBanner(banners);
+            
                 qsosOutput.push({
                     type: 'AD',
-                    source: 'FEED',
-                    ad: banner
+                    source: 'FEED'
                 });
 
             }
@@ -198,61 +197,6 @@ exports.handler = async(event, context, callback) => {
         return (qsosOutput);
     }
 
-    async function getBanner(banners) {
 
-        let selBanner = await determineBanner(banners);
-        await updateImpressionCounter(selBanner.idad_banners);
-        return selBanner;
-
-    }
-
-    function getBannersInfo(spot) {
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            console.log("getBannerInfo");
-            conn.query('SELECT *' +
-                ' FROM ad_banners as b ' +
-                ' inner join ad_spots as s on b.idad_spots = s.idad_spots' +
-                ' inner join ad_customers as c on b.idad_customers = c.idad_customers ' +
-                ' where b.idad_spots=? ' +
-                ' order by percentage ASC', spot,
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
-        });
-    }
-
-    function determineBanner(banners) {
-        let max = 100;
-        let min = 1;
-        let random = Math.floor(Math.random() * (max - min)) + min;
-
-        for (let i = 0; i < banners.length; i++) {
-            if (random <= banners[i].percentage)
-                return banners[i];
-            random -= banners[i].percentage;
-        }
-    }
-
-    function updateImpressionCounter(idad_banner) {
-
-        return new Promise(function(resolve, reject) {
-            conn
-                .query('UPDATE ad_banners SET impressions = impressions+1 WHERE idad_banners=?', idad_banner, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info)));
-                    // console.log(info);
-                });
-        });
-    }
 
 };
