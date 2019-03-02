@@ -32,7 +32,7 @@ exports.handler = async(event, context, callback) => {
     let uuid_QR = uuidv4();
 
     let uuid_URL = uuidv4();
-
+    let addresses = {};
 
     //***********************************************************
     if (!event['stage-variables']) {
@@ -198,12 +198,28 @@ exports.handler = async(event, context, callback) => {
         });
     }
     async function createNotifications(idActivity, qra_owner, followers, datetime, band, mode, type, uuid_URL, idqsos) {
-
+        let channel;
         for (let i = 0; i < followers.length; i++) {
             let idnotif = await insertNotification(idActivity, qra_owner, followers[i], datetime, band, mode, type, uuid_URL, idqsos);
             let qra_devices = await getDeviceInfo(followers[i].idqra);
-            if (qra_devices)
-                await sendPushNotification(qra_devices, qra_owner, datetime, band, mode, type, uuid_URL, idnotif);
+            if (qra_devices) {
+                for (let i = 0; i < qra_devices.length; i++) {
+
+                    qra_devices[i].device_type === 'android' ?
+                        channel = 'GCM' :
+                        channel = 'APNS';
+                    addresses[qra_devices[i].token] = {
+                        ChannelType: channel
+                    };
+
+
+
+
+                }
+                await sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idnotif);
+                addresses = {};
+            }
+
         }
     }
 
@@ -295,10 +311,10 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function sendPushNotification(qra_devices, qra_owner, datetime, band, mode, type, uuid_URL, idnotif) {
+    async function sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idnotif) {
         console.log("sendPushNotification");
         var date = new Date(datetime);
-        let channel;
+
         let title;
         if (type === 'QSO')
             title = qra_owner.qra + " worked a QSO";
@@ -306,62 +322,85 @@ exports.handler = async(event, context, callback) => {
             title = qra_owner.qra + " listened a QSO";
         let body = 'Mode: ' + mode + ' Band: ' + band + " QTR (UTC): " + date.getUTCHours() + ':' + date.getMinutes();
         let final_url = url + "qso/" + uuid_URL;
-        let addresses = {};
+
         let notif = JSON.stringify(idnotif);
-        for (let i = 0; i < qra_devices.length; i++) {
 
-            qra_devices[i].device_type === 'android' ?
-                channel = 'GCM' :
-                channel = 'APNS';
-            addresses = {};
-            addresses[qra_devices[i].token] = {
-                ChannelType: channel
-            };
-            var params = {
-                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
-                /* required */
-                MessageRequest: { /* required */
-                    Addresses: addresses,
 
-                    MessageConfiguration: {
+        var params = {
+            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            /* required */
+            MessageRequest: { /* required */
+                Addresses: addresses,
 
-                        APNSMessage: {
-                            Body: title,
-                            Title: title,
-                            Action: 'OPEN_APP',
-                            Url: final_url,
-                            // SilentPush: false,
-                            Data: {
+                MessageConfiguration: {
 
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            }
-                            // MediaUrl: qra_owner.avatarpic
-                        },
-                        GCMMessage: {
-                            Action: 'OPEN_APP',
-                            Body: body,
-                            Data: {
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            },
-                            Title: title,
-                            Url: final_url
+                    APNSMessage: {
+                        Body: title,
+                        Title: title,
+                        Action: 'OPEN_APP',
+                        Url: final_url,
+                        // SilentPush: false,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDNOTIF': notif
                         }
+                        // MediaUrl: qra_owner.avatarpic
                     },
-                    // TraceId: 'STRING_VALUE'
-                }
-            };
-
-            let status = await sendMessages(params);
-            console.log(status);
-            if (status !== 200) {
-                await deleteDevice(qra_devices[i].token);
-
+                    GCMMessage: {
+                        Action: 'OPEN_APP',
+                        Body: body,
+                        Data: {
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDNOTIF': notif
+                        },
+                        Title: title,
+                        Url: final_url
+                    }
+                },
+                // TraceId: 'STRING_VALUE'
             }
-        }
+        };
+
+        await sendMessages(params);
+
+
+
+    }
+
+    function sendMessages(params) {
+        console.log("sendMessages");
+        return new Promise(function(resolve, reject) {
+
+            pinpoint
+                .sendMessages(params, function(err, data) {
+
+                    if (err)
+                        return reject(err);
+
+
+                    else {
+
+                        let status;
+                        let token;
+                        for (let i = 0; i < Object.keys(data.MessageResponse.Result).length; i++) {
+
+                            // console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[i]])
+                            status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[i]].StatusCode;
+                            token = Object.keys(data.MessageResponse.Result)[i];
+                            // console.log(token + " " + status);
+                            if (status !== 200)
+                                deleteDevice(token);
+
+                        }
+
+                        resolve(status);
+                    }
+                });
+        });
+
     }
 
     function deleteDevice(token) {
@@ -380,32 +419,12 @@ exports.handler = async(event, context, callback) => {
                     else {
 
                         resolve(JSON.parse(JSON.stringify(info)));
+                        console.log(JSON.parse(JSON.stringify(info)))
                     }
 
                 });
         });
     }
 
-    function sendMessages(params) {
-        console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            pinpoint
-                .sendMessages(params, function(err, data) {
 
-                    if (err)
-                        return reject(err);
-
-
-                    else {
-                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
-
-                        resolve(status);
-                    }
-                });
-        });
-
-    }
 };
