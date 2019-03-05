@@ -86,7 +86,7 @@ exports.handler = async(event, context, callback) => {
         qra_output.following = await getQRAfollowing(idqra);
         qra_output.followers = await getQRAfollowers(idqra);
         let qsos = await getQRAqsos(idqra);
-        qra_output.qsos = await processQsos(qsos);         
+        qra_output.qsos = await processQsos(qsos);
         return (qra_output);
     }
 
@@ -112,7 +112,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
                     "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
                     " ?",
                     idqra,
@@ -132,7 +132,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
 
             conn
-                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic  from qra_followers inner joi" +
+                .query("SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
                     "n qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed =" +
                     " ?",
                     idqra,
@@ -172,14 +172,14 @@ exports.handler = async(event, context, callback) => {
         let qso_links = qsos[6];
         let qsosOutput = [];
 
-        
-                  
+
+
 
         for (let i = 0; i < qsos_aux.length; i++) {
             let qso = qsos_aux[i];
             if (i % 2 === 0 && i !== 0) { //     console.log('Ad')
 
-            
+
                 qsosOutput.push({
                     type: 'AD',
                     source: 'FEED'
