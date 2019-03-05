@@ -1,8 +1,10 @@
 var mysql = require('mysql');
 const uuidv4 = require('uuid/v4');
 var AWS = require("aws-sdk");
-var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
-const warmer = require('lambda-warmer');
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
+var pinpoint = new AWS.Pinpoint();
+var warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
@@ -212,14 +214,21 @@ exports.handler = async(event, context, callback) => {
                         ChannelType: channel
                     };
 
+                    if (Object.keys(addresses).length == 100) {
+                        await sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idActivity);
+                        addresses = {};
+                    }
 
 
 
                 }
-                await sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idnotif);
-                addresses = {};
+
             }
 
+        }
+        if (Object.keys(addresses).length > 0) {
+            await sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idActivity);
+            addresses = {};
         }
     }
 
@@ -311,7 +320,7 @@ exports.handler = async(event, context, callback) => {
                     });
         });
     }
-    async function sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idnotif) {
+    async function sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idActivity) {
         console.log("sendPushNotification");
         var date = new Date(datetime);
 
@@ -322,8 +331,7 @@ exports.handler = async(event, context, callback) => {
             title = qra_owner.qra + " listened a QSO";
         let body = 'Mode: ' + mode + ' Band: ' + band + " QTR (UTC): " + date.getUTCHours() + ':' + date.getMinutes();
         let final_url = url + "qso/" + uuid_URL;
-
-        let notif = JSON.stringify(idnotif);
+        let idAct = JSON.stringify(idActivity);
 
 
         var params = {
@@ -344,7 +352,7 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDNOTIF': notif
+                            'IDACTIVITY': idAct
                         }
                         // MediaUrl: qra_owner.avatarpic
                     },
@@ -354,7 +362,7 @@ exports.handler = async(event, context, callback) => {
                         Data: {
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDNOTIF': notif
+                            'IDACTIVITY': idAct
                         },
                         Title: title,
                         Url: final_url
@@ -364,67 +372,43 @@ exports.handler = async(event, context, callback) => {
             }
         };
 
-        await sendMessages(params);
+
+        //PUSH Notification
+
+        let payload = {
+            "body": {
+                "params": params
+            },
+            "stage-variables": {
+                "db_host": event['stage-variables'].db_host,
+                "db_user": event['stage-variables'].db_user,
+                "db_password": event['stage-variables'].db_password,
+                "db_database": event['stage-variables'].db_database
+            }
+        };
 
 
+        let paramslambda = {
+            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            LogType: 'None',
+            Payload: JSON.stringify(payload)
+        };
 
-    }
-
-    function sendMessages(params) {
-        console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-
-            pinpoint
-                .sendMessages(params, function(err, data) {
-
-                    if (err)
-                        return reject(err);
-
-
-                    else {
-
-                        let status;
-                        let token;
-                        for (let i = 0; i < Object.keys(data.MessageResponse.Result).length; i++) {
-
-                            // console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[i]])
-                            status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[i]].StatusCode;
-                            token = Object.keys(data.MessageResponse.Result)[i];
-                            // console.log(token + " " + status);
-                            if (status !== 200)
-                                deleteDevice(token);
-
-                        }
-
-                        resolve(status);
-                    }
-                });
+        lambda.invoke(paramslambda, function(err, data) {
+            // console.log("lambda");
+            if (err) {
+                console.log("error");
+                // console.log(err);
+            }
+            // else {
+            // console.log(data.Payload);
+            // }
         });
 
+
     }
 
-    function deleteDevice(token) {
-        console.log("deleteDevice");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-
-                    }
-                    else {
-
-                        resolve(JSON.parse(JSON.stringify(info)));
-                        console.log(JSON.parse(JSON.stringify(info)))
-                    }
-
-                });
-        });
-    }
 
 
 };

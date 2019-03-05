@@ -50,7 +50,7 @@ var conn = await mysql.createConnection({
         }
         let info = await setNotificationAsRead(idqras_owner, idnotif, idactivity);
         console.log(info)
-        if (info.changedRows) {
+        if (info.affectedRows) {
             response.body.error = 0;
             response.body.message = info;
         }
