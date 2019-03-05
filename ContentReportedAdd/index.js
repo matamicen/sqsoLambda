@@ -1,7 +1,10 @@
 var mysql = require('mysql');
 const warmer = require('lambda-warmer');
 var AWS = require("aws-sdk");
-var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
+
+
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
@@ -43,7 +46,7 @@ exports.handler = async(event, context, callback) => {
         password: event['stage-variables'].db_password, // Enter your  MySQL password
         database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
-
+    let addresses = {};
     try {
         let qra_owner = await checkQraCognito(sub);
         if (!qra_owner) {
@@ -107,13 +110,13 @@ exports.handler = async(event, context, callback) => {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("insertReportedContent")
+            console.log("insertReportedContent");
             let content_type;
             if (idcomment) {
-                content_type = 'COMMENT'
+                content_type = 'COMMENT';
             }
             else if (idmedia) {
-                content_type = 'MEDIA'
+                content_type = 'MEDIA';
             }
             else
                 content_type = 'QSO';
@@ -165,10 +168,6 @@ exports.handler = async(event, context, callback) => {
     async function sendPushNotification(qra_devices, qra_owner) {
         console.log("sendPushNotification");
         let channel;
-        let params;
-        let title = qra_owner.qra + " reported content";
-
-        let addresses = {};
 
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -176,105 +175,101 @@ exports.handler = async(event, context, callback) => {
                 channel = 'GCM' :
                 channel = 'APNS';
 
-            addresses = {};
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-            params = {
-                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
-                /* required */
-                MessageRequest: { /* required */
-                    Addresses: addresses,
 
-                    MessageConfiguration: {
-                        APNSMessage: {
-                            Body: title,
-                            Title: title,
-                            Action: 'OPEN_APP',
-                            // Url: final_url, SilentPush: false,
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic
-                            }
-                            // MediaUrl: qra_owner.avatarpic
-                        },
-                       
-                        GCMMessage: {
-                            Action: 'OPEN_APP',
-                            Body: title,
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic
-                            },
-                            // CollapseKey: 'STRING_VALUE', IconReference: 'STRING_VALUE', ImageIconUrl:
-                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
-                            // i con_25.png', ImageUrl: qra_owner.avatarpic, Priority: 'STRING_VALUE',
-                            // RawContent: 'STRING_VALUE', RestrictedPackageName: 'STRING_VALUE',
-                            // SilentPush: false, SmallImageIconUrl:
-                            // 'https://s3.amazonaws.com/sqso-static/res/drawable-xxxhdpi/ic_stat_ham_radio_
-                            // i con_25.png', Sound: 'STRING_VALUE', Substitutions: {//     '<__string>': [
-                            //     'STRING_VALUE',         /* more items */     ],     /* '<__string>': ...
-                            // */ }, TimeToLive: 10,
-                            Title: title
-                            // Url: final_url
-                        }
-                    },
-                    TraceId: 'STRING_VALUE'
-                }
-            };
-            // console.log(qra_devices[i]);
-            let status = await sendMessages(params);
-            console.log(status);
-            if (status !== 200) {
-                await deleteDevice(qra_devices[i].token);
-
+            if (Object.keys(addresses).length == 100) {
+                await sendMessages(qra_owner, datetime, qra_owner);
+                addresses = {};
             }
         }
+        if (Object.keys(addresses).length > 0) {
+            await sendMessages(qra_owner, datetime, qra_owner);
+            addresses = {};
+        }
+
+
     }
 
-    function deleteDevice(token) {
-        console.log("deleteDevice");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    else {
 
-                        resolve(JSON.parse(JSON.stringify(info)));
-                    }
-
-                });
-        });
-    }
-
-    function sendMessages(params) {
+    function sendMessages(qra_owner) {
         console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            pinpoint
-                .sendMessages(params, function(err, data) {
+        let title = qra_owner.qra + " reported content";
 
-                    if (err)
-                        return reject(err);
+        let params = {
+            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            /* required */
+            MessageRequest: { /* required */
+                Addresses: addresses,
 
-                    else {
-                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
+                MessageConfiguration: {
+                    APNSMessage: {
+                        Body: title,
+                        Title: title,
+                        Action: 'OPEN_APP',
 
-                        resolve(status);
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            "IDACTIVITY": "CONTENT_REPORTED"
+                        }
+
+                    },
+
+                    GCMMessage: {
+                        Action: 'OPEN_APP',
+                        Body: title,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            "IDACTIVITY": "CONTENT_REPORTED"
+                        },
+
+                        Title: title
+
                     }
-                });
-        });
+                }
 
+            }
+        };
+
+        //PUSH Notification
+
+        let payload = {
+            "body": {
+                "source": "ContentReportedAdd",
+                "params": params
+            },
+            "stage-variables": {
+                "db_host": event['stage-variables'].db_host,
+                "db_user": event['stage-variables'].db_user,
+                "db_password": event['stage-variables'].db_password,
+                "db_database": event['stage-variables'].db_database
+            }
+        };
+
+
+        let paramslambda = {
+            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            LogType: 'None',
+            Payload: JSON.stringify(payload)
+        };
+
+        lambda.invoke(paramslambda, function(err, data) {
+            // console.log("lambda");
+            if (err) {
+                console.log("error");
+                // console.log(err);
+            }
+            // else {
+            // console.log(data.Payload);
+            // }
+        });
     }
 
-}
+};

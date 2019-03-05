@@ -377,6 +377,7 @@ exports.handler = async(event, context, callback) => {
 
         let payload = {
             "body": {
+                "source": "QsoNEW",
                 "params": params
             },
             "stage-variables": {

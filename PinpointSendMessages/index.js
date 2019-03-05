@@ -38,7 +38,7 @@ exports.handler = async(event, context, callback) => {
         database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
-
+        console.log(event.body.source);
         let result = await sendMessages(event.body.params);
 
 
