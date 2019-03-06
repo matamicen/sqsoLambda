@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var AWS = require("aws-sdk");
-var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
 const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
@@ -26,7 +27,7 @@ exports.handler = async(event, context, callback) => {
     var qras = event.body.qras;
     var sub = event.context.sub;
     var datetime = new Date();
-
+    let addresses = {};
     //***********************************************************
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
@@ -101,6 +102,7 @@ exports.handler = async(event, context, callback) => {
         console.log("saveQrasInQso");
         let qras_output = [];
         let idqra;
+        let idActivity;
         // let qsoNotifications = await getQSONotifications(idqso);
         for (var i = 0; i < qras.length; i++) {
             console.log(qras[i]);
@@ -117,14 +119,14 @@ exports.handler = async(event, context, callback) => {
 
             await saveQraInQso(idqra, idqso);
 
-            let idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
+            idActivity = await saveActivity(qra_owner.idqras, idqso, idqra, datetime);
             if (idActivity) {
                 //Notify QRA added to the QSO
-                let idnotif = await saveNotification(idActivity, idqra, qra_owner, datetime, qras[i], idqso, idqra);
+                await saveNotification(idActivity, idqra, qra_owner, datetime, qras[i], idqso, idqra);
                 // if (!qsoNotifications.some(elem => elem.idqra === idqra)) {
                 let qra_devices = await getDeviceInfo(idqra);
                 if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i], idnotif);
+                    await sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras[i], idActivity);
                 // }
                 //Notify Followers
                 let followers = await getQRAFollowers(idqra);
@@ -136,6 +138,10 @@ exports.handler = async(event, context, callback) => {
                     }
                 }
             }
+        }
+        if (Object.keys(addresses).length > 0) {
+            await sendMessages(qra_owner, idActivity);
+            addresses = {};
         }
         return qras_output;
     }
@@ -181,15 +187,9 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idnotif) {
+    async function sendPushNotification(qra_devices, qra_owner, idqso, idqra, qras, idActivity) {
         console.log("sendPushNotification");
         let channel;
-        let params;
-        let title = qra_owner.qra + " included you on his new QSO";
-        let body = "Mode: " + qra_owner.mode + " Band: " + qra_owner.band;
-        let final_url = url + 'qso/' + qra_owner.guid_URL;
-        let addresses = {};
-        let notif = JSON.stringify(idnotif);
 
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -201,93 +201,95 @@ exports.handler = async(event, context, callback) => {
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-            params = {
-                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
-                /* required */
-                MessageRequest: { /* required */
-                    Addresses: addresses,
 
-                    MessageConfiguration: {
-                        APNSMessage: {
-                            Body: body,
-                            Title: title,
-                            Action: 'OPEN_APP',
-                            Url: final_url,
-                            // SilentPush: false,
-                            Data: {
 
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            }
-                            // MediaUrl: qra_owner.avatarpic,
+            if (Object.keys(addresses).length == 100) {
+                await sendMessages(qra_owner, idActivity);
+                addresses = {};
+            }
 
-                        },
+        }
 
-                        GCMMessage: {
-                            Action: 'OPEN_APP',
-                            Body: body,
-                            Data: {
+    }
 
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            },
-                            Title: title,
-                            Url: final_url
+
+
+    function sendMessages(qra_owner, idActivity) {
+        console.log("sendMessages");
+        let params;
+        let title = qra_owner.qra + " included you on his new QSO";
+        let body = "Mode: " + qra_owner.mode + " Band: " + qra_owner.band;
+        let final_url = url + 'qso/' + qra_owner.guid_URL;
+        let activ = JSON.stringify(idActivity);
+        params = {
+            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            /* required */
+            MessageRequest: { /* required */
+                Addresses: addresses,
+
+                MessageConfiguration: {
+                    APNSMessage: {
+                        Body: body,
+                        Title: title,
+                        Action: 'OPEN_APP',
+                        Url: final_url,
+                        // SilentPush: false,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDNOTIF': activ
                         }
+                        // MediaUrl: qra_owner.avatarpic,
+
+                    },
+
+                    GCMMessage: {
+                        Action: 'OPEN_APP',
+                        Body: body,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDACTIVITY"': activ
+                        },
+                        Title: title,
+                        Url: final_url
                     }
                 }
-            };
-            let status = await sendMessages(params);
-            console.log(qra_devices[i].qra + ": " +
-                status);
-            if (status !== 200) {
-                await deleteDevice(qra_devices[i].token);
-
             }
-        }
-    }
+        };
 
-    function deleteDevice(token) {
-        console.log("deleteDevice");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    else {
+        //PUSH Notification
 
-                        resolve(JSON.parse(JSON.stringify(info)));
-                    }
+        let payload = {
+            "body": {
+                "source": "QsoQraAdd",
+                "params": params
+            },
+            "stage-variables": {
+                "db_host": event['stage-variables'].db_host,
+                "db_user": event['stage-variables'].db_user,
+                "db_password": event['stage-variables'].db_password,
+                "db_database": event['stage-variables'].db_database
+            }
+        };
 
-                });
-        });
-    }
 
-    function sendMessages(params) {
-        console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            pinpoint
-                .sendMessages(params, function(err, data) {
+        let paramslambda = {
+            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            LogType: 'None',
+            Payload: JSON.stringify(payload)
+        };
 
-                    if (err)
-                        return reject(err);
+        lambda.invoke(paramslambda, function(err, data) {
 
-                    else {
-                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
+            if (err) {
+                console.log("lambda error");
+                console.log(err);
+            }
 
-                        resolve(status);
-                    }
-                });
         });
 
     }

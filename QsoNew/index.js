@@ -3,7 +3,6 @@ const uuidv4 = require('uuid/v4');
 var AWS = require("aws-sdk");
 AWS.config.region = 'us-east-1';
 var lambda = new AWS.Lambda();
-var pinpoint = new AWS.Pinpoint();
 var warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {

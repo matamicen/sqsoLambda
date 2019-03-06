@@ -261,14 +261,12 @@ exports.handler = async(event, context, callback) => {
         };
 
         lambda.invoke(paramslambda, function(err, data) {
-            // console.log("lambda");
+           
             if (err) {
-                console.log("error");
-                // console.log(err);
+                console.log("lambda error");
+                console.log(err)               
             }
-            // else {
-            // console.log(data.Payload);
-            // }
+
         });
     }
 
