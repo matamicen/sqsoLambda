@@ -1,6 +1,8 @@
 var mysql = require('mysql');
 var AWS = require("aws-sdk");
-var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
+
 const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
@@ -40,6 +42,7 @@ exports.handler = async(event, context, callback) => {
         password: event['stage-variables'].db_password, // Enter your  MySQL password
         database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
+    let addresses = {};
     try {
 
         let qra_owner = await checkQraCognito(sub);
@@ -72,7 +75,7 @@ exports.handler = async(event, context, callback) => {
 
                 console.log("Get Stakeholders of QSO");
                 qras = await getQsoStakeholders(idqso);
-                console.log(qras);
+                
                 console.log("createNotifications");
                 let message = qra_owner.qra + " liked a QSO you are participating";
                 for (let i = 0; i < qras.length; i++) {
@@ -83,9 +86,13 @@ exports.handler = async(event, context, callback) => {
                         let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
 
                         if (qra_devices)
-                            await sendPushNotification(qra_devices, qra_owner, idnotif, qso);
+                            await sendPushNotification(qra_devices, qra_owner, idnotif, qso, idActivity);
 
                     }
+                }
+                if (Object.keys(addresses).length > 0) {
+                    await sendMessages(qra_owner, qso, idActivity);
+                    addresses = {};
                 }
                 console.log("getFollowing Me " + qra_owner.idqras);
                 qras = await getFollowingMe(qra_owner.idqras);
@@ -328,14 +335,10 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
-    async function sendPushNotification(qra_devices, qra_owner, idnotif, qso) {
+    async function sendPushNotification(qra_devices, qra_owner, idnotif, qso, idActivity) {
         console.log("sendPushNotification");
         let channel;
-        let title = qra_owner.qra + " liked a QSO you are participating";
-        let final_url = url + "qso/" + qso.guid_URL;
-        console.log(final_url);
-        let addresses = {};
-        let notif = JSON.stringify(idnotif);
+
 
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -346,94 +349,92 @@ exports.handler = async(event, context, callback) => {
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-            var params = {
-                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
-                /* required */
-                MessageRequest: { /* required */
-                    Addresses: addresses,
 
-                    MessageConfiguration: {
-
-                        APNSMessage: {
-                            Body: " ",
-                            Title: title,
-                            Action: 'OPEN_APP',
-                            Url: final_url,
-                            // SilentPush: false,
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            }
-                            // MediaUrl: qra_owner.avatarpic
-                        },
-                        GCMMessage: {
-                            Action: 'OPEN_APP',
-                            Body: " ",
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            },
-
-                            Title: title,
-                            Url: final_url
-                        }
-                    }
-                }
-            };
-
-            let status = await sendMessages(params);
-            console.log(qra_devices[i].idpush_devices + " " + qra_devices[i].qra + " " + status);
-            if (status !== 200) {
-                await deleteDevice(qra_devices[i].token);
-
+            if (Object.keys(addresses).length == 100) {
+                await sendMessages(qra_owner, qso, idActivity);
+                addresses = {};
             }
+
+
         }
     }
 
-    function deleteDevice(token) {
-        console.log("deleteDevice");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
+
+    function sendMessages(qra_owner, qso, idActivity) {
+        console.log("sendMessages");
+        let title = qra_owner.qra + " liked a QSO you are participating";
+        let final_url = url + "qso/" + qso.guid_URL;
+
+
+        let activ = JSON.stringify(idActivity);
+        var params = {
+            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            /* required */
+            MessageRequest: { /* required */
+                Addresses: addresses,
+
+                MessageConfiguration: {
+
+                    APNSMessage: {
+                        Body: " ",
+                        Title: title,
+                        Action: 'OPEN_APP',
+                        Url: final_url,
+                        // SilentPush: false,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDACTIVITY"': activ
+                        }
+                        // MediaUrl: qra_owner.avatarpic
+                    },
+                    GCMMessage: {
+                        Action: 'OPEN_APP',
+                        Body: " ",
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDACTIVITY"': activ
+                        },
+
+                        Title: title,
+                        Url: final_url
                     }
-                    else {
+                }
+            }
+        };
+        //PUSH Notification
 
-                        resolve(JSON.parse(JSON.stringify(info)));
-                    }
+        let payload = {
+            "body": {
+                "source": "QsoLikeAdd",
+                "params": params
+            },
+            "stage-variables": {
+                "db_host": event['stage-variables'].db_host,
+                "db_user": event['stage-variables'].db_user,
+                "db_password": event['stage-variables'].db_password,
+                "db_database": event['stage-variables'].db_database
+            }
+        };
 
-                });
-        });
-    }
 
-    function sendMessages(params) {
-        // console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
+        let paramslambda = {
+            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            LogType: 'None',
+            Payload: JSON.stringify(payload)
+        };
 
-            pinpoint
-                .sendMessages(params, function(err, data) {
+        lambda.invoke(paramslambda, function(err, data) {
 
-                    if (err)
-                        return reject(err);
+            if (err) {
+                console.log("lambda error");
+                console.log(err);
+            }
 
-                    else {
-                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
-
-                        resolve(status);
-                    }
-                });
         });
 
     }
