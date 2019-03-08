@@ -1,8 +1,8 @@
 var fs = require('fs');
 var mysql = require('mysql');
-// var async = require('async');
 var AWS = require("aws-sdk");
-var pinpoint = new AWS.Pinpoint({ "region": 'us-east-1' });
+AWS.config.region = 'us-east-1';
+var lambda = new AWS.Lambda();
 const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
@@ -30,14 +30,7 @@ exports.handler = async(event, context, callback) => {
     var datetime = event.body.datetime;
     var sub = event.context.sub;
 
-    //***********************************************************
-    //   "stage-variables": {
-    //     "db_host": "sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com",
-    //     "db_user": "sqso",
-    //     "db_password": "parquepatricios",
-    //     "db_database": "sqso",
-    //     "url": "http://d3cevjpdxmn966.cloudfront.net/"
-    //   }
+    let addresses = {};
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
         conn.destroy();
@@ -229,7 +222,7 @@ exports.handler = async(event, context, callback) => {
             idnotif = await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime, stakeholders[i].qra, message);
             let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
             if (qra_devices)
-                await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso);
+                await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso, idActivity);
 
         }
         console.log(commentWriters);
@@ -240,7 +233,7 @@ exports.handler = async(event, context, callback) => {
                 idnotif = await insertNotification(idActivity, commentWriters[i].idqra, qra_owner, qso, datetime, commentWriters[i].qra, message);
                 let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
                 if (qra_devices)
-                    await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso);
+                    await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso, idActivity);
             }
         }
         console.log(followers);
@@ -251,6 +244,10 @@ exports.handler = async(event, context, callback) => {
                     message);
 
             }
+        }
+        if (Object.keys(addresses).length > 0) {
+            await sendMessages(qra_owner, idActivity, qso);
+            addresses = {};
         }
     }
 
@@ -365,16 +362,14 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso) {
+    async function sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso, idActivity) {
         console.log("sendPushNotification");
 
         let channel;
-        let title = qra_owner.qra + " commented a QSO you are participating";
-        let body = comment;
-        let final_url = url + "qso/" + qso.guid_URL;
 
-        let addresses = {};
-        let notif = JSON.stringify(idnotif);
+
+
+
         // console.log(qra_devices);
         for (let i = 0; i < qra_devices.length; i++) {
 
@@ -382,110 +377,96 @@ exports.handler = async(event, context, callback) => {
                 channel = 'GCM' :
                 channel = 'APNS';
 
-            addresses = {};
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-            var params = {
-                ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
-                /* required */
-                MessageRequest: { /* required */
-                    Addresses: addresses,
 
-                    MessageConfiguration: {
-
-                        APNSMessage: {
-                            Body: body,
-                            Title: title,
-                            Action: 'OPEN_APP',
-                            Url: final_url,
-                            // SilentPush: false,
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            }
-                            // MediaUrl: qra_owner.avatarpic
-                        },
-                        GCMMessage: {
-                            Action: 'OPEN_APP',
-                            Body: body,
-                            Data: {
-
-                                'QRA': qra_owner.qra,
-                                'AVATAR': qra_owner.avatarpic,
-                                'IDNOTIF': notif
-                            },
-                            // CollapseKey: 'STRING_VALUE',
-
-                            // IconReference: 'STRING_VALUE',
-                            // ImageIconUrl: qra_owner.avatarpic,
-                            // ImageUrl: qra_owner.avatarpic,
-                            // Priority: 'STRING_VALUE', RawContent: 'STRING_VALUE', RestrictedPackageName:
-                            // 'STRING_VALUE',
-                            // SilentPush: false,
-                            // SmallImageIconUrl: qra_owner.avatarpic,
-                            // Sound: 'STRING_VALUE',
-                            // Substitutions: {//     '<__string>': [         'STRING_VALUE',         /*
-                            // more items */     ],     /* '<__string>': ... */ }, TimeToLive: 10,
-                            Title: title,
-                            Url: final_url
-                        }
-                    },
-                    TraceId: 'STRING_VALUE'
-                }
-            };
-
-            let status = await sendMessages(params);
-            console.log(qra_devices[i].qra, status);
-            if (status !== 200) {
-                await deleteDevice(qra_devices[i].token);
-
+            if (Object.keys(addresses).length == 100) {
+                await sendMessages(qra_owner, idActivity, qso);
+                addresses = {};
             }
+
         }
     }
 
-    function deleteDevice(token) {
-        console.log("deleteDevice");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            conn
-                .query('DELETE FROM push_devices where token=?', token, function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    else {
 
-                        resolve(JSON.parse(JSON.stringify(info)));
-                    }
 
-                });
-        });
-    }
-
-    function sendMessages(params) {
+    function sendMessages(qra_owner, idActivity, qso) {
         console.log("sendMessages");
-        return new Promise(function(resolve, reject) {
-            // The Promise constructor should catch any errors thrown on this tick.
-            // Alternately, try/catch and reject(err) on catch.
-            // ***********************************************************
-            pinpoint
-                .sendMessages(params, function(err, data) {
+        let title = qra_owner.qra + " commented a QSO you are participating";
+        let body = comment;
+        let final_url = url + "qso/" + qso.guid_URL;
+        let activ = JSON.stringify(idActivity);
+        var params = {
+            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            /* required */
+            MessageRequest: { /* required */
+                Addresses: addresses,
 
-                    if (err)
-                        return reject(err);
+                MessageConfiguration: {
 
-                    else {
-                        var status = data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[0]].StatusCode;
+                    APNSMessage: {
+                        Body: body,
+                        Title: title,
+                        Action: 'OPEN_APP',
+                        Url: final_url,
+                        // SilentPush: false,
+                        Data: {
 
-                        resolve(status);
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDACTIVITY"': activ
+                        }
+
+                    },
+                    GCMMessage: {
+                        Action: 'OPEN_APP',
+                        Body: body,
+                        Data: {
+
+                            'QRA': qra_owner.qra,
+                            'AVATAR': qra_owner.avatarpic,
+                            'IDACTIVITY"': activ
+                        },
+
+                        Title: title,
+                        Url: final_url
                     }
-                });
-        });
+                },
+                TraceId: 'STRING_VALUE'
+            }
+        };
+        //PUSH Notification
 
+        let payload = {
+            "body": {
+                "source": "QsoCommentAdd",
+                "params": params
+            },
+            "stage-variables": {
+                "db_host": event['stage-variables'].db_host,
+                "db_user": event['stage-variables'].db_user,
+                "db_password": event['stage-variables'].db_password,
+                "db_database": event['stage-variables'].db_database
+            }
+        };
+
+
+        let paramslambda = {
+            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
+            InvocationType: 'Event',
+            LogType: 'None',
+            Payload: JSON.stringify(payload)
+        };
+
+        lambda.invoke(paramslambda, function(err, data) {
+
+            if (err) {
+                console.log("lambda error");
+                console.log(err);
+            }
+
+        });
     }
 };
