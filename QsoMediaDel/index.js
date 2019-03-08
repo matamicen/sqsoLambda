@@ -1,4 +1,3 @@
-
 var mysql = require('mysql');
 // var async = require('async');
 var AWS = require('aws-sdk');
@@ -12,12 +11,12 @@ exports.handler = (event, context, callback) => {
 
     var Sub;
 
-var qso;
+    var qso;
 
-    
 
- var idmedia;
- 
+
+    var idmedia;
+
 
     var response = {
         "message": "",
@@ -25,39 +24,38 @@ var qso;
     };
 
     // var count;
-    if (process.env.TEST) {
-        var test = {  
-          "idmedia": 1892,
-          "qso":  1307
-        };
-         idmedia = test.idmedia;
-         qso = test.qso;
-    }
-    else {
-        qso = event.body.qso;
-        idmedia = event.body.idmedia;
-    }
 
-    if (process.env.TEST){
-        Sub = "ccd403e3-06ae-4996-bb70-3aacf32a86df";
-    }else if (event.context.sub){
-        Sub = event.context.sub;
-    }
-    console.log("sub =", Sub);
+    qso = event.body.qso;
+    idmedia = event.body.idmedia;
+
+
+
+    Sub = event.context.sub;
+
+
 
 
     //***********************************************************
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
     var conn = mysql.createConnection({
-        host      :  'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com' ,  // give your RDS endpoint  here
-        user      :  'sqso' ,  // Enter your  MySQL username
-        password  :  'parquepatricios' ,  // Enter your  MySQL password
-        database  :  'sqso'    // Enter your  MySQL database name.
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
+
 
     // GET QRA ID of OWNER
     console.log("select QRA to get ID of Owner");
     console.log(qso);
-    conn.query ( "SELECT qras.idqras, qras.qra from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos =? and qras.idcognito=?", [qso , Sub],   function(error,info) {
+    conn.query("SELECT qras.idqras, qras.qra from qras inner join qsos on qras.idqras = qsos.idqra_owner where qsos.idqsos =? and qras.idcognito=?", [qso, Sub], function(error, info) {
         if (error) {
             console.log("Error when select QRA to get ID of Owner");
             console.log(error);
@@ -70,7 +68,7 @@ var qso;
 
 
 
-        if (info.length === 0){
+        if (info.length === 0) {
             console.log("Caller user is not the QSO Owner");
             response.error = 400;
             response.message = "Error: Caller user is not the QSO Owner";
@@ -92,20 +90,20 @@ var qso;
                 return context.succeed(response);
             } //End If
             console.log(info);
-              if (info.affectedRows) {
+            if (info.affectedRows) {
                 console.log("Media Deleted");
 
-                
+
                 var msg = {
                     "error": "0",
                     "message": info.message
                 };
                 console.log(info.message);
-               
+
 
 
                 //***********************************************************
-                
+
                 context.succeed(msg);
             } //ENDIF 
 

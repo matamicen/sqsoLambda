@@ -1,4 +1,3 @@
-
 var mysql = require('mysql');
 
 
@@ -7,7 +6,7 @@ exports.handler = async(event, context, callback) => {
     context.callbackWaitsForEmptyEventLoop = false;
 
     var sub;
-    var qso;    
+    var qso;
 
     var response = {
         statusCode: 200,
@@ -21,24 +20,29 @@ exports.handler = async(event, context, callback) => {
         }
     };
 
-    // var count;
-    if (event.qso) {
-        qso = event.qso;        
-        sub = event.sub;
-    } else {
-        qso = event.qso;        
-        sub = event.context.sub;
-    }
+
+    qso = event.body.qso;
+    sub = event.context.sub;
+
 
     //***********************************************************
-    var conn = await mysql.createConnection({
-        host: 'sqso.clqrfqgg8s70.us-east-1.rds.amazonaws.com', // give your RDS endpoint  here
-        user: 'sqso', // Enter your  MySQL username
-        password: 'parquepatricios', // Enter your  MySQL password
-        database: 'sqso' // Enter your  MySQL database name.
+
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
     });
     try {
-        
+
         let idqras_owner = await checkQraCognito(sub);
         if (!idqras_owner) {
             console.log("User does not exist");
@@ -48,45 +52,47 @@ exports.handler = async(event, context, callback) => {
             callback("User does not exist");
             return context.fail(response);
         }
-               
+
         let likes = await getLikes(qso);
         let found = likes.find(o => o.idqra === idqras_owner)
-        if (!found) {       
+        if (!found) {
             console.log("no like found");
             //like already exist => do not insert again
             response.body.error = 400;
             response.body.message = likes.length;
             return callback(null, response);
         }
-        
+
         info = await deleteLike(idqras_owner, qso);
-        if (info) {            
-            await UpdateLikesCounterInQso(qso);            
-                conn.destroy();
-                response.body.error = 0;
-                response.body.message = likes.length - 1;
-                console.log("likes deleted ");
-                return callback(null, response);
-            
+        if (info) {
+            await UpdateLikesCounterInQso(qso);
+            conn.destroy();
+            response.body.error = 0;
+            response.body.message = likes.length - 1;
+            console.log("likes deleted ");
+            return callback(null, response);
+
         }
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing QSO Likes Delete");
         console.log(e);
         conn.destroy();
         callback(e.message);
         response.body.error = 1;
-        response.body.message = e.message;       
-        callback(null,response);
+        response.body.message = e.message;
+        callback(null, response);
         return context.fail(response);
     }
+
     function UpdateLikesCounterInQso(qso) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateLikesCounterInQso");
             conn
-                .query('UPDATE sqso.qsos SET likes_counter = likes_counter-1  WHERE idqsos=?', qso, function (err, info) {
+                .query('UPDATE sqso.qsos SET likes_counter = likes_counter-1  WHERE idqsos=?', qso, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -96,13 +102,14 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
     function checkQraCognito(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQraCognito");
             conn
-                .query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+                .query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -111,16 +118,17 @@ exports.handler = async(event, context, callback) => {
                     resolve(JSON.parse(JSON.stringify(info))[0].idqras);
                 });
         });
-    }   
+    }
+
     function getLikes(qso) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQsoAlreadyLiked");
             conn
                 .query("SELECT * from qsos_likes WHERE idqso = ?", [
                     qso
-                ], function (err, info) {
+                ], function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -130,15 +138,16 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
     function deleteLike(idqra_owner, qso) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("insertLike");
             conn
                 .query('DELETE FROM qsos_likes where idqso=? and idqra=?', [
                     qso, idqra_owner
-                ], function (err, info) {
+                ], function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -148,6 +157,6 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
-   
+
 
 };
