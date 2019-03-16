@@ -70,8 +70,11 @@ exports.handler = async(event, context, callback) => {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
-            console.log("insertDevice")
-            
+            console.log("insertDevice");
+            console.log("token" + token);
+            console.log("idqra" + idqra);
+            console.log("device_type" + device_type);
+
             conn.query("INSERT INTO push_devices ( token, qra, device_type, datetime) VALUES( ?, ?, ?, NOW" +
                 "()) ON DUPLICATE KEY UPDATE qra = ?, datetime=NOW()", [
                     token, idqra, device_type, idqra

@@ -28,6 +28,7 @@ exports.handler = async(event, context, callback) => {
     var datetime = event.body.datetime;
     var sub = event.context.sub;
     let addresses = {};
+
     //***********************************************************
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
@@ -46,6 +47,8 @@ exports.handler = async(event, context, callback) => {
     try {
         console.log("checkQraCognito");
         let qra_owner = await checkQraCognito(sub);
+        console.log(qra_owner.qra + " follow " +
+            qra + " " + datetime);
         if (!qra_owner) {
             console.log("User does not exist");
             response.body.error = 1;
@@ -339,7 +342,7 @@ exports.handler = async(event, context, callback) => {
         console.log("sendPushNotification");
         let channel;
 
-
+        console.log(qra_devices);
 
         let activ = JSON.stringify(idActivity);
 
@@ -349,7 +352,7 @@ exports.handler = async(event, context, callback) => {
                 channel = 'GCM' :
                 channel = 'APNS';
 
-            addresses = {};
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
@@ -371,6 +374,7 @@ exports.handler = async(event, context, callback) => {
         console.log("sendMessages");
         let title = qra_owner.qra + " started to follow you ";
         let final_url = url + qra_owner.qra;
+        console.log(addresses);
         let params = {
             ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
             /* required */
@@ -383,12 +387,13 @@ exports.handler = async(event, context, callback) => {
                         Title: title,
                         Action: 'OPEN_APP',
                         Url: final_url,
+                        Priority: '10',
                         // SilentPush: false,
                         Data: {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         }
                         // MediaUrl: qra_owner.avatarpic
                     },
@@ -400,9 +405,10 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         },
-
+                        Priority: '10',
+                        "TimeToLive": 0,
                         Title: title,
                         Url: final_url
                     }
@@ -414,7 +420,7 @@ exports.handler = async(event, context, callback) => {
 
         let payload = {
             "body": {
-                "source": "QraFollowerAdd",
+                "source": "QraFollowerAdd " + qra_owner.qra + " " + qra,
                 "params": params
             },
             "stage-variables": {
@@ -428,13 +434,14 @@ exports.handler = async(event, context, callback) => {
 
         let paramslambda = {
             FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
-            InvocationType: 'Event',
-            LogType: 'None',
+            InvocationType: 'RequestResponse',
+            LogType: 'Tail',
             Payload: JSON.stringify(payload)
+
         };
 
         lambda.invoke(paramslambda, function(err, data) {
-
+            console.log(data);
             if (err) {
                 console.log("lambda error");
                 console.log(err);
