@@ -71,7 +71,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
             conn
-                .query("SELECT * FROM qras where qras.qra=? LIMIT 1", qra, function(err, info) {
+                .query("SELECT qra, firstname, lastname, avatarpic FROM qras where qras.qra=? LIMIT 1", qra, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);

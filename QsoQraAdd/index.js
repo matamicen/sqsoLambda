@@ -197,7 +197,7 @@ exports.handler = async(event, context, callback) => {
                 channel = 'GCM' :
                 channel = 'APNS';
 
-            
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
@@ -238,7 +238,9 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ                        }
+                            'IDACTIVITY': activ
+
+                        }
                         // MediaUrl: qra_owner.avatarpic,
 
                     },
@@ -250,7 +252,8 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
+
                         },
                         Title: title,
                         Url: final_url
