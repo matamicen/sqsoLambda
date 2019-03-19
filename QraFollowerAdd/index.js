@@ -439,9 +439,10 @@ exports.handler = async(event, context, callback) => {
             Payload: JSON.stringify(payload)
 
         };
-
+        console.log("invoke Lambda");
         lambda.invoke(paramslambda, function(err, data) {
             console.log(data);
+            console.log(err);
             if (err) {
                 console.log("lambda error");
                 console.log(err);
