@@ -1,4 +1,3 @@
-var fs = require('fs');
 var mysql = require('mysql');
 var AWS = require("aws-sdk");
 AWS.config.region = 'us-east-1';
@@ -10,7 +9,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
 
     var response = {
@@ -27,6 +26,7 @@ exports.handler = async(event, context, callback) => {
 
     var idqso = event.body.qso;
     var comment = event.body.comment;
+    console.log(idqso, comment);
     var datetime = event.body.datetime;
     var sub = event.context.sub;
 
@@ -215,16 +215,19 @@ exports.handler = async(event, context, callback) => {
         console.log("createNotifications");
         let idnotif;
         let message;
-
+        console.log("stakeholders");
         console.log(stakeholders);
         for (let i = 0; i < stakeholders.length; i++) {
             message = qra_owner.qra + " commented a QSO you are participating";
             idnotif = await insertNotification(idActivity, stakeholders[i].idqra, qra_owner, qso, datetime, stakeholders[i].qra, message);
             let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
+            console.log(qra_devices);
             if (qra_devices)
                 await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso, idActivity);
 
         }
+
+        console.log("commentWriters");
         console.log(commentWriters);
 
         for (let i = 0; i < commentWriters.length; i++) {
@@ -232,6 +235,7 @@ exports.handler = async(event, context, callback) => {
                 message = qra_owner.qra + " commented a QSO you are participating";
                 idnotif = await insertNotification(idActivity, commentWriters[i].idqra, qra_owner, qso, datetime, commentWriters[i].qra, message);
                 let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
+                console.log(qra_devices);
                 if (qra_devices)
                     await sendPushNotification(qra_devices, qra_owner, idnotif, comment, qso, idActivity);
             }
@@ -245,8 +249,9 @@ exports.handler = async(event, context, callback) => {
 
             }
         }
+        console.log(Object.keys(addresses).length);
         if (Object.keys(addresses).length > 0) {
-            await sendMessages(qra_owner, idActivity, qso);
+            await sendMessages(qra_owner, idActivity, qso, comment);
             addresses = {};
         }
     }
@@ -381,9 +386,9 @@ exports.handler = async(event, context, callback) => {
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
-
+            console.log(Object.keys(addresses).length);
             if (Object.keys(addresses).length == 100) {
-                await sendMessages(qra_owner, idActivity, qso);
+                await sendMessages(qra_owner, idActivity, qso, comment);
                 addresses = {};
             }
 
@@ -392,14 +397,17 @@ exports.handler = async(event, context, callback) => {
 
 
 
-    function sendMessages(qra_owner, idActivity, qso) {
+    async function sendMessages(qra_owner, idActivity, qso, comment) {
         console.log("sendMessages");
         let title = qra_owner.qra + " commented a QSO you are participating";
         let body = comment;
         let final_url = url + "qso/" + qso.guid_URL;
         let activ = JSON.stringify(idActivity);
+        console.log(addresses);
+        console.log("body")
+        console.log(body)
         var params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: "b5a50c31fd004a20a1a2fe4f357c8e89",
             /* required */
             MessageRequest: { /* required */
                 Addresses: addresses,
@@ -411,12 +419,12 @@ exports.handler = async(event, context, callback) => {
                         Title: title,
                         Action: 'OPEN_APP',
                         Url: final_url,
-                        // SilentPush: false,
+
                         Data: {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         }
 
                     },
@@ -427,21 +435,20 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         },
 
                         Title: title,
                         Url: final_url
                     }
-                },
-                TraceId: 'STRING_VALUE'
+                }
             }
         };
         //PUSH Notification
 
         let payload = {
             "body": {
-                "source": "QsoCommentAdd",
+                "source": "QsoCommentAdd" + qra_owner.qra + " " + comment,
                 "params": params
             },
             "stage-variables": {
@@ -452,21 +459,23 @@ exports.handler = async(event, context, callback) => {
             }
         };
 
-
         let paramslambda = {
-            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
-            InvocationType: 'Event',
-            LogType: 'None',
+            FunctionName: "PinpointSendMessages", // the lambda function we are going to invoke
+            InvocationType: "Event",
+            LogType: "None",
             Payload: JSON.stringify(payload)
+
         };
-
+        console.log("invoke Lambda");
         lambda.invoke(paramslambda, function(err, data) {
-
+            console.log(data);
+            console.log(err);
             if (err) {
                 console.log("lambda error");
                 console.log(err);
             }
 
         });
+
     }
 };
