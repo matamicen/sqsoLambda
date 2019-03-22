@@ -39,6 +39,8 @@ exports.handler = async(event, context, callback) => {
     });
     try {
         console.log(event.body.source);
+        console.log(event.body.params.MessageRequest.MessageConfiguration);
+
         let result = await sendMessages(event.body.params);
 
 
@@ -50,6 +52,7 @@ exports.handler = async(event, context, callback) => {
             // console.log(data.MessageResponse.Result[Object.keys(data.MessageResponse.Result)[i]])
             status = result[Object.keys(result)[i]].StatusCode;
             token = Object.keys(result)[i];
+
             console.log(token + " " + status);
             if (status !== 200)
                 await deleteDevice(token);
@@ -88,7 +91,7 @@ exports.handler = async(event, context, callback) => {
                         return reject(err);
                     else {
 
-                        resolve(data.MessageResponse.Result);
+                        return resolve(data.MessageResponse.Result);
                     }
                 });
         });

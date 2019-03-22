@@ -1,16 +1,16 @@
-// var fs = require('fs');
-var mysql = require('mysql');
+// var fs = require("fs");
+var mysql = require("mysql");
 var AWS = require("aws-sdk");
-AWS.config.region = 'us-east-1';
+AWS.config.region = "us-east-1";
 var lambda = new AWS.Lambda();
-const warmer = require('lambda-warmer');
+const warmer = require("lambda-warmer");
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
     if (await warmer(event))
-        return 'warmed';
+        return "warmed";
 
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var response = {
         statusCode: 200,
@@ -30,19 +30,19 @@ exports.handler = async(event, context, callback) => {
     let addresses = {};
 
     //***********************************************************
-    if (!event['stage-variables']) {
+    if (!event["stage-variables"]) {
         console.log("Stage Variables Missing");
         conn.destroy();
         response.body.error = 1;
         response.body.message = "Stage Variables Missing";
         return callback(null, response);
     }
-    var url = event['stage-variables'].url;
+    var url = event["stage-variables"].url;
     var conn = await mysql.createConnection({
-        host: event['stage-variables'].db_host, // give your RDS endpoint  here
-        user: event['stage-variables'].db_user, // Enter your  MySQL username
-        password: event['stage-variables'].db_password, // Enter your  MySQL password
-        database: event['stage-variables'].db_database // Enter your  MySQL database name.
+        host: event["stage-variables"].db_host, // give your RDS endpoint  here
+        user: event["stage-variables"].db_user, // Enter your  MySQL username
+        password: event["stage-variables"].db_password, // Enter your  MySQL password
+        database: event["stage-variables"].db_database // Enter your  MySQL database name.
     });
     try {
         console.log("checkQraCognito");
@@ -119,7 +119,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
-                .query('UPDATE sqso.qras SET followers_counter = followers_counter+1  WHERE idqras=?', idqras, function(err, info) {
+                .query("UPDATE sqso.qras SET followers_counter = followers_counter+1  WHERE idqras=?", idqras, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -227,7 +227,7 @@ exports.handler = async(event, context, callback) => {
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
-                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='1', ref_idqra=?, dateti" +
+                .query("INSERT INTO qra_activities SET idqra = ?, activity_type='1', ref_idqra = ? , dateti" +
                     "me=?", [
                         qra_owner.idqras, qra_follower.idqras, datetime
                     ],
@@ -348,9 +348,9 @@ exports.handler = async(event, context, callback) => {
 
         for (let i = 0; i < qra_devices.length; i++) {
 
-            qra_devices[i].device_type === 'android' ?
-                channel = 'GCM' :
-                channel = 'APNS';
+            qra_devices[i].device_type === "android" ?
+                channel = "GCM" :
+                channel = "APNS";
 
 
             addresses[qra_devices[i].token] = {
@@ -374,41 +374,38 @@ exports.handler = async(event, context, callback) => {
         console.log("sendMessages");
         let title = qra_owner.qra + " started to follow you ";
         let final_url = url + qra_owner.qra;
-        console.log(addresses);
+
         let params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: "b5a50c31fd004a20a1a2fe4f357c8e89",
             /* required */
             MessageRequest: { /* required */
                 Addresses: addresses,
 
                 MessageConfiguration: {
                     APNSMessage: {
-                        Body: " ",
+                        Body: "Click to see his profile ",
                         Title: title,
                         Action: 'OPEN_APP',
                         Url: final_url,
-                        Priority: '10',
                         // SilentPush: false,
                         Data: {
 
-                            'QRA': qra_owner.qra,
-                            'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY': activ
+                            "QRA": qra_owner.qra,
+                            "AVATAR": qra_owner.avatarpic,
+                            "IDACTIVITY": activ
                         }
                         // MediaUrl: qra_owner.avatarpic
                     },
 
                     GCMMessage: {
                         Action: 'OPEN_APP',
-                        Body: " ",
+                        Body: "Click to see his profile ",
                         Data: {
 
-                            'QRA': qra_owner.qra,
-                            'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY': activ
+                            "QRA": qra_owner.qra,
+                            "AVATAR": qra_owner.avatarpic,
+                            "IDACTIVITY": activ
                         },
-                        Priority: '10',
-                        "TimeToLive": 0,
                         Title: title,
                         Url: final_url
                     }
@@ -424,24 +421,27 @@ exports.handler = async(event, context, callback) => {
                 "params": params
             },
             "stage-variables": {
-                "db_host": event['stage-variables'].db_host,
-                "db_user": event['stage-variables'].db_user,
-                "db_password": event['stage-variables'].db_password,
-                "db_database": event['stage-variables'].db_database
+                "db_host": event["stage-variables"].db_host,
+                "db_user": event["stage-variables"].db_user,
+                "db_password": event["stage-variables"].db_password,
+                "db_database": event["stage-variables"].db_database
             }
         };
 
-
+        console.log(payload);
         let paramslambda = {
-            FunctionName: 'PinpointSendMessages', // the lambda function we are going to invoke
-            InvocationType: 'RequestResponse',
-            LogType: 'Tail',
+            FunctionName: "PinpointSendMessages", // the lambda function we are going to invoke
+            InvocationType: "Event",
+            LogType: "None",
             Payload: JSON.stringify(payload)
 
         };
         console.log("invoke Lambda");
+        console.log(params.MessageRequest);
         lambda.invoke(paramslambda, function(err, data) {
+            console.log("data")
             console.log(data);
+            console.log("err")
             console.log(err);
             if (err) {
                 console.log("lambda error");
