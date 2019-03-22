@@ -10,7 +10,7 @@ exports.handler = async(event, context, callback) => {
     // if a warming event
     if (await warmer(event))
         return 'warmed';
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var response = {
         statusCode: 200,
@@ -206,7 +206,7 @@ exports.handler = async(event, context, callback) => {
 
                 MessageConfiguration: {
                     APNSMessage: {
-                        Body: title,
+                        Body: detail,
                         Title: title,
                         Action: 'OPEN_APP',
 
@@ -221,7 +221,7 @@ exports.handler = async(event, context, callback) => {
 
                     GCMMessage: {
                         Action: 'OPEN_APP',
-                        Body: title,
+                        Body: detail,
                         Data: {
 
                             'QRA': qra_owner.qra,
@@ -261,12 +261,14 @@ exports.handler = async(event, context, callback) => {
         };
 
         lambda.invoke(paramslambda, function(err, data) {
-           
+            // console.log("lambda");
             if (err) {
-                console.log("lambda error");
-                console.log(err)               
+                console.log("error");
+                // console.log(err);
             }
-
+            // else {
+            // console.log(data.Payload);
+            // }
         });
     }
 
