@@ -9,7 +9,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var response = {
         statusCode: 200,
