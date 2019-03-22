@@ -10,7 +10,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var response = {
         statusCode: 200,
@@ -75,7 +75,7 @@ exports.handler = async(event, context, callback) => {
 
                 console.log("Get Stakeholders of QSO");
                 qras = await getQsoStakeholders(idqso);
-                
+
                 console.log("createNotifications");
                 let message = qra_owner.qra + " liked a QSO you are participating";
                 for (let i = 0; i < qras.length; i++) {
@@ -345,7 +345,7 @@ exports.handler = async(event, context, callback) => {
             qra_devices[i].device_type === 'android' ?
                 channel = 'GCM' :
                 channel = 'APNS';
-            addresses = {};
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
