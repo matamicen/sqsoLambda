@@ -3,13 +3,14 @@ const uuidv4 = require('uuid/v4');
 var AWS = require("aws-sdk");
 AWS.config.region = 'us-east-1';
 var lambda = new AWS.Lambda();
+
 var warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
     if (await warmer(event))
         return 'warmed';
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var response = {
         statusCode: 200,
@@ -22,7 +23,9 @@ exports.handler = async(event, context, callback) => {
             "message": null
         }
     };
-
+    console.log(event)
+    console.log(context)
+    console.log("QSOnew");
     let mode = event.body.mode;
     let band = event.body.band;
     let latitude = event.body.latitude;
