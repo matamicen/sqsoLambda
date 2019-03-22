@@ -9,7 +9,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = true;
 
     var qsos_rel = [];
 
@@ -406,7 +406,7 @@ exports.handler = async(event, context, callback) => {
             qra_devices[i].device_type === 'android' ?
                 channel = 'GCM' :
                 channel = 'APNS';
-            addresses = {};
+
             addresses[qra_devices[i].token] = {
                 ChannelType: channel
             };
@@ -445,7 +445,7 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         }
                         // MediaUrl: qra_owner.avatarpic
                     },
@@ -456,14 +456,14 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         },
 
                         Title: title,
                         Url: final_url
                     }
                 },
-                TraceId: 'STRING_VALUE'
+
             }
         };
 
