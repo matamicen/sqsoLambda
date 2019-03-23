@@ -10,7 +10,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return "warmed";
 
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
         statusCode: 200,
@@ -372,6 +372,8 @@ exports.handler = async(event, context, callback) => {
 
     function sendMessages(qra_owner, activ) {
         console.log("sendMessages");
+        context.callbackWaitsForEmptyEventLoop = true;
+
         let title = qra_owner.qra + " started to follow you ";
         let final_url = url + qra_owner.qra;
 

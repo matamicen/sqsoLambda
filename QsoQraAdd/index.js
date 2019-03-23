@@ -9,7 +9,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
         statusCode: 200,
@@ -216,6 +216,8 @@ exports.handler = async(event, context, callback) => {
 
     function sendMessages(qra_owner, idActivity) {
         console.log("sendMessages");
+        context.callbackWaitsForEmptyEventLoop = true;
+
         let params;
         let title = qra_owner.qra + " included you on his new QSO";
         let body = "Mode: " + qra_owner.mode + " Band: " + qra_owner.band;

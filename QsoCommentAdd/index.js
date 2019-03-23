@@ -9,7 +9,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
 
     var response = {
@@ -399,6 +399,8 @@ exports.handler = async(event, context, callback) => {
 
     async function sendMessages(qra_owner, idActivity, qso, comment) {
         console.log("sendMessages");
+        context.callbackWaitsForEmptyEventLoop = true;
+
         let title = qra_owner.qra + " commented a QSO you are participating";
         let body = comment;
         let final_url = url + "qso/" + qso.guid_URL;

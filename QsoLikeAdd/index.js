@@ -10,7 +10,7 @@ exports.handler = async(event, context, callback) => {
     if (await warmer(event))
         return 'warmed';
 
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
         statusCode: 200,
@@ -361,6 +361,8 @@ exports.handler = async(event, context, callback) => {
 
 
     function sendMessages(qra_owner, qso, idActivity) {
+        context.callbackWaitsForEmptyEventLoop = true;
+
         console.log("sendMessages");
         let title = qra_owner.qra + " liked a QSO you are participating";
         let final_url = url + "qso/" + qso.guid_URL;

@@ -10,7 +10,7 @@ exports.handler = async(event, context, callback) => {
     // if a warming event
     if (await warmer(event))
         return 'warmed';
-    context.callbackWaitsForEmptyEventLoop = true;
+    context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
         statusCode: 200,
@@ -324,6 +324,8 @@ exports.handler = async(event, context, callback) => {
     }
     async function sendPushNotification(qra_owner, datetime, band, mode, type, uuid_URL, idActivity) {
         console.log("sendPushNotification");
+        context.callbackWaitsForEmptyEventLoop = true;
+
         var date = new Date(datetime);
 
         let title;
