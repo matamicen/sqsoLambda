@@ -385,7 +385,7 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         }
                         // MediaUrl: qra_owner.avatarpic
                     },
@@ -396,7 +396,7 @@ exports.handler = async(event, context, callback) => {
 
                             'QRA': qra_owner.qra,
                             'AVATAR': qra_owner.avatarpic,
-                            'IDACTIVITY"': activ
+                            'IDACTIVITY': activ
                         },
 
                         Title: title,
