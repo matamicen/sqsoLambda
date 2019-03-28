@@ -3,7 +3,7 @@ const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
 
-    if (await warmer(event))
+    if (await warmer(event)) 
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -39,7 +39,7 @@ exports.handler = async(event, context, callback) => {
     let scanCounter = 0;
     try {
         let qra = await checkQraCognito(event.context.sub);
-        if (isScan)
+        if (isScan) 
             scanCounter = 1;
         if (!qra) {
             console.log("User does not exist");
@@ -50,7 +50,7 @@ exports.handler = async(event, context, callback) => {
         }
         let qso = {};
         qso = await getQsoLinks(await getQso(guid));
-
+        updateViewsCounterInQsos(qso.idqsos);
         if (!qso) {
             console.log("QSO does not exist");
             conn.destroy();
@@ -70,8 +70,7 @@ exports.handler = async(event, context, callback) => {
 
         return callback(null, response);
 
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing QSO Get Detail");
         console.log(e);
         conn.destroy();
@@ -83,42 +82,39 @@ exports.handler = async(event, context, callback) => {
     }
 
     function checkQraCognito(sub) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQraCognito");
-            conn.query("SELECT qras.idqras, monthly_scans, monthly_links FROM qras where idcognito=? ",
-                sub,
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    if (info.length > 0) {
-                        resolve(JSON.parse(JSON.stringify(info))[0]);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
+            conn.query("SELECT qras.idqras, monthly_scans, monthly_links FROM qras where idcognito=? ", sub, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+                if (info.length > 0) {
+                    resolve(JSON.parse(JSON.stringify(info))[0]);
+                } else {
+                    resolve();
+                }
+            });
         });
     }
     async function getLink(GUID_QR) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             let link = getQso(GUID_QR);
 
             resolve(link);
         });
     }
     async function getQsoLinks(qso) {
-        if (!qso) return null;
+        if (!qso) 
+            return null;
         let links = qso.links;
-        const p2 = links.map(
-            async l => {
-                console.log(l.GUID_QR);
-                l = await getLink(l.GUID_QR);
-                return l;
-            });
+        const p2 = links.map(async l => {
+            console.log(l.GUID_QR);
+            l = await getLink(l.GUID_QR);
+            return l;
+        });
         qso.links = await Promise.all(p2);
 
         return qso;
@@ -126,11 +122,11 @@ exports.handler = async(event, context, callback) => {
 
     async function getQso(guid) {
         console.log("getQso");
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             conn
-                .query("CALL `qso-detail-get-qr`(?)", guid, function(err, info) {
+                .query("CALL `qso-detail-get-qr`(?)", guid, function (err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -144,8 +140,9 @@ exports.handler = async(event, context, callback) => {
                     let qso_orig = JSON.parse(JSON.stringify(info))[5];
                     let qso_links = JSON.parse(JSON.stringify(info))[6];
 
-                    if (!qso) return resolve();
-
+                    if (!qso) 
+                        return resolve();
+                    
                     qso.qras = qso_qras.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
 
                     qso.comments = qso_comments.filter(obj => obj.idqso === qso.idqsos);
@@ -158,18 +155,34 @@ exports.handler = async(event, context, callback) => {
 
                     qso.links = qso_links.filter(obj => obj.idqso === qso.idqsos || obj.idqso === qso.idqso_shared);
 
-
                     resolve(qso);
                 });
         });
     }
-
+    function updateViewsCounterInQsos(idqsos) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qsos SET views_counter = views_counter+1  WHERE idqsos=?", idqsos, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
+        });
+    }
     function UpdateScansInQraOwner(idqras, scanCounter) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateLinksInQraOwner" + idqras);
-            conn.query('UPDATE sqso.qras SET monthly_scans = monthly_scans+? WHERE idqras=?', [scanCounter, idqras], function(err, info) {
+            conn.query('UPDATE sqso.qras SET monthly_scans = monthly_scans+? WHERE idqras=?', [
+                scanCounter, idqras
+            ], function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);

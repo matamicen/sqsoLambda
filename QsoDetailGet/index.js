@@ -3,7 +3,7 @@ const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
 
-    if (await warmer(event))
+    if (await warmer(event)) 
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -47,14 +47,14 @@ exports.handler = async(event, context, callback) => {
 
             return callback(null, response);
         }
+        updateViewsCounterInQso(qso.idqsos)
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
         console.log("new follower ");
         return callback(null, response);
 
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing QSO Get Detail");
         console.log(e);
         conn.destroy();
@@ -66,11 +66,11 @@ exports.handler = async(event, context, callback) => {
     }
     async function getQso(guid) {
         let qso = {};
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             conn
-                .query("CALL `qso-detail-get`(?)", guid, function(err, info) {
+                .query("CALL `qso-detail-get`(?)", guid, function (err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -90,5 +90,20 @@ exports.handler = async(event, context, callback) => {
         });
 
     }
-
+    function updateViewsCounterInQsos(idqsos) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qsos SET views_counter = views_counter+1  WHERE idqsos=?", idqsos, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
+        });
+    }
 };
