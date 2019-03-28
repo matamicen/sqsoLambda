@@ -64,7 +64,7 @@ exports.handler = async(event, context, callback) => {
 
             return callback(null, response);
         }
-        
+
         if (!qra_owner.identityId) 
             await updateIdentityId(qra_owner, identityId);
         
@@ -72,6 +72,7 @@ exports.handler = async(event, context, callback) => {
             let image_nsfw = await checkImageNSFW(url);
 
             if (image_nsfw === 'true') {
+                await updateNSFWCounterInQra(qra_owner.idqras);
                 console.log("Image is NSFW");
                 conn.destroy();
                 response.body.error = 1;
@@ -90,7 +91,7 @@ exports.handler = async(event, context, callback) => {
             };
 
         }
-        if (info.affectedRows) {            
+        if (info.affectedRows) {
             console.log("QSOMEDIA inserted", info.insertId);
             conn.destroy();
             response.body.error = 0;
@@ -107,15 +108,16 @@ exports.handler = async(event, context, callback) => {
         callback(null, response);
         return context.fail(response);
     }
+
     function updateIdentityId(qra_owner, identityId) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("UpdateIdentityId");
             //***********************************************************
             conn.query('UPDATE qras SET identityId = ?  WHERE idqras=?', [
                 identityId, qra_owner.idqras
-            ], function(err, info) {
+            ], function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -125,6 +127,7 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
+
     function checkOwnerInQso(idqso, sub) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -216,4 +219,20 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
+    function updateNSFWCounterInQra(idqras) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qras SET nsfw_counter = nsfw_counter+1  WHERE idqras=?", idqras, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
+        });
+    }
 };
