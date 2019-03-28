@@ -26,7 +26,9 @@ exports.handler = async(event, context, callback) => {
     };
 
     var idqso = event.body.qso;
+    console.log("qso " + idqso);
     qsos_rel = event.body.qsos_rel;
+    console.log("rel " + qsos_rel);
     var sub = event.context.sub;
     var datetime = new Date();
     let addresses = {};
@@ -47,7 +49,7 @@ exports.handler = async(event, context, callback) => {
     });
     try {
         let qra_owner = await checkOwnerInQso(idqso, sub);
-
+        console.log("owner " + qra_owner.idqras);
         if (!qra_owner) {
             console.log("Caller is not QSO Owner");
             conn.destroy();
@@ -72,8 +74,19 @@ exports.handler = async(event, context, callback) => {
                 monthly_scans: qra_owner.monthly_scans
             };
 
+            return response;
+        }
+        else {
+            console.log("QSOLink Added");
+            response.body.error = 1;
+            response.body.message = {
+                // info: info,// monthly_links: qra_owner.monthly_links + 1,
+
+                // monthly_scans: qra_owner.monthly_scans
+            };
+
             return callback(null, response);
-        } //ENDIF
+        }
 
     }
     catch (e) {
@@ -265,6 +278,7 @@ exports.handler = async(event, context, callback) => {
 
     function getFollowingQRA(idqra_owner) {
         return new Promise(function(resolve, reject) {
+
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
 
@@ -398,10 +412,11 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    async function sendPushNotification(qra_devices, qra_owner, idnotif, qso, idActivity) {
+    function sendPushNotification(qra_devices, qra_owner, idnotif, qso, idActivity) {
         console.log("sendPushNotification");
         let channel;
-
+        context.callbackWaitsForEmptyEventLoop = true;
+        console.log(qra_devices);
         for (let i = 0; i < qra_devices.length; i++) {
 
             qra_devices[i].device_type === 'android' ?
@@ -414,7 +429,7 @@ exports.handler = async(event, context, callback) => {
 
 
             if (Object.keys(addresses).length == 100) {
-                await sendMessages(qra_owner, qso, idActivity);
+                sendMessages(qra_owner, qso, idActivity);
                 addresses = {};
             }
 
@@ -423,7 +438,7 @@ exports.handler = async(event, context, callback) => {
 
 
     function sendMessages(qra_owner, qso, idActivity) {
-        context.callbackWaitsForEmptyEventLoop = true;
+
 
         console.log("sendMessages");
         let title = qra_owner.qra + " linked a QSO you are participating";
