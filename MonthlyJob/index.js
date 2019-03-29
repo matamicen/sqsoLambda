@@ -3,7 +3,7 @@ const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
 
-    if (await warmer(event))
+    if (await warmer(event)) 
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -42,8 +42,7 @@ exports.handler = async(event, context, callback) => {
         console.log("new follower ");
         return callback(null, response);
 
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing Monthly Job");
         console.log(e);
         conn.destroy();
@@ -55,11 +54,13 @@ exports.handler = async(event, context, callback) => {
     }
     async function deleteCounters() {
 
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             conn
-                .query("UPDATE qras SET monthly_links=0, monthly_scans=0, monthly_qra_views=0, monthly_qso_views=0", function(err, info) {
+                .query("UPDATE qras SET monthly_links=0, monthly_scans=0, monthly_qra_views=0, monthly_q" +
+                        "so_views=0, monthly_qso_new=0, monthly_qslcard=0, monthly_audio_play=0",
+                function (err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
