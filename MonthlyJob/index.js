@@ -59,7 +59,7 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             conn
-                .query("UPDATE qras SET monthly_links=0, monthly_scans=0", function(err, info) {
+                .query("UPDATE qras SET monthly_links=0, monthly_scans=0, monthly_qra_views=0, monthly_qso_views=0", function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);

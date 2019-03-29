@@ -21,7 +21,7 @@ exports.handler = async(event, context, callback) => {
     };
 
     let qra = event.body.qra;
-
+    let sub = event.context.sub;
     //***********************************************************
     if (!event['stage-variables']) {
         console.log("Stage Variables Missing");
@@ -50,7 +50,9 @@ exports.handler = async(event, context, callback) => {
             return context.fail(response);
         }
         let qra_output = await getQRAinfo(idqras_owner);
-        updateViewsCounterInQra(idqras_owner);
+        await updateViewsCounterInQra(idqras_owner);
+        if (sub) 
+            await updateMonthlyViewsCounterInQra(sub);
         console.log(qra_output);
         conn.destroy();
         response.body.error = 0;
@@ -78,6 +80,23 @@ exports.handler = async(event, context, callback) => {
                         return reject(err);
                     }
                     resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+                });
+        });
+    }
+
+    function updateMonthlyViewsCounterInQra(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qras SET monthly_qra_views = monthly_qra_views+1  WHERE idcognito=?", sub, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
                 });
         });
     }
