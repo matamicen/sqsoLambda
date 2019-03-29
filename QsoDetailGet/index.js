@@ -47,7 +47,9 @@ exports.handler = async(event, context, callback) => {
 
             return callback(null, response);
         }
-        updateViewsCounterInQso(qso.idqsos)
+        await updateViewsCounterInQsos(qso.idqsos);
+        if (event.context.sub) 
+            await updateMonthlyViewsCounterInQra(event.context.sub);
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
@@ -90,6 +92,24 @@ exports.handler = async(event, context, callback) => {
         });
 
     }
+
+    function updateMonthlyViewsCounterInQra(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qras SET monthly_qso_views = monthly_qso_views+1  WHERE idcognito=?", sub, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
+        });
+    }
+
     function updateViewsCounterInQsos(idqsos) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
