@@ -38,11 +38,14 @@ exports.handler = async(event, context, callback) => {
     var result = {};
     try {
 
-        result.qra = await getQRAinfo(event.context.sub);
+        let qra = await getQRAinfo(event.context.sub);
         const {
             bio,
+            idqras,
+            idcognito,
+            identityId,
             ...noBio
-        } = result.qra;
+        } = qra;
         result.qra = noBio;
         if (!result.qra) {
             console.log("User does not exist");
@@ -53,11 +56,12 @@ exports.handler = async(event, context, callback) => {
 
         }
 
-        result.following = await getFollowings(result.qra);
+        result.following = await getFollowings(qra);
 
-        result.followers = await getFollowers(result.qra);
-        result.notifications = await getNotifications(result.qra);
-        await updateLastLoginInQra(result.qra.idqras)
+        result.followers = await getFollowers(qra);
+        result.notifications = await getNotifications(qra);
+        result.accounttype = await getAccountInfo(qra);
+        await updateLastLoginInQra(qra.idqras);
         conn.destroy();
         response.body.error = 0;
         response.body.message = result;
@@ -109,6 +113,23 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
+    function getAccountInfo(qra) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            console.log("get Account Info");
+
+            conn.query("SELECT * from account_types where idaccount_types = ?", qra.account_type, function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
+
+                resolve(JSON.parse(JSON.stringify(info)));
+            });
+        });
+    }
+
     function getFollowers(qra) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -146,6 +167,7 @@ exports.handler = async(event, context, callback) => {
             });
         });
     }
+
     function updateLastLoginInQra(idqra) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
