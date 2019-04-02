@@ -55,12 +55,17 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
 
         }
+        let account_type = await getAccountInfo(qra);
+        result.qra = {
+            ...result.qra,
+            account_type
+        };
 
         result.following = await getFollowings(qra);
 
         result.followers = await getFollowers(qra);
         result.notifications = await getNotifications(qra);
-        result.accounttype = await getAccountInfo(qra);
+
         await updateLastLoginInQra(qra.idqras);
         conn.destroy();
         response.body.error = 0;
@@ -125,7 +130,7 @@ exports.handler = async(event, context, callback) => {
                     return reject(err);
                 }
 
-                resolve(JSON.parse(JSON.stringify(info)));
+                resolve(JSON.parse(JSON.stringify(info))[0]);
             });
         });
     }
