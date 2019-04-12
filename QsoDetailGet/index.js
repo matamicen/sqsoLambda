@@ -48,8 +48,10 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
         await updateViewsCounterInQsos(qso.idqsos);
-        if (event.context.sub) 
+        if (event.context.sub) {
+            qso.monthly_qso_views = await getMonthlyViewsCounter(event.context.sub) + 1;
             await updateMonthlyViewsCounterInQra(event.context.sub);
+        }
         conn.destroy();
         response.body.error = 0;
         response.body.message = qso;
@@ -91,6 +93,22 @@ exports.handler = async(event, context, callback) => {
                 });
         });
 
+    }
+
+    function getMonthlyViewsCounter(sub) {
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+            // from Congito ID");
+            conn
+                .query("SELECT monthly_qso_views FROM qras where idcognito=?", sub, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info))[0].monthly_qso_views);
+                });
+        });
     }
 
     function updateMonthlyViewsCounterInQra(sub) {
