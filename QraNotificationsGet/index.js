@@ -1,6 +1,11 @@
 var mysql = require('mysql');
 
+const warmer = require('lambda-warmer');
+
 exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event)) 
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -17,21 +22,21 @@ exports.handler = async(event, context, callback) => {
 
     var sub = event.context.sub;
 
- //***********************************************************
- if (!event['stage-variables']) {
-    console.log("Stage Variables Missing");
-    conn.destroy();
-    response.body.error = 1;
-    response.body.message = "Stage Variables Missing";
-    return callback(null, response);
-}
-var url = event['stage-variables'].url;
-var conn = await mysql.createConnection({
-    host: event['stage-variables'].db_host, // give your RDS endpoint  here
-    user: event['stage-variables'].db_user, // Enter your  MySQL username
-    password: event['stage-variables'].db_password, // Enter your  MySQL password
-    database: event['stage-variables'].db_database // Enter your  MySQL database name.
-});
+    //***********************************************************
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = await mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
+    });
     try {
         let idqras_owner = await getQRA(sub);
         if (!idqras_owner) {
@@ -48,8 +53,7 @@ var conn = await mysql.createConnection({
         conn.destroy();
         return callback(null, response);
 
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing GetNotifications");
         console.log(e);
         conn.destroy();
@@ -60,11 +64,11 @@ var conn = await mysql.createConnection({
     }
 
     function getQRA(sub) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRA");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -76,23 +80,22 @@ var conn = await mysql.createConnection({
     }
 
     function getNotifications(idqra) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getNotifications");
             console.log(idqra);
-            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? " +
-                "order by qra_notifications.datetime DESC",
-                idqra,
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
+            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? order by qra_n" +
+                    "otifications.datetime DESC",
+            idqra, function (err, info) {
+                // Call reject on error states, call resolve with results
 
-                    if (err) {
-                        return reject(err);
-                    }
+                if (err) {
+                    return reject(err);
+                }
 
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
+                resolve(JSON.parse(JSON.stringify(info)));
+            });
         });
     }
 };
