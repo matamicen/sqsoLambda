@@ -60,6 +60,7 @@ exports.handler = async(event, context, callback) => {
         }
 
         await UpdateScansInQraOwner(qra.idqras, scanCounter);
+        await updateScansCounterInQso(qso.idqsos);
         conn.destroy();
         response.body.error = 0;
         response.body.message = {
@@ -159,6 +160,7 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
     function updateViewsCounterInQsos(idqsos) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
@@ -175,6 +177,25 @@ exports.handler = async(event, context, callback) => {
                 });
         });
     }
+
+    function updateScansCounterInQso(idqso) {
+        console.log("updateScansCounterInQra");
+        return new Promise(function (resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qsos SET scans_counter = scans_counter+1  WHERE idqsos=?", idqso, function (err, info) {
+                    // Call reject on error states, call resolve with results
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(JSON.stringify(info)));
+                    // console.log(info);
+                });
+        });
+    }
+
     function UpdateScansInQraOwner(idqras, scanCounter) {
         return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
