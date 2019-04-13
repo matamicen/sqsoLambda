@@ -1,35 +1,44 @@
 const request = require('request');
 const AWS = require('aws-sdk');
+const rekognition = new AWS.Rekognition();
+const warmer = require('lambda-warmer');
 
-exports.handler = (event, context, callback) => {
+exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event)) 
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
-    const rekognition = new AWS.Rekognition();
+    let result = await isNSFW(event.body.url);
+    console.log(result);
+    var isNotOk = result.length > 0;
+    console.log(isNotOk);
+    return callback(null, isNotOk);
 
-    request({
-        method: "GET",
-        url: event.body.url,
-        encoding: null
-    }, (err, response, body) => {
-        if (err) {
-            console.log(err);
-            return context.fail(err);
-        }
+    function isNSFW(url) {
+        console.log(url);
+        return new Promise(function (resolve, reject) {
+            request({
+                method: "GET",
+                url: url,
+                encoding: null
+            }, (err, response, body) => {
+                if (err) {
+                    reject(err);
+                }
 
-        rekognition.detectModerationLabels({
-            Image: {
-                Bytes: body
-            },
-            MinConfidence: 50.0
-        }, (err, data) => {
-            if (err) {
-                return context.fail(err);
-            }
-            console.log(data.ModerationLabels);
-
-            var isNotOk = data.ModerationLabels.length > 0;
-            console.log(isNotOk)
-            return callback(null, isNotOk);
+                rekognition.detectModerationLabels({
+                    Image: {
+                        Bytes: body
+                    },
+                    MinConfidence: 50.0
+                }, (err, data) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    resolve(data.ModerationLabels);
+                });
+            });
         });
-    });
+    }
 };
