@@ -4,7 +4,7 @@ const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
     // if a warming event
-    if (await warmer(event)) 
+    if (await warmer(event))
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -20,6 +20,7 @@ exports.handler = async(event, context, callback) => {
         }
     };
     let idMedia = event.body.idmedia;
+    let idqso = event.body.idqso;
 
     //***********************************************************
     if (!event['stage-variables']) {
@@ -52,15 +53,18 @@ exports.handler = async(event, context, callback) => {
             return callback(null, response);
         }
 
+
         await updateViewsCounterInMedia(idMedia);
         await updateMonthlyViewsCounterInQra(event.context.sub);
+        await updateMonthlyViewsCounterInQso(idqso);
         response.body.message = await getMonthlyViewsCounter(event.context.sub);
         console.log("qso-media-audio-play inserted");
         conn.destroy();
         response.body.error = 0;
         return callback(null, response);
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing Qso Media Play Counter");
         console.log(e);
         conn.destroy();
@@ -72,11 +76,11 @@ exports.handler = async(event, context, callback) => {
     }
 
     function checkQraCognito(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("checkQraCognito" + sub);
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -84,7 +88,8 @@ exports.handler = async(event, context, callback) => {
 
                 if (info.length > 0) {
                     resolve(JSON.parse(JSON.stringify(info))[0]);
-                } else {
+                }
+                else {
                     resolve();
                 }
             });
@@ -93,12 +98,12 @@ exports.handler = async(event, context, callback) => {
 
     function getMonthlyViewsCounter(sub) {
         console.log("getMonthlyViewsCounter");
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
             // from Congito ID");
             conn
-                .query("SELECT monthly_audio_play FROM qras where idcognito=?", sub, function (err, info) {
+                .query("SELECT monthly_audio_play FROM qras where idcognito=?", sub, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
@@ -110,32 +115,53 @@ exports.handler = async(event, context, callback) => {
 
     function updateMonthlyViewsCounterInQra(sub) {
         console.log("updateMonthlyViewsCounterInQra");
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
                 .query("UPDATE sqso.qras SET monthly_audio_play = monthly_audio_play+1  WHERE idcognito=" +
-                        "?",
-                sub, function (err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(JSON.parse(JSON.stringify(info)));
-                    // console.log(info);
-                });
+                    "?",
+                    sub,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(JSON.parse(JSON.stringify(info)));
+                        // console.log(info);
+                    });
+        });
+    }
+
+    function updateMonthlyViewsCounterInQso(idqso) {
+        console.log("updateMonthlyViewsCounterInQra");
+        return new Promise(function(resolve, reject) {
+            // The Promise constructor should catch any errors thrown on this tick.
+            // Alternately, try/catch and reject(err) on catch.
+            // ***********************************************************
+            conn
+                .query("UPDATE sqso.qsos SET plays_counter = plays_counter+1  WHERE idqsos=" +
+                    "?", idqso,
+                    function(err, info) {
+                        // Call reject on error states, call resolve with results
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(JSON.parse(JSON.stringify(info)));
+                        // console.log(info);
+                    });
         });
     }
 
     function updateViewsCounterInMedia(idMedia) {
         console.log("updateViewsCounterInMedia");
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             // ***********************************************************
             conn
-                .query("UPDATE qsos_media SET views_counter = views_counter+1  WHERE idqsos_media=?", idMedia, function (err, info) {
+                .query("UPDATE qsos_media SET views_counter = views_counter+1  WHERE idqsos_media=?", idMedia, function(err, info) {
                     // Call reject on error states, call resolve with results
                     if (err) {
                         return reject(err);
