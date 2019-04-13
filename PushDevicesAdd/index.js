@@ -1,7 +1,13 @@
 var mysql = require('mysql');
 
-exports.handler = async(event, context, callback) => {
+var warmer = require('lambda-warmer');
 
+exports.handler = async(event, context, callback) => {
+    console.log(event)
+    // if a warming event
+    if (await warmer(event)) 
+        return 'warmed';
+    
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -53,8 +59,7 @@ exports.handler = async(event, context, callback) => {
         response.body.message = info;
         return callback(null, response);
 
-    }
-    catch (e) {
+    } catch (e) {
         console.log("Error executing Push_Devices Add");
         console.log(e);
         conn.destroy();
@@ -65,9 +70,8 @@ exports.handler = async(event, context, callback) => {
         return context.fail(response);
     }
 
-
     function insertDevice(idqra, token, device_type) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("insertDevice");
@@ -75,35 +79,34 @@ exports.handler = async(event, context, callback) => {
             console.log("idqra" + idqra);
             console.log("device_type" + device_type);
 
-            conn.query("INSERT INTO push_devices ( token, qra, device_type, datetime) VALUES( ?, ?, ?, NOW" +
-                "()) ON DUPLICATE KEY UPDATE qra = ?, datetime=NOW()", [
-                    token, idqra, device_type, idqra
-                ],
-                function(err, info) {
-                    // Call reject on error states, call resolve with results
-                    if (err) {
-                        return reject(err);
-                    }
+            conn.query("INSERT INTO push_devices ( token, qra, device_type, datetime) VALUES( ?, ?, ?, N" +
+                    "OW()) ON DUPLICATE KEY UPDATE qra = ?, datetime=NOW()",
+            [
+                token, idqra, device_type, idqra
+            ], function (err, info) {
+                // Call reject on error states, call resolve with results
+                if (err) {
+                    return reject(err);
+                }
 
-                    resolve(JSON.parse(JSON.stringify(info)));
-                });
+                resolve(JSON.parse(JSON.stringify(info)));
+            });
         });
     }
 
     function getQraInfo(qra) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRA");
-            conn.query("SELECT idqras FROM qras where qra=? LIMIT 1", qra, function(err, info) {
+            conn.query("SELECT idqras FROM qras where qra=? LIMIT 1", qra, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
                 if (info.length > 0) {
                     resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                }
-                else {
+                } else {
                     resolve();
                 }
             });
@@ -111,19 +114,18 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getQRA(sub) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRA");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
                 }
                 if (info.length > 0) {
                     resolve(JSON.parse(JSON.stringify(info))[0].idqras);
-                }
-                else {
+                } else {
                     resolve();
                 }
             });
