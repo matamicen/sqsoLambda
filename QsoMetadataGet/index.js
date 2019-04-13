@@ -1,11 +1,11 @@
-
 var mysql = require('mysql');
 
+const warmer = require('lambda-warmer');
 
-
-exports.handler = async(event, context, callback) =>{
-
-
+exports.handler = async(event, context, callback) => {
+    // if a warming event
+    if (await warmer(event)) 
+        return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
     var response = {
@@ -22,22 +22,21 @@ exports.handler = async(event, context, callback) =>{
 
     let guid = event.body.qso;
 
-   //***********************************************************
-   if (!event['stage-variables']) {
-    console.log("Stage Variables Missing");
-    
-    response.body.error = 1;
-    response.body.message = "Stage Variables Missing";
-    return callback(null, response);
-}
-var url = event['stage-variables'].url;
-var conn = mysql.createConnection({
-    host: event['stage-variables'].db_host, // give your RDS endpoint  here
-    user: event['stage-variables'].db_user, // Enter your  MySQL username
-    password: event['stage-variables'].db_password, // Enter your  MySQL password
-    database: event['stage-variables'].db_database // Enter your  MySQL database name.
-});
+    //***********************************************************
+    if (!event['stage-variables']) {
+        console.log("Stage Variables Missing");
 
+        response.body.error = 1;
+        response.body.message = "Stage Variables Missing";
+        return callback(null, response);
+    }
+    var url = event['stage-variables'].url;
+    var conn = mysql.createConnection({
+        host: event['stage-variables'].db_host, // give your RDS endpoint  here
+        user: event['stage-variables'].db_user, // Enter your  MySQL username
+        password: event['stage-variables'].db_password, // Enter your  MySQL password
+        database: event['stage-variables'].db_database // Enter your  MySQL database name.
+    });
 
     try {
         let qso = await getQSO(guid);
@@ -47,8 +46,7 @@ var conn = mysql.createConnection({
             response.body.error = 1;
             response.body.message = "QSO does not exist";
 
-            callback("QSO does not exist");
-            return context.fail(response);
+            return callback(null, response);
         }
         let qra = await getQRAofOwnerQSO(qso);
         qso.qra = qra.qra;
@@ -68,14 +66,14 @@ var conn = mysql.createConnection({
         conn.destroy();
         response.body.error = 1;
         response.body.message = "ERROR In Get QSOS Detail";
-        return context.fail(response);
+        return callback(null, response);
     }
     function getQSO(guid) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQSO");
-            conn.query("SELECT * from qsos WHERE GUID_URL =?", guid, function(err, info) {
+            conn.query("SELECT * from qsos WHERE GUID_URL =?", guid, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -85,11 +83,11 @@ var conn = mysql.createConnection({
         });
     }
     function getQRAofOwnerQSO(qso) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRAofOwnerQSO");
-            conn.query("SELECT qra, profilepic, avatarpic from qras WHERE idqras = ? LIMIT 1", qso.idqra_owner, function(err, info) {
+            conn.query("SELECT qra, profilepic, avatarpic from qras WHERE idqras = ? LIMIT 1", qso.idqra_owner, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -99,12 +97,14 @@ var conn = mysql.createConnection({
         });
     }
     function getQRASofQSO(qso) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRASofQSO");
-            
-            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in ( SELECT idqra FROM sqso.qsos_qras where isOwner <> true and idqso = ? )", qso.idqsos, function(err, info) {
+
+            conn.query("SELECT qra, profilepic, avatarpic FROM sqso.qras where  idqras in ( SELECT idqra" +
+                    " FROM sqso.qsos_qras where isOwner <> true and idqso = ? )",
+            qso.idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -114,11 +114,11 @@ var conn = mysql.createConnection({
         });
     }
     function getMEDIAofQSO(qso) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getMEDIAofQSO");
-            conn.query("SELECT * from qsos_media WHERE idqso =? and type = 'image' LIMIT 1 ", qso.idqsos, function(err, info) {
+            conn.query("SELECT * from qsos_media WHERE idqso =? and type = 'image' LIMIT 1 ", qso.idqsos, function (err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -126,8 +126,6 @@ var conn = mysql.createConnection({
                 resolve(JSON.parse(JSON.stringify(info)));
             });
         });
-    }                
-    
+    }
 
-}
-;
+};
