@@ -5,6 +5,7 @@ var lambda = new AWS.Lambda();
 const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    console.log(event);
     // if a warming event
     if (await warmer(event)) 
         return 'warmed';
