@@ -10,10 +10,6 @@ exports.handler = async (event, context, callback) => {
 
   var qra;
 
-  var msg;
-  var sub;
-  var qras = [];
-
   var response = {
     statusCode: 200,
     headers: {
@@ -128,7 +124,7 @@ exports.handler = async (event, context, callback) => {
       console.log("getQRAs");
       conn.query(
         "SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
-          "astname,'')) AS name, profilepic, avatarpic, idqras  FROM qras where qra LIKE ?",
+          "astname,'')) AS name, profilepic, avatarpic, idqras  FROM qras where qra LIKE ? and disabled = '0'",
         qra + "%",
         function(err, info) {
           // Call reject on error states, call resolve with results
