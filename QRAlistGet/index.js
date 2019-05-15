@@ -73,7 +73,7 @@ exports.handler = async (event, context, callback) => {
       console.log("getQRA");
       conn.query(
         "SELECT qra, CONCAT(COALESCE(qra,''), ' ', COALESCE(firstname,''),' ', COALESCE(l" +
-          "astname,'')) AS name, profilepic, avatarpic  FROM qras where qra LIKE ?",
+          "astname,'')) AS name, profilepic, avatarpic  FROM qras where qra LIKE ? and disabled = '0'",
         qra.toUpperCase() + "%",
         function(err, info) {
           // Call reject on error states, call resolve with results
