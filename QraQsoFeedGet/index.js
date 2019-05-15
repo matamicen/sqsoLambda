@@ -68,14 +68,18 @@ exports.handler = async (event, context, callback) => {
       // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
       // from Congito ID");
       conn.query(
-        "SELECT idqras FROM qras where qras.qra=? LIMIT 1",
+        "SELECT idqras FROM qras where qras.qra=? and disabled = 0",
         qra,
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
             return reject(err);
           }
-          resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+          if (info.length > 0) {
+            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
+          } else {
+            resolve();
+          }
         }
       );
     });
@@ -116,7 +120,7 @@ exports.handler = async (event, context, callback) => {
       conn.query(
         "SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic  from qra_followers inner joi" +
           "n qras on qra_followers.idqra_followed = qras.idqras WHERE qra_followers.idqra =" +
-          " ?",
+          " ? and qras.disabled = 0",
         idqra,
         function(err, info) {
           // Call reject on error states, call resolve with results
@@ -137,7 +141,7 @@ exports.handler = async (event, context, callback) => {
       conn.query(
         "SELECT qra_followers.*,  qras.qra, qras.profilepic, qras.avatarpic from qra_followers inner joi" +
           "n qras on qra_followers.idqra = qras.idqras WHERE qra_followers.idqra_followed =" +
-          " ?",
+          " ? and qras.disabled = 0",
         idqra,
         function(err, info) {
           // Call reject on error states, call resolve with results
