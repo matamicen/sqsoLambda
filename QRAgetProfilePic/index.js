@@ -133,7 +133,7 @@ exports.handler = async (event, context, callback) => {
       // Alternately, try/catch and reject(err) on catch.
       console.log("getQRA " + qra);
       conn.query(
-        "SELECT idqras, profilepic, avatarpic FROM qras where qra=?",
+        "SELECT idqras, profilepic, avatarpic FROM qras where qra=? and disabled = 0",
         qra,
         function(err, info) {
           // Call reject on error states, call resolve with results
