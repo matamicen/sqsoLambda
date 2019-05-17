@@ -31,6 +31,7 @@ FROM
     t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_qras.idqso
 WHERE
     isOwner = 1 
+	and qras.disabled = 0
 order by idqso desc;
 
 #QRAS
@@ -44,6 +45,7 @@ FROM
     t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_qras.idqso
 WHERE
     isOwner = 0
+	and qras.disabled = 0
 order by idqsos) UNION (SELECT 
     idqso, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 FROM
@@ -54,6 +56,7 @@ FROM
     t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_qras.idqso
 WHERE
     isOwner = 0
+	and qras.disabled = 0
 order by idqsos);
 
     #Comments
@@ -67,6 +70,7 @@ from
     qras ON qsos_comments.idqra = qras.idqras
 where
     qsos_comments.deleted = 0
+	and qras.disabled = 0
 order by idqso) UNION (SELECT 
     qsos_comments . *, qras.idqras, qras.qra, qras.profilepic, qras.avatarpic
 from
@@ -77,6 +81,7 @@ from
     qras ON qsos_comments.idqra = qras.idqras
 where
     qsos_comments.deleted = 0
+	and qras.disabled = 0
 order by idqso);
 
 #Likes 
@@ -131,6 +136,7 @@ FROM
 	qsos on qsos.idqsos = t_qsos2.idqso_shared
 WHERE
     isOwner = 1
+	and qras.disabled = 0
 order by idqsos;
              
 #Links
@@ -152,6 +158,7 @@ order by idqsos;
         inner join
 			t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso  
 		where qsos_qras.isOwner = 1
+			and qras.disabled = 0
 		order by idqso) UNION (
 	SELECT 
 		   qsos_links.*,
@@ -171,6 +178,7 @@ order by idqsos;
         inner join
 			t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
 		where qsos_qras.isOwner = 1
+			and qras.disabled = 0
 		order by idqso)
 ;
  
