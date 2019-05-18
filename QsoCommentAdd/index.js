@@ -105,6 +105,7 @@ exports.handler = async (event, context, callback) => {
         );
       }
       await UpdateCommentCounterInQso(idqso);
+      await UpdateCommentCounterInQra(qra_owner.idqras);
 
       let info = await getComments(idqso);
       if (info) {
@@ -136,6 +137,27 @@ exports.handler = async (event, context, callback) => {
       conn.query(
         "UPDATE sqso.qsos SET comments_counter = comments_counter+1  WHERE idqsos=?",
         qso,
+        function(err, info) {
+          // Call reject on error states, call resolve with results
+          if (err) {
+            return reject(err);
+          }
+          resolve(JSON.parse(JSON.stringify(info)));
+          // console.log(info);
+        }
+      );
+    });
+  }
+  function UpdateCommentCounterInQra(idqras) {
+    console.log("UpdateQsosCounterInQra" + idqras);
+    return new Promise(function(resolve, reject) {
+      // The Promise constructor should catch any errors thrown on this tick.
+      // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+      // from Congito ID");
+      // ***********************************************************
+      conn.query(
+        "UPDATE qras SET comments_counter = comments_counter+1 WHERE idqras=?",
+        idqras,
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
