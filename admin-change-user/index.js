@@ -1,9 +1,10 @@
-var mysql = require("mysql");
-const warmer = require("lambda-warmer");
-var AWS = require("aws-sdk");
+var mysql = require("./node_modules/mysql");
+const warmer = require("./node_modules/lambda-warmer");
+var AWS = require("./node_modules/aws-sdk");
 AWS.config.region = "us-east-1";
 
 exports.handler = async (event, context, callback) => {
+  console.log(event);
   // if a warming event
   if (await warmer(event)) return "warmed";
   context.callbackWaitsForEmptyEventLoop = false;
@@ -51,10 +52,17 @@ exports.handler = async (event, context, callback) => {
     }
     let info;
     switch (action) {
+      case "L":
+        info = await disableUser(username);
+        // await changeStatus(username, "1");
+        break;
+      case "U":
+        info = await enableUser(username);
+        // await changeStatus(username, "0");
+        break;
       case "D":
         info = await disableUser(username);
         await changeStatus(username, "1");
-
         break;
       case "E":
         info = await enableUser(username);
@@ -88,8 +96,8 @@ exports.handler = async (event, context, callback) => {
           if (err) {
             return reject(err);
           }
+          console.log(info);
           resolve(JSON.parse(JSON.stringify(info)));
-          // console.log(info);
         }
       );
     });
@@ -129,6 +137,7 @@ exports.handler = async (event, context, callback) => {
           console.log(err);
           reject(err);
         } else {
+          console.log(data);
           resolve(data);
         }
       });
@@ -147,6 +156,7 @@ exports.handler = async (event, context, callback) => {
           console.log(err);
           reject(err);
         } else {
+          console.log(data);
           resolve(data);
         }
       });
