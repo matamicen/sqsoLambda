@@ -45,7 +45,7 @@ exports.handler = async (event, context, callback) => {
       database: event["stage-variables"].db_database // Enter your  MySQL database name.
     });
 
-    let idqra_owner = await checkQraCognito(sub);
+    let idqra_owner = await checkQraCognito(event.context.sub);
     if (!idqra_owner) {
       console.log("QRA does not exist");
       conn.destroy();
@@ -59,7 +59,7 @@ exports.handler = async (event, context, callback) => {
 
     conn.destroy();
     response.body.error = 0;
-    response.body.message = info;
+    response.body.message = output;
     context.succeed(response);
   } catch (e) {
     console.log("Error when select QRA");
@@ -76,7 +76,7 @@ exports.handler = async (event, context, callback) => {
       // Alternately, try/catch and reject(err) on catch.
       console.log("checkQraCognito" + sub);
       conn.query(
-        "SELECT qras.idqras FROM qras where idcognito=? LIMIT 1",
+        "SELECT idqras FROM qras where idcognito=? LIMIT 1",
         sub,
         function(err, info) {
           // Call reject on error states, call resolve with results
@@ -84,7 +84,7 @@ exports.handler = async (event, context, callback) => {
             return reject(err);
           }
           if (info.length > 0) {
-            resolve(JSON.parse(JSON.stringify(info))[0]).idqras;
+            resolve(JSON.parse(JSON.stringify(info))[0].idqras);
           } else {
             resolve();
           }
@@ -92,26 +92,27 @@ exports.handler = async (event, context, callback) => {
       );
     });
   }
+
   function getFollowingMe(idqra) {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-
       conn.query(
-        "select * " +
-          "FROM sqso.qra_followers as fme " +
-          "left outer join  sqso.qra_followers as fing" +
-          "on fme.idqra = fing.idqra_followed " +
-          "and fme.idqra_followed = fing.idqra " +
-          "where fme.idqra_followed = ? " +
-          "and fing.idqra is null",
+        "select fme.*, qras.* " +
+          " FROM sqso.qra_followers as fme " +
+          " left outer join  sqso.qra_followers as fing " +
+          " on fme.idqra = fing.idqra_followed " +
+          " and fme.idqra_followed = fing.idqra " +
+          " inner join qras on fme.idqra = qras.idqras" +
+          " where fme.idqra_followed = ? " +
+          " and fing.idqra is null",
         idqra,
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
             return reject(err);
           }
-          resolve(JSON.parse(JSON.stringify(info))[0]);
+          resolve(JSON.parse(JSON.stringify(info)));
         }
       );
     });
