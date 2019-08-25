@@ -57,6 +57,7 @@ exports.handler = async(event, context, callback) => {
     let output = {};
     output.followingMe = await getFollowingMe(idqra_owner);
     output.taggedMe = await getTaggedMe(idqra_owner);
+    output.taggedByMe = await getTaggedByMe(idqra_owner);
     output.topFollowed = await getTopFollowed(idqra_owner);
 
     conn.destroy();
@@ -111,6 +112,36 @@ exports.handler = async(event, context, callback) => {
         " inner join qras on fme.idqra = qras.idqras" +
         " where fme.idqra_followed = ? " +
         " and fing.idqra is null",
+        idqra,
+        function(err, info) {
+          // Call reject on error states, call resolve with results
+          if (err) {
+            return reject(err);
+          }
+          resolve(JSON.parse(JSON.stringify(info)));
+        }
+      );
+    });
+  }
+
+  function getTaggedByMe(idqra) {
+    return new Promise(function(resolve, reject) {
+      // The Promise constructor should catch any errors thrown on this tick.
+      // Alternately, try/catch and reject(err) on catch.
+      conn.query(
+        "SELECT qras.idqras, qras.qra, qras.avatarpic, qras.firstname, qras.lastname,  followers_counter, qsos_counter, " +
+        "qras.comments_counter " +
+        "from qsos as q " +
+        "inner join qsos_qras as qqr on " +
+        "q.idqsos = qqr.idqso " +
+        "left outer join  sqso.qra_followers as fing " +
+        "on qqr.idqra = fing.idqra_followed  " +
+        "and q.idqra_owner = fing.idqra " +
+        "inner join qras on qqr.idqra = qras.idqras " +
+        "where q.idqra_owner = ? " +
+        "and isOwner = 0 " +
+        "and fing.idqra is null " +
+        "group by qqr.idqra",
         idqra,
         function(err, info) {
           // Call reject on error states, call resolve with results
