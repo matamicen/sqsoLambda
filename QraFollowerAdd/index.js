@@ -368,9 +368,9 @@ exports.handler = async(event, context, callback) => {
 
         let title = qra_owner.qra + " started to follow you ";
         let final_url = url + qra_owner.qra;
-
+        let appId = event["stage-variables"].pinpointAppId;
         let params = {
-            ApplicationId: "b5a50c31fd004a20a1a2fe4f357c8e89",
+            ApplicationId: appId,
             /* required */
             MessageRequest: {/* required */
                 Addresses: addresses,

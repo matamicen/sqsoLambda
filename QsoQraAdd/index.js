@@ -216,8 +216,10 @@ exports.handler = async(event, context, callback) => {
         let body = "Mode: " + qra_owner.mode + " Band: " + qra_owner.band;
         let final_url = url + 'qso/' + qra_owner.guid_URL;
         let activ = JSON.stringify(idActivity);
+        let appId = event["stage-variables"].pinpointAppId;
+
         params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: appId,
             /* required */
             MessageRequest: {/* required */
                 Addresses: addresses,

@@ -433,10 +433,11 @@ exports.handler = async(event, context, callback) => {
         console.log("sendMessages");
         let title = qra_owner.qra + " linked a QSO you are participating";
         let final_url = url + "qso/" + qso.guid_URL;
+        let appId = event["stage-variables"].pinpointAppId;
 
         let activ = JSON.stringify(idActivity);
         var params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: appId,
             /* required */
             MessageRequest: {/* required */
                 Addresses: addresses,

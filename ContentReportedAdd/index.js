@@ -199,9 +199,9 @@ exports.handler = async(event, context, callback) => {
         context.callbackWaitsForEmptyEventLoop = true;
 
         let title = qra_owner.qra + " reported content";
-
+        let appId = event["stage-variables"].pinpointAppId;
         let params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: appId,
             /* required */
             MessageRequest: { /* required */
                 Addresses: addresses,

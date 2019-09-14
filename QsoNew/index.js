@@ -353,9 +353,10 @@ exports.handler = async(event, context, callback) => {
         let body = 'Mode: ' + mode + ' Band: ' + band + " QTR (UTC): " + date.getUTCHours() + ':' + date.getMinutes();
         let final_url = url + "qso/" + uuid_URL;
         let idAct = JSON.stringify(idActivity);
+        let appId = event["stage-variables"].pinpointAppId;
 
         var params = {
-            ApplicationId: 'b5a50c31fd004a20a1a2fe4f357c8e89',
+            ApplicationId: appId,
             /* required */
             MessageRequest: { /* required */
                 Addresses: addresses,

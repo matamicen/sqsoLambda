@@ -538,8 +538,9 @@ exports.handler = async (event, context, callback) => {
     console.log(addresses);
     console.log("body");
     console.log(body);
+    let appId = event["stage-variables"].pinpointAppId;
     var params = {
-      ApplicationId: "b5a50c31fd004a20a1a2fe4f357c8e89",
+      ApplicationId: appId,
       /* required */
       MessageRequest: {
         /* required */
@@ -585,7 +586,8 @@ exports.handler = async (event, context, callback) => {
         db_host: event["stage-variables"].db_host,
         db_user: event["stage-variables"].db_user,
         db_password: event["stage-variables"].db_password,
-        db_database: event["stage-variables"].db_database
+        db_database: event["stage-variables"].db_database,
+        pinpointAppId: event["stage-variables"].pinpointAppId
       }
     };
 
