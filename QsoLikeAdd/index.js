@@ -75,35 +75,7 @@ exports.handler = async(event, context, callback) => {
                 console.log("Get Stakeholders of QSO: " + qras.length);
                 final_url = url + "qso/" + qso.guid_URL;
                 let message = qra_owner.qra + " liked a QSO you are participating";
-                for (let i = 0; i < qras.length; i++) {
-                    if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) &&
-                        qras[i].idqra !== qra_owner.idqras
-                    ) {
-                        notifs.push([
-                            idActivity, //idActivity
-                            qras[i].idqra, //idqra
-                            qra_owner.qra, //qra
-                            qra_owner.avatarpic, //qra_avatarpic
-                            qso.guid_URL, //qso_guid
-                            qso.qra, //ref_qra
-                            datetime, //datetime
-                            message, //message
-                            final_url, //url
-                            idqso, //idqsos
-                            23 //activity_type
-                        ]);
-                        qrasAll.push({ idqra: qras[i].idqra });
-                        let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
-
-                        if (qra_devices)
-                            await sendPushNotification(
-                                qra_devices,
-                                qra_owner,
-                                qso,
-                                idActivity
-                            );
-                    }
-                }
+                await notifyStakeholders(qras, qra_owner, idActivity, qso, datetime, message, final_url, idqso, qrasAll);
                 if (Object.keys(addresses).length > 0) {
                     await sendMessages(qra_owner, qso, idActivity);
                     addresses = {};
@@ -135,6 +107,38 @@ exports.handler = async(event, context, callback) => {
         response.body.error = 1;
         response.body.message = e.message;
         return callback(null, response);
+    }
+
+    async function notifyStakeholders(qras, qra_owner, idActivity, qso, datetime, message, final_url, idqso, qrasAll) {
+        for (let i = 0; i < qras.length; i++) {
+            if (!qrasAll.some(elem => elem.idqra === qras[i].idqra) &&
+                qras[i].idqra !== qra_owner.idqras
+            ) {
+                notifs.push([
+                    idActivity, //idActivity
+                    qras[i].idqra, //idqra
+                    qra_owner.qra, //qra
+                    qra_owner.avatarpic, //qra_avatarpic
+                    qso.guid_URL, //qso_guid
+                    qso.qra, //ref_qra
+                    datetime, //datetime
+                    message, //message
+                    final_url, //url
+                    idqso, //idqsos
+                    23 //activity_type
+                ]);
+                qrasAll.push({ idqra: qras[i].idqra });
+                let qra_devices = await getDeviceInfo(qras[i].idqra, qras[i].qra);
+
+                if (qra_devices)
+                    await sendPushNotification(
+                        qra_devices,
+                        qra_owner,
+                        qso,
+                        idActivity
+                    );
+            }
+        }
     }
 
     function getDeviceInfo(idqra, qra) {
@@ -398,7 +402,7 @@ exports.handler = async(event, context, callback) => {
         }
     }
 
-    async function sendMessages(qra_owner, qso, idActivity) {
+    function sendMessages(qra_owner, qso, idActivity) {
         context.callbackWaitsForEmptyEventLoop = true;
 
         console.log("sendMessages");
