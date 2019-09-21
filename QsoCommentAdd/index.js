@@ -142,7 +142,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
           resolve(JSON.parse(JSON.stringify(info)));
           // console.log(info);
@@ -164,7 +164,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
           resolve(JSON.parse(JSON.stringify(info)));
           // console.log(info);
@@ -184,7 +184,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)).insertId);
@@ -204,7 +204,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
@@ -228,7 +228,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
@@ -252,7 +252,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
           resolve(JSON.parse(JSON.stringify(info)));
         }
@@ -272,7 +272,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)).insertId);
@@ -405,7 +405,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -425,7 +425,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -446,7 +446,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -466,7 +466,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err);
+            return reject(err); //TODO mandar a sentry
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -487,7 +487,7 @@ exports.handler = async (event, context, callback) => {
       ) {
         // Call reject on error states, call resolve with results
         if (err) {
-          return reject(err);
+          return reject(err); //TODO mandar a sentry
         }
 
         if (info.length > 0) {
@@ -600,7 +600,7 @@ exports.handler = async (event, context, callback) => {
       console.log(err);
       if (err) {
         console.log("lambda error");
-        console.log(err);
+        console.log(err); //TODO mandar a sentry
       }
     });
   }
