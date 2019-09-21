@@ -80,19 +80,21 @@ exports.handler = async (event, context, callback) => {
         datetime
       );
       if (idActivity) {
-        console.log("getFollowing Me" + qra_owner.idqras);
         let followers = await getFollowingMe(qra_owner.idqras);
-        console.log(followers);
-        console.log("Get Stakeholders of QSO" + idqso);
+        console.log(
+          "getFollowing Me " + qra_owner.idqras + " : " + followers.length
+        );
         let stakeholders = await getQsoStakeholders(idqso, qra_owner.idqras);
-        console.log(stakeholders);
-        console.log("get Other Comment Writters");
+        console.log(
+          "Get Stakeholders of QSO " + idqso + " : " + stakeholders.length
+        );
+
         let commentWriters = await getQsoCommentWriters(
           idqso,
           qra_owner.idqras
         );
-        console.log(commentWriters);
-        console.log("createNotifications");
+        console.log("get Other Comment Writters: " + commentWriters.length);
+
         await createNotifications(
           idActivity,
           followers,
@@ -132,7 +134,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("UpdateCommentCounterInQso" + qso);
+      console.log("UpdateCommentCounterInQso " + qso);
       //***********************************************************
       conn.query(
         "UPDATE sqso.qsos SET comments_counter = comments_counter+1  WHERE idqsos=?",
@@ -148,8 +150,9 @@ exports.handler = async (event, context, callback) => {
       );
     });
   }
+
   function UpdateCommentCounterInQra(idqras) {
-    console.log("UpdateQsosCounterInQra" + idqras);
+    console.log("UpdateQsosCounterInQra " + idqras);
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
@@ -174,7 +177,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("insertComment");
+      console.log("insertComment " + comment);
       conn.query(
         "INSERT INTO qsos_comments SET idqso = ?, idqra=?, datetime=?, comment=?",
         [idqsos, idqras, datetime, comment],
@@ -194,7 +197,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("checkQraCognito" + sub);
+      console.log("checkQraCognito " + sub);
       conn.query(
         "SELECT qras.idqras, qras.qra, qras.avatarpic FROM qras where idcognito=? LIMIT 1",
         sub,
@@ -217,7 +220,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("checkQraCognito" + idqsos);
+      console.log("checkQraCognito " + idqsos);
       conn.query(
         "SELECT qsos.idqsos, qsos.guid_URL, qras.qra FROM qsos inner join qras on qras.id" +
           "qras = qsos.idqra_owner where idqsos=? ",
@@ -241,7 +244,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("getComments" + qso);
+      console.log("getComments " + qso);
       conn.query(
         "SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
           "ents.idqra = qras.idqras where  idqso=?",
@@ -290,21 +293,30 @@ exports.handler = async (event, context, callback) => {
     console.log("createNotifications");
     let idnotif;
     let message;
-    console.log("stakeholders");
-    console.log(stakeholders);
+    var notif = [];
+    let final_url;
+
+    // STAKEHOLDERS
+    console.log("stakeholders " + stakeholders.length);
+    notif = [];
     for (let i = 0; i < stakeholders.length; i++) {
       message = qra_owner.qra + " commented a QSO you are participating";
-      idnotif = await insertNotification(
+      final_url = url + "qso/" + qso.guid_URL;
+      notif.push([
         idActivity,
         stakeholders[i].idqra,
-        qra_owner,
-        qso,
+        qra_owner.qra,
+        qra_owner.avatarpic,
+        qso.guid_URL,
+        qso.qra,
         datetime,
-        stakeholders[i].qra,
-        message
-      );
+        message,
+        final_url,
+        idqso,
+        18
+      ]);
       let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
-      console.log(qra_devices);
+      console.log("Stakeholder Devices " + qra_devices.length);
       if (qra_devices)
         await sendPushNotification(
           qra_devices,
@@ -316,23 +328,27 @@ exports.handler = async (event, context, callback) => {
         );
     }
 
-    console.log("commentWriters");
-    console.log(commentWriters);
-
+    // Comment Writters
     for (let i = 0; i < commentWriters.length; i++) {
       if (!stakeholders.some(elem => elem.idqra === commentWriters[i].idqra)) {
         message = qra_owner.qra + " commented a QSO you are participating";
-        idnotif = await insertNotification(
+        final_url = url + "qso/" + qso.guid_URL;
+
+        notif.push([
           idActivity,
           commentWriters[i].idqra,
-          qra_owner,
-          qso,
+          qra_owner.qra,
+          qra_owner.avatarpic,
+          qso.guid_URL,
+          qso.qra,
           datetime,
-          commentWriters[i].qra,
-          message
-        );
+          message,
+          final_url,
+          idqso,
+          18
+        ]);
         let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
-        console.log(qra_devices);
+        console.log("commentWritter Devices " + qra_devices.length);
         if (qra_devices)
           await sendPushNotification(
             qra_devices,
@@ -344,70 +360,55 @@ exports.handler = async (event, context, callback) => {
           );
       }
     }
-    console.log(followers);
+
     for (let i = 0; i < followers.length; i++) {
       if (
         !commentWriters.some(elem => elem.idqra === followers[i].idqra) &&
         !stakeholders.some(elem => elem.idqra === followers[i].idqra)
       ) {
         message = qra_owner.qra + " commented a QSO created by " + qso.qra;
-        await insertNotification(
+        let final_url = url + "qso/" + qso.guid_URL;
+        notif.push([
           idActivity,
           followers[i].idqra,
-          qra_owner,
-          qso,
+          qra_owner.qra,
+          qra_owner.avatarpic,
+          qso.guid_URL,
+          qso.qra,
           datetime,
-          "",
-          message
-        );
+          message,
+          final_url,
+          idqso,
+          18
+        ]);
       }
     }
-    console.log(Object.keys(addresses).length);
+
+    await insertNotifications(notif);
     if (Object.keys(addresses).length > 0) {
       await sendMessages(qra_owner, idActivity, qso, comment);
       addresses = {};
     }
   }
 
-  function insertNotification(
-    idActivity,
-    idqra,
-    qra_owner,
-    qso,
-    datetime,
-    qra_dest,
-    message
-  ) {
-    console.log("insertNotification" + idqra + qra_owner.idqras);
+  function insertNotifications(notifs) {
+    console.log("insertNotifications " + notifs.length);
 
-    let final_url = url + "qso/" + qso.guid_URL;
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
 
       conn.query(
-        "INSERT INTO qra_notifications SET idqra = ?, idqra_activity=? , datetime=?, acti" +
-          "vity_type='18', qra=?,  qra_avatarpic=?, QSO_GUID=?, REF_QRA=?, message=?, url=?" +
-          ", idqsos=? ",
-        [
-          idqra,
-          idActivity,
-          datetime,
-          qra_owner.qra,
-          qra_owner.avatarpic,
-          qso.guid_URL,
-          qso.qra,
-          message,
-          final_url,
-          idqso
-        ],
+        "INSERT INTO qra_notifications (idqra_activity, idqra, qra, qra_avatarpic, QSO_GUID, REF_QRA, datetime, " +
+          "message, url, idqsos, activity_type) VALUES ?",
+        [notifs],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
             return reject(err);
           }
 
-          resolve(JSON.parse(JSON.stringify(info)).insertId);
+          resolve(JSON.parse(JSON.stringify(info)));
         }
       );
     });
@@ -475,11 +476,11 @@ exports.handler = async (event, context, callback) => {
   }
 
   function getDeviceInfo(idqra) {
-    console.log("getDeviceInfo" + idqra);
+    console.log("getDeviceInfo " + idqra);
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("getDeviceInfo");
+
       conn.query("SELECT * FROM push_devices where qra=?", idqra, function(
         err,
         info
@@ -519,7 +520,6 @@ exports.handler = async (event, context, callback) => {
       addresses[qra_devices[i].token] = {
         ChannelType: channel
       };
-      console.log(Object.keys(addresses).length);
       if (Object.keys(addresses).length == 100) {
         await sendMessages(qra_owner, idActivity, qso, comment);
         addresses = {};
@@ -535,9 +535,6 @@ exports.handler = async (event, context, callback) => {
     let body = comment;
     let final_url = url + "qso/" + qso.guid_URL;
     let activ = JSON.stringify(idActivity);
-    console.log(addresses);
-    console.log("body");
-    console.log(body);
     let appId = event["stage-variables"].pinpointAppId;
     var params = {
       ApplicationId: appId,
