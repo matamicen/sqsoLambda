@@ -369,17 +369,17 @@ exports.handler = async (event, context, callback) => {
         message = qra_owner.qra + " commented a QSO created by " + qso.qra;
         let final_url = url + "qso/" + qso.guid_URL;
         notif.push([
-          idActivity,
-          followers[i].idqra,
-          qra_owner.qra,
-          qra_owner.avatarpic,
-          qso.guid_URL,
-          qso.qra,
-          datetime,
-          message,
-          final_url,
-          idqso,
-          18
+          idActivity, //idActivity
+          followers[i].idqra, //idqra
+          qra_owner.qra, //qra
+          qra_owner.avatarpic, //qra_avatarpic
+          qso.guid_URL, //qso_guid
+          qso.qra, //ref_qra
+          datetime, //datetime
+          message, //message
+          final_url, //url
+          idqso, //idqsos
+          18 //activity_type
         ]);
       }
     }
