@@ -1,28 +1,14 @@
-CREATE DEFINER=`sqso`@`%` PROCEDURE `qraqsofeedget2`(IN QRA varchar(45))
-BEGIN
+CREATE DEFINER = `sqso` @`%` PROCEDURE `qso-detail-get-qr`(IN GUID varchar(36)) BEGIN
 /**/
 DROP TEMPORARY TABLE IF EXISTS t_qsos;
-/*   #Get all the post where the current user is owner. */
+/*#GET QSOS AND QRA of QSO_OWNER*/
 CREATE TEMPORARY TABLE t_qsos (
-  select
+  SELECT
     *
   from
-    (
-      SELECT
-        qsos.*
-      from
-        qsos
-        INNER JOIN qsos_qras ON qsos_qras.idqso = qsos.idqsos
-        inner join qras on qras.idqras = qsos_qras.idqra
-      WHERE
-        qsos.datetime <= NOW()
-        and qras.qra = QRA
-        and deleted = 0
-      order by
-        datetime desc
-      LIMIT
-        50
-    ) as t_qsos
+    qsos
+  where
+    qsos.GUID_QR = guid
 );
 DROP TEMPORARY TABLE IF EXISTS t_qsos1;
 DROP TEMPORARY TABLE IF EXISTS t_qsos2;
@@ -38,7 +24,7 @@ CREATE TEMPORARY TABLE t_qsos2 (
   from
     t_qsos
 );
-/*#Get QSO Data and QRA Owner Detail**/
+/*#Get QSO Data and QRA Owner Detail*/
 SELECT
   t_qsos1.*,
   qras.idqras,
@@ -54,45 +40,42 @@ WHERE
 ORDER BY
   idqso DESC;
   /*#QRAS*/
+SELECT
+  *
+FROM
   (
-    SELECT
-      *
-    FROM
+    (
+      SELECT
+        idqso,
+        qras.idqras,
+        qras.qra,
+        qras.profilepic,
+        qras.avatarpic
+      FROM
+        qras
+        INNER JOIN qsos_qras ON qsos_qras.idqra = qras.idqras
+        INNER JOIN t_qsos1 AS t_qsos1 ON t_qsos1.idqsos = qsos_qras.idqso
+      WHERE
+        isOwner = 0
+    )
+    UNION
       (
-        (
-          SELECT
-            idqso,
-            qras.idqras,
-            qras.qra,
-            qras.profilepic,
-            qras.avatarpic
-          FROM
-            qras
-            INNER JOIN qsos_qras ON qsos_qras.idqra = qras.idqras
-            INNER JOIN t_qsos1 AS t_qsos1 ON t_qsos1.idqsos = qsos_qras.idqso
-          WHERE
-            isOwner = 0
-            AND qras.disabled = 0
-        )
-        UNION
-          (
-            SELECT
-              idqso,
-              qras.idqras,
-              qras.qra,
-              qras.profilepic,
-              qras.avatarpic
-            FROM
-              qras
-              INNER JOIN qsos_qras ON qsos_qras.idqra = qras.idqras
-              INNER JOIN t_qsos2 AS t_qsos2 ON t_qsos2.idqso_shared = qsos_qras.idqso
-            WHERE
-              isOwner = 0
-              AND qras.disabled = 0
-          )
-      ) AS i
-    
-  );
+        SELECT
+          idqso,
+          qras.idqras,
+          qras.qra,
+          qras.profilepic,
+          qras.avatarpic
+        FROM
+          qras
+          INNER JOIN qsos_qras ON qsos_qras.idqra = qras.idqras
+          INNER JOIN t_qsos2 AS t_qsos2 ON t_qsos2.idqso_shared = qsos_qras.idqso
+        WHERE
+          isOwner = 0
+      )
+  ) AS i
+ORDER BY
+  idqso;
   /*#Comments*/
 SELECT
   *
@@ -111,7 +94,6 @@ FROM
         INNER JOIN qras ON qsos_comments.idqra = qras.idqras
       WHERE
         qsos_comments.deleted = 0
-        AND qras.disabled = 0
     )
     UNION
       (
@@ -127,31 +109,40 @@ FROM
           INNER JOIN qras ON qsos_comments.idqra = qras.idqras
         WHERE
           qsos_comments.deleted = 0
-          AND qras.disabled = 0
       )
   ) AS i
 ORDER BY
   idqso DESC,
   idqsos_comments ASC;
-  /*#Likes*/
+  /*#Likes */
 SELECT
   *
 FROM
   (
     (
       SELECT
-        qsos_likes.*
+        qsos_likes.*,
+        qras.idqras,
+        qras.qra,
+        qras.profilepic,
+        qras.avatarpic
       FROM
         qsos_likes
         INNER JOIN t_qsos1 AS t_qsos1 ON t_qsos1.idqsos = qsos_likes.idqso
+        INNER JOIN qras ON qsos_likes.idqra = qras.idqras
     )
     UNION
       (
         SELECT
-          qsos_likes.*
+          qsos_likes.*,
+          qras.idqras,
+          qras.qra,
+          qras.profilepic,
+          qras.avatarpic
         FROM
           qsos_likes
           INNER JOIN t_qsos2 AS t_qsos2 ON t_qsos2.idqso_shared = qsos_likes.idqso
+          INNER JOIN qras ON qsos_likes.idqra = qras.idqras
       )
   ) AS i
 ORDER BY
@@ -164,22 +155,22 @@ FROM
     (
       SELECT
         qsos_media.*
-      FROM
+      from
         qsos_media
-        INNER JOIN t_qsos1 AS t_qsos1 ON t_qsos1.idqsos = qsos_media.idqso
-      WHERE
+        inner join t_qsos1 as t_qsos1 ON t_qsos1.idqsos = qsos_media.idqso
+      where
         qsos_media.deleted = 0
+      UNION
+        (
+          SELECT
+            qsos_media.*
+          from
+            qsos_media
+            inner join t_qsos2 as t_qsos2 ON t_qsos2.idqso_shared = qsos_media.idqso
+          where
+            qsos_media.deleted = 0
+        )
     )
-    UNION
-      (
-        SELECT
-          qsos_media.*
-        FROM
-          qsos_media
-          INNER JOIN t_qsos2 AS t_qsos2 ON t_qsos2.idqso_shared = qsos_media.idqso
-        WHERE
-          qsos_media.deleted = 0
-      )
   ) AS i
 ORDER BY
   idqso;
@@ -197,7 +188,6 @@ FROM
   INNER JOIN qsos ON qsos.idqsos = t_qsos2.idqso_shared
 WHERE
   isOwner = 1
-  AND qras.disabled = 0
 ORDER BY
   idqsos;
   /*#Links*/
@@ -207,20 +197,44 @@ FROM
   (
     (
       SELECT
-        qsos_links.*
+        qsos_links.idqsos_links,
+        qsos_links.idqso,
+        qsos_links.idqso_rel,
+        qsos.*,
+        qras.idqras,
+        qras.qra,
+        qras.profilepic,
+        qras.avatarpic
       FROM
         qsos_links
+        INNER JOIN qsos ON qsos.idqsos = qsos_links.idqso_rel
+        INNER JOIN qsos_qras ON qsos.idqsos = qsos_qras.idqso
+        INNER JOIN qras ON qsos_qras.idqra = qras.idqras
         INNER JOIN t_qsos1 AS t_qsos1 ON t_qsos1.idqsos = qsos_links.idqso
+      WHERE
+        qsos_qras.isOwner = 1
     )
     UNION
       (
         SELECT
-          qsos_links.*
+          qsos_links.idqsos_links,
+          qsos_links.idqso,
+          qsos_links.idqso_rel,
+          qsos.*,
+          qras.idqras,
+          qras.qra,
+          qras.profilepic,
+          qras.avatarpic
         FROM
           qsos_links
+          INNER JOIN qsos ON qsos.idqsos = qsos_links.idqso_rel
+          INNER JOIN qsos_qras ON qsos.idqsos = qsos_qras.idqso
+          INNER JOIN qras ON qsos_qras.idqra = qras.idqras
           INNER JOIN t_qsos2 AS t_qsos2 ON t_qsos2.idqso_shared = qsos_links.idqso
+        WHERE
+          qsos_qras.isOwner = 1
       )
   ) AS i
 ORDER BY
-  idqso;
+  idqsos;
 END
