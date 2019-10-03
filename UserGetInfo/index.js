@@ -164,8 +164,11 @@ exports.handler = async(event, context, callback) => {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getNotifications");
-            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? and qra_notifi" +
-                "cations.read IS NULL order by qra_notifications.datetime DESC",
+  conn.query("SELECT n.idqra_notifications, n.activity_type, n.qra, n.message, n.REF_QRA, n.QSO_GUID,  q.avatarpic as qra_avatarpic " +
+                " FROM qra_notifications as n " +
+                " inner join qras as q " +
+                " on n.qra = q.QRA where idqra = ? order by " +
+                "n.idqra_notifications DESC",
                 qra.idqras,
                 function(err, info) {
                     // Call reject on error states, call resolve with results

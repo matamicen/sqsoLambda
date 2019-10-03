@@ -3,8 +3,9 @@ var mysql = require('mysql');
 const warmer = require('lambda-warmer');
 
 exports.handler = async(event, context, callback) => {
+    console.log(event);
     // if a warming event
-    if (await warmer(event)) 
+    if (await warmer(event))
         return 'warmed';
     context.callbackWaitsForEmptyEventLoop = false;
 
@@ -53,7 +54,8 @@ exports.handler = async(event, context, callback) => {
         conn.destroy();
         return callback(null, response);
 
-    } catch (e) {
+    }
+    catch (e) {
         console.log("Error executing GetNotifications");
         console.log(e);
         conn.destroy();
@@ -64,11 +66,11 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getQRA(sub) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getQRA");
-            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function (err, info) {
+            conn.query("SELECT idqras FROM qras where idcognito=? LIMIT 1", sub, function(err, info) {
                 // Call reject on error states, call resolve with results
                 if (err) {
                     return reject(err);
@@ -80,22 +82,26 @@ exports.handler = async(event, context, callback) => {
     }
 
     function getNotifications(idqra) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
             console.log("getNotifications");
             console.log(idqra);
-            conn.query("SELECT qra_notifications.* FROM qra_notifications where idqra = ? order by qra_n" +
-                    "otifications.datetime DESC",
-            idqra, function (err, info) {
-                // Call reject on error states, call resolve with results
+            conn.query("SELECT n.idqra_notifications, n.activity_type, n.qra, n.message, n.REF_QRA, n.QSO_GUID,  q.avatarpic as qra_avatarpic " +
+                " FROM qra_notifications as n " +
+                " inner join qras as q " +
+                " on n.qra = q.QRA where idqra = ? order by " +
+                "n.idqra_notifications DESC",
+                idqra,
+                function(err, info) {
+                    // Call reject on error states, call resolve with results
 
-                if (err) {
-                    return reject(err);
-                }
+                    if (err) {
+                        return reject(err);
+                    }
 
-                resolve(JSON.parse(JSON.stringify(info)));
-            });
+                    resolve(JSON.parse(JSON.stringify(info)));
+                });
         });
     }
 };
