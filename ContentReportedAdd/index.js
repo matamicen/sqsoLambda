@@ -56,16 +56,18 @@ exports.handler = async(event, context, callback) => {
             response.body.message = "User does not exist";
             return callback(null, response);
         }
-
+ 
         let info = await insertReportedContent(qra_owner.idqras, idqso, idcomment, idmedia, detail, datetime);
         if (info.insertId) {
-            await push2Admin(qra_owner);
+           await push2Admin(qra_owner);
             console.log("Reported Content Added");
+            conn.destroy();
             response.body.error = 0;
             response.body.message = info;
             return callback(null, response);
         }
         else {
+            conn.destroy();
             console.log("Reported Content NOT Added");
             response.body.error = 1;
             response.body.message = info;
@@ -196,7 +198,7 @@ exports.handler = async(event, context, callback) => {
 
     function sendMessages(qra_owner) {
         console.log("sendMessages");
-        context.callbackWaitsForEmptyEventLoop = true;
+                context.callbackWaitsForEmptyEventLoop = true;
 
         let title = qra_owner.qra + " reported content";
         let appId = event["stage-variables"].pinpointAppId;
@@ -262,8 +264,8 @@ exports.handler = async(event, context, callback) => {
             Payload: JSON.stringify(payload)
         };
 
-        lambda.invoke(paramslambda, function(err, data) {
-            // console.log("lambda");
+       lambda.invoke(paramslambda, function(err, data) {
+       
             if (err) {
                 console.log("error");
                 // console.log(err);
