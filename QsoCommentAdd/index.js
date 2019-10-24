@@ -142,7 +142,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
           resolve(JSON.parse(JSON.stringify(info)));
           // console.log(info);
@@ -164,7 +164,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
           resolve(JSON.parse(JSON.stringify(info)));
           // console.log(info);
@@ -177,14 +177,14 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-      console.log("insertComment " + comment);
+      console.log("insertComment");
       conn.query(
         "INSERT INTO qsos_comments SET idqso = ?, idqra=?, datetime=?, comment=?",
         [idqsos, idqras, datetime, comment],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)).insertId);
@@ -204,7 +204,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
@@ -228,7 +228,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
@@ -252,7 +252,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
           resolve(JSON.parse(JSON.stringify(info)));
         }
@@ -272,7 +272,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)).insertId);
@@ -316,8 +316,9 @@ exports.handler = async (event, context, callback) => {
         18
       ]);
       let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
-      console.log("Stakeholder Devices " + qra_devices.length);
-      if (qra_devices)
+
+      if (qra_devices) {
+        console.log("Stakeholder Devices " + qra_devices.length);
         await sendPushNotification(
           qra_devices,
           qra_owner,
@@ -326,6 +327,7 @@ exports.handler = async (event, context, callback) => {
           qso,
           idActivity
         );
+      }
     }
 
     // Comment Writters
@@ -348,16 +350,17 @@ exports.handler = async (event, context, callback) => {
           18
         ]);
         let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
-        console.log("commentWritter Devices " + qra_devices.length);
+
         if (qra_devices)
-          await sendPushNotification(
-            qra_devices,
-            qra_owner,
-            idnotif,
-            comment,
-            qso,
-            idActivity
-          );
+          console.log("commentWritter Devices " + qra_devices.length);
+        await sendPushNotification(
+          qra_devices,
+          qra_owner,
+          idnotif,
+          comment,
+          qso,
+          idActivity
+        );
       }
     }
 
@@ -369,17 +372,17 @@ exports.handler = async (event, context, callback) => {
         message = qra_owner.qra + " commented a QSO created by " + qso.qra;
         let final_url = url + "qso/" + qso.guid_URL;
         notif.push([
-          idActivity, //idActivity
-          followers[i].idqra, //idqra
-          qra_owner.qra, //qra
-          qra_owner.avatarpic, //qra_avatarpic
-          qso.guid_URL, //qso_guid
-          qso.qra, //ref_qra
-          datetime, //datetime
-          message, //message
-          final_url, //url
-          idqso, //idqsos
-          18 //activity_type
+          idActivity,
+          followers[i].idqra,
+          qra_owner.qra,
+          qra_owner.avatarpic,
+          qso.guid_URL,
+          qso.qra,
+          datetime,
+          message,
+          final_url,
+          idqso,
+          18
         ]);
       }
     }
@@ -405,7 +408,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -425,7 +428,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -446,7 +449,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -466,7 +469,7 @@ exports.handler = async (event, context, callback) => {
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
-            return reject(err); //TODO mandar a sentry
+            return reject(err);
           }
 
           resolve(JSON.parse(JSON.stringify(info)));
@@ -487,7 +490,7 @@ exports.handler = async (event, context, callback) => {
       ) {
         // Call reject on error states, call resolve with results
         if (err) {
-          return reject(err); //TODO mandar a sentry
+          return reject(err);
         }
 
         if (info.length > 0) {
@@ -600,7 +603,7 @@ exports.handler = async (event, context, callback) => {
       console.log(err);
       if (err) {
         console.log("lambda error");
-        console.log(err); //TODO mandar a sentry
+        console.log(err);
       }
     });
   }
