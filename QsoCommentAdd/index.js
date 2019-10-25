@@ -4,7 +4,7 @@ AWS.config.region = "us-east-1";
 var lambda = new AWS.Lambda();
 const warmer = require("lambda-warmer");
 
-exports.handler = async (event, context, callback) => {
+exports.handler = async(event, context, callback) => {
   // if a warming event
   console.log(event);
   if (await warmer(event)) return "warmed";
@@ -22,8 +22,7 @@ exports.handler = async (event, context, callback) => {
       message: null
     }
   };
-  if (
-    !event.body ||
+  if (!event.body ||
     !event.body.qso ||
     !event.body.comment ||
     !event.body.datetime ||
@@ -80,21 +79,18 @@ exports.handler = async (event, context, callback) => {
         datetime
       );
       if (idActivity) {
-        let followers = await getFollowingMe(qra_owner.idqras);
-        console.log(
-          "getFollowing Me " + qra_owner.idqras + " : " + followers.length
-        );
-        let stakeholders = await getQsoStakeholders(idqso, qra_owner.idqras);
-        console.log(
-          "Get Stakeholders of QSO " + idqso + " : " + stakeholders.length
-        );
 
+        let followers = await getFollowingMe(qra_owner.idqras);
+        console.log("getFollowing Me " + qra_owner.idqras + " : " + followers.length);
+        let stakeholders = await getQsoStakeholders(idqso, qra_owner.idqras);
+        console.log("Get Stakeholders of QSO " + idqso + " : " + stakeholders.length);
+        
         let commentWriters = await getQsoCommentWriters(
           idqso,
           qra_owner.idqras
         );
         console.log("get Other Comment Writters: " + commentWriters.length);
-
+        
         await createNotifications(
           idActivity,
           followers,
@@ -118,7 +114,8 @@ exports.handler = async (event, context, callback) => {
         return callback(null, response);
       }
     }
-  } catch (e) {
+  }
+  catch (e) {
     console.log("Error executing QRA Comment Add");
     console.log(e);
     conn.destroy();
@@ -179,8 +176,7 @@ exports.handler = async (event, context, callback) => {
       // Alternately, try/catch and reject(err) on catch.
       console.log("insertComment");
       conn.query(
-        "INSERT INTO qsos_comments SET idqso = ?, idqra=?, datetime=?, comment=?",
-        [idqsos, idqras, datetime, comment],
+        "INSERT INTO qsos_comments SET idqso = ?, idqra=?, datetime=?, comment=?", [idqsos, idqras, datetime, comment],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
@@ -208,7 +204,8 @@ exports.handler = async (event, context, callback) => {
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
-          } else {
+          }
+          else {
             resolve();
           }
         }
@@ -223,7 +220,7 @@ exports.handler = async (event, context, callback) => {
       console.log("checkQraCognito " + idqsos);
       conn.query(
         "SELECT qsos.idqsos, qsos.guid_URL, qras.qra FROM qsos inner join qras on qras.id" +
-          "qras = qsos.idqra_owner where idqsos=? ",
+        "qras = qsos.idqra_owner where idqsos=? ",
         idqsos,
         function(err, info) {
           // Call reject on error states, call resolve with results
@@ -232,7 +229,8 @@ exports.handler = async (event, context, callback) => {
           }
           if (info.length > 0) {
             resolve(JSON.parse(JSON.stringify(info))[0]);
-          } else {
+          }
+          else {
             resolve();
           }
         }
@@ -247,7 +245,7 @@ exports.handler = async (event, context, callback) => {
       console.log("getComments " + qso);
       conn.query(
         "SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-          "ents.idqra = qras.idqras where  idqso=?",
+        "ents.idqra = qras.idqras where  idqso=? order by idqsos_comments",
         qso,
         function(err, info) {
           // Call reject on error states, call resolve with results
@@ -267,8 +265,7 @@ exports.handler = async (event, context, callback) => {
       // ***********************************************************
       conn.query(
         "INSERT INTO qra_activities SET idqra = ?, activity_type='18', ref_idqso=?, ref_i" +
-          "dqso_comment=?, datetime=?",
-        [idqras, idqsos.idqsos, idcomment, datetime],
+        "dqso_comment=?, datetime=?", [idqras, idqsos.idqsos, idcomment, datetime],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
@@ -316,9 +313,9 @@ exports.handler = async (event, context, callback) => {
         18
       ]);
       let qra_devices = await getDeviceInfo(stakeholders[i].idqra);
-
-      if (qra_devices) {
-        console.log("Stakeholder Devices " + qra_devices.length);
+     
+      if (qra_devices){
+       console.log("Stakeholder Devices " + qra_devices.length);
         await sendPushNotification(
           qra_devices,
           qra_owner,
@@ -350,23 +347,22 @@ exports.handler = async (event, context, callback) => {
           18
         ]);
         let qra_devices = await getDeviceInfo(commentWriters[i].idqra);
-
+       
         if (qra_devices)
-          console.log("commentWritter Devices " + qra_devices.length);
-        await sendPushNotification(
-          qra_devices,
-          qra_owner,
-          idnotif,
-          comment,
-          qso,
-          idActivity
-        );
+         console.log("commentWritter Devices " + qra_devices.length);
+          await sendPushNotification(
+            qra_devices,
+            qra_owner,
+            idnotif,
+            comment,
+            qso,
+            idActivity
+          );
       }
     }
 
     for (let i = 0; i < followers.length; i++) {
-      if (
-        !commentWriters.some(elem => elem.idqra === followers[i].idqra) &&
+      if (!commentWriters.some(elem => elem.idqra === followers[i].idqra) &&
         !stakeholders.some(elem => elem.idqra === followers[i].idqra)
       ) {
         message = qra_owner.qra + " commented a QSO created by " + qso.qra;
@@ -386,7 +382,7 @@ exports.handler = async (event, context, callback) => {
         ]);
       }
     }
-
+    
     await insertNotifications(notif);
     if (Object.keys(addresses).length > 0) {
       await sendMessages(qra_owner, idActivity, qso, comment);
@@ -403,8 +399,7 @@ exports.handler = async (event, context, callback) => {
 
       conn.query(
         "INSERT INTO qra_notifications (idqra_activity, idqra, qra, qra_avatarpic, QSO_GUID, REF_QRA, datetime, " +
-          "message, url, idqsos, activity_type) VALUES ?",
-        [notifs],
+        "message, url, idqsos, activity_type) VALUES ?", [notifs],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
@@ -444,8 +439,7 @@ exports.handler = async (event, context, callback) => {
 
       conn.query(
         "Select distinct idqra, qra from qsos_qras as q inner join qras on q.idqra = qras" +
-          ".idqras where idqso=? and idqra!=?",
-        [idqso, idqraCommentOwner],
+        ".idqras where idqso=? and idqra!=?", [idqso, idqraCommentOwner],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
@@ -464,8 +458,7 @@ exports.handler = async (event, context, callback) => {
       // Alternately, try/catch and reject(err) on catch.
       conn.query(
         "Select distinct idqra, qra from qsos_comments  as c inner join qras on c.idqra =" +
-          " qras.idqras where idqso=? and idqra!=?",
-        [idqso, idqraCommentOwner],
+        " qras.idqras where idqso=? and idqra!=?", [idqso, idqraCommentOwner],
         function(err, info) {
           // Call reject on error states, call resolve with results
           if (err) {
@@ -483,7 +476,7 @@ exports.handler = async (event, context, callback) => {
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
-
+      
       conn.query("SELECT * FROM push_devices where qra=?", idqra, function(
         err,
         info
@@ -495,7 +488,8 @@ exports.handler = async (event, context, callback) => {
 
         if (info.length > 0) {
           resolve(JSON.parse(JSON.stringify(info)));
-        } else {
+        }
+        else {
           resolve();
         }
       });
@@ -516,9 +510,9 @@ exports.handler = async (event, context, callback) => {
 
     // console.log(qra_devices);
     for (let i = 0; i < qra_devices.length; i++) {
-      qra_devices[i].device_type === "android"
-        ? (channel = "GCM")
-        : (channel = "APNS");
+      qra_devices[i].device_type === "android" ?
+        (channel = "GCM") :
+        (channel = "APNS");
 
       addresses[qra_devices[i].token] = {
         ChannelType: channel
