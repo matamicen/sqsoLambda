@@ -1,0 +1,12 @@
+{
+  "name": "appleApi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "http": "^0.0.0",
+    "lambda-warmer": "^1.2.1",
+    "mysql": "^2.17.1",
+    "node-fetch": "^2.6.0"
+  }
+}
