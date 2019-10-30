@@ -51,6 +51,40 @@ exports.handler = async (event, context, callback) => {
       return callback(null, response);
     }
 
+    if (action === "BUY") return doBuy(idqras_owner);
+    else if (action === "RESTORE") return doRestore(idqras_owner);
+  } catch (e) {
+    console.log("Error in IAP APPLE VALIDATE");
+    console.log(e);
+    conn.destroy();
+    response.body.error = 1;
+    response.body.message = "Error when select QRA";
+    return callback(null, response);
+  }
+  async function doRestore(idqras_owner) {
+    var current_record = await getIAP();
+   console.log()
+    
+    if (!current_record) return doBuy(idqras_owner);
+    else if (current_record && current_record.idqra !== idqras_owner) {
+      await downgradeQRA(current_record.idqra);
+      current_record.idqra = idqras_owner;
+      await updateIAP(current_record);
+      await upgradeQRA(idqras_owner);
+      conn.destroy();
+      response.body.error = 0;
+      response.body.message = current_record;
+      return callback(null, response);
+    }
+    else {
+      conn.destroy();
+      response.body.error = 1;
+      response.body.message = current_record;
+      return callback(null, response);
+    }
+  }
+  async function doBuy(idqras_owner) {
+    console.log("Action: BUY");
     const body = JSON.stringify({
       "receipt-data": transactionReceipt,
       // Set in App Store Connect
@@ -76,13 +110,25 @@ exports.handler = async (event, context, callback) => {
       response.body.message = not_exp;
       return callback(null, response);
     }
-  } catch (e) {
-    console.log("Error in IAP APPLE VALIDATE");
-    console.log(e);
-    conn.destroy();
-    response.body.error = 1;
-    response.body.message = "Error when select QRA";
-    return callback(null, response);
+  }
+  function downgradeQRA(idqras) {
+    return new Promise(function(resolve, reject) {
+      // The Promise constructor should catch any errors thrown on this tick.
+      // Alternately, try/catch and reject(err) on catch.
+
+      conn.query(
+        "UPDATE qras SET account_type=1 WHERE idqras=?",
+        idqras,
+        function(err, info) {
+          // Call reject on error states, call resolve with results
+          if (err) {
+            return reject(err);
+          }
+         
+          resolve(JSON.parse(JSON.stringify(info)));
+        }
+      );
+    });
   }
   function upgradeQRA(idqras) {
     return new Promise(function(resolve, reject) {
@@ -97,8 +143,47 @@ exports.handler = async (event, context, callback) => {
           if (err) {
             return reject(err);
           }
-          console.log(info);
+                resolve(JSON.parse(JSON.stringify(info)));
+        }
+      );
+    });
+  }
+  function updateIAP(iap) {
+    return new Promise(function(resolve, reject) {
+      // The Promise constructor should catch any errors thrown on this tick.
+      // Alternately, try/catch and reject(err) on catch.
+
+      conn.query(
+        "UPDATE iap SET idqra=? WHERE idiap=?",
+        [iap.idqra, iap.idiap],
+        function(err, info) {
+          // Call reject on error states, call resolve with results
+          if (err) {
+            return reject(err);
+          }
           resolve(JSON.parse(JSON.stringify(info)));
+        }
+      );
+    });
+  }
+  function getIAP() {
+    console.log("getIAP " + originalTransactionId);
+    return new Promise(function(resolve, reject) {
+      // The Promise constructor should catch any errors thrown on this tick.
+      // Alternately, try/catch and reject(err) on catch. console.log("get QRA info
+      // from Congito ID");
+      conn.query(
+        "SELECT * FROM iap where original_transaction_id=?  order by end_date desc limit 1",
+        originalTransactionId,
+        function(err, info) {
+          // Call reject on error states, call resolve with results
+          if (err) {
+            return reject(err);
+          }
+          
+          if (info.length > 0)
+            resolve(JSON.parse(JSON.stringify(info))[0]);
+          else resolve();
         }
       );
     });
@@ -162,7 +247,6 @@ exports.handler = async (event, context, callback) => {
         i.original_transaction_id === originalTransactionId &&
         i.expires_date_ms > date.getTime()
       );
-      
     });
     console.log("Not Expired: " + not_exp.length);
     return not_exp;
