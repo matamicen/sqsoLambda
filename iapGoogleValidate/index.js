@@ -69,6 +69,15 @@ exports.handler = async (event, context, callback) => {
 
     if (!current_record) return doBuy(idqras_owner);
     else if (current_record && current_record.idqra !== idqras_owner) {
+      var now = new Date();
+      var end_date = new Date(current_record.end_date);
+
+      if (end_date < now) {
+        conn.destroy();
+        response.body.error = 2;
+        response.body.message = current_record;
+        return callback(null, response);
+      }
       await downgradeQRA(current_record.idqra);
       current_record.idqra = idqras_owner;
       await updateIAP(current_record);
