@@ -86,20 +86,17 @@ exports.handler = async (event, context, callback) => {
   }
   async function doBuy(idqras_owner) {
     console.log("Action: BUY");
+    try {
+      // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
+      // environment variables.
+      const auth = new google.auth.GoogleAuth({
+        // Scopes can be specified either as an array or as a single, space-delimited string.
+        scopes: ["https://www.googleapis.com/auth/androidpublisher"]
+      });
+      const authClient = await auth.getClient();
+      await authClient.authorize();
 
-    // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-    // environment variables.
-    const auth = new google.auth.GoogleAuth({
-      // Scopes can be specified either as an array or as a single, space-delimited string.
-      scopes: ["https://www.googleapis.com/auth/androidpublisher"]
-    });
-    const authClient = await auth.getClient();
-    await authClient.authorize().catch(function(error) {
-      console.log(error);
-    });
-
-    var res = await pub.purchases.subscriptions
-      .get({
+      var res = await pub.purchases.subscriptions.get({
         auth: authClient,
         packageName: packageName,
         subscriptionId: productId,
@@ -107,23 +104,30 @@ exports.handler = async (event, context, callback) => {
           // "lpbkmknfaaneapjglmflcgmk.AO-J1OxOS726GtSA6l5TLc4ZyLWmF0PqrCXXMQegk1Nw7bbUcOezqnqSBX-eRa-4pfM1vKyxrSbcsNxPwAN8VIuMe-zrbUvT666MUoqwm5AZ3RKDTn2gGQM"
           // "jeocdifjcdkeafebfomcannm.AO-J1OwGp47oFxczJpUPoq7sw3nf-wWabE87QqlgIfMiNcIh59Bdtxz7uNBOXxcZvLmuQZ8maNCV6WpncKjT6LW9OVfwKMn8-G_K4-fuL86isIXOLAwyLsU"
           purchaseToken
-      })
-      .catch(console.log("error"));
+      });
 
-   
-    var not_exp = await validateReceipt(res);
+      var not_exp = await validateReceipt(res);
 
-    if (not_exp) {
-      await insertIAP(idqras_owner, not_exp);
-      await upgradeQRA(idqras_owner);
-      conn.destroy();
-      response.body.error = 0;
-      response.body.message = not_exp;
-      return callback(null, response);
-    } else {
+      if (not_exp) {
+        console.log("ok");
+        await insertIAP(idqras_owner, not_exp);
+        await upgradeQRA(idqras_owner);
+        conn.destroy();
+        response.body.error = 0;
+        response.body.message = not_exp;
+        return callback(null, response);
+      } else {
+        console.log("not ok");
+        conn.destroy();
+        response.body.error = 1;
+        response.body.message = res.data;
+        return callback(null, response);
+      }
+    } catch (e) {
+      console.log(e);
       conn.destroy();
       response.body.error = 1;
-      response.body.message = not_exp;
+      response.body.message = e.message;
       return callback(null, response);
     }
   }
@@ -208,16 +212,16 @@ exports.handler = async (event, context, callback) => {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
       console.log("insertIAP");
-      var start = new Date(0)
+      var start = new Date(0);
       start.setUTCMilliseconds(not_exp.startTimeMillis);
       var end = new Date(0);
       end.setUTCMilliseconds(not_exp.expiryTimeMillis);
       let post = {
         idqra: idqras_owner,
         device_type: "android",
-        product_id: productId,
-        purchaseToken: purchaseToken, 
-        packageName: packageName,        
+        productId: productId,
+        purchaseToken: purchaseToken,
+        packageName: packageName,
         start_date: start,
         end_date: end,
         orderId: not_exp.orderId
@@ -257,8 +261,7 @@ exports.handler = async (event, context, callback) => {
   async function validateReceipt(res) {
     console.log("validateReceipt");
     var date = new Date();
-    if (res.data.expiryTimeMillis < date.getTime()) return res.data;
+    if (res.data.expiryTimeMillis > date.getTime()) return res.data;
     else return null;
   }
-  
 };
