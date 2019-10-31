@@ -63,20 +63,17 @@ exports.handler = async (event, context, callback) => {
   }
   async function doRestore(idqras_owner) {
     var current_record = await getIAP();
-   
-    
+
     if (!current_record) return doBuy(idqras_owner);
     else if (current_record && current_record.idqra !== idqras_owner) {
       var now = new Date();
       var end_date = new Date(current_record.end_date);
 
-      if (end_date < now)
-      {
-        
-       conn.destroy();
-      response.body.error = 2;
-      response.body.message = current_record;
-      return callback(null, response);
+      if (end_date < now) {
+        conn.destroy();
+        response.body.error = 2;
+        response.body.message = current_record;
+        return callback(null, response);
       }
       await downgradeQRA(current_record.idqra);
       current_record.idqra = idqras_owner;
@@ -86,8 +83,7 @@ exports.handler = async (event, context, callback) => {
       response.body.error = 0;
       response.body.message = current_record;
       return callback(null, response);
-    }
-    else {
+    } else {
       conn.destroy();
       response.body.error = 1;
       response.body.message = current_record;
@@ -103,7 +99,7 @@ exports.handler = async (event, context, callback) => {
       "exclude-old-transactions": false
     });
     if (env === "QA") var res = await sandbox(body);
-    else if (env === "QA") res = await prd(body);
+    else if (env === "PRD") res = await prd(body);
 
     console.log("Transactions " + res.latest_receipt_info.length);
     var not_exp = await validateReceipt(res);
@@ -135,7 +131,7 @@ exports.handler = async (event, context, callback) => {
           if (err) {
             return reject(err);
           }
-         
+
           resolve(JSON.parse(JSON.stringify(info)));
         }
       );
@@ -154,7 +150,7 @@ exports.handler = async (event, context, callback) => {
           if (err) {
             return reject(err);
           }
-                resolve(JSON.parse(JSON.stringify(info)));
+          resolve(JSON.parse(JSON.stringify(info)));
         }
       );
     });
@@ -191,9 +187,8 @@ exports.handler = async (event, context, callback) => {
           if (err) {
             return reject(err);
           }
-          
-          if (info.length > 0)
-            resolve(JSON.parse(JSON.stringify(info))[0]);
+
+          if (info.length > 0) resolve(JSON.parse(JSON.stringify(info))[0]);
           else resolve();
         }
       );
