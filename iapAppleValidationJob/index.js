@@ -62,7 +62,7 @@ exports.handler = async (event, context, callback) => {
 
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 3 && diffDays > 0) {
+        if (diffDays === 3) {
           await verifyNew(i);
         }
       })
@@ -86,7 +86,7 @@ exports.handler = async (event, context, callback) => {
 
     if (env === "QA") var res = await sandbox(body);
     else if (env === "PRD") res = await prd(body);
-    console.log("Verifying: " + iap.idiap);
+    console.log("Verifying ID: " + iap.idiap);
     console.log("Transactions " + res.latest_receipt_info.length);
     var not_exp = await validateReceipt(res, iap.original_transaction_id);
 
