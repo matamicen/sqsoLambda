@@ -51,8 +51,11 @@ exports.handler = async (event, context, callback) => {
       return callback(null, response);
     }
 
-    if (action === "BUY") return doBuy(idqras_owner);
-    else if (action === "RESTORE") return doRestore(idqras_owner);
+    if (action === "BUY") {
+      response = await doBuy(idqras_owner);
+      conn.destroy();
+      return callback(null, response);
+    } else if (action === "RESTORE") return doRestore(idqras_owner);
   } catch (e) {
     console.log("Error in IAP APPLE VALIDATE");
     console.log(e);
@@ -62,6 +65,8 @@ exports.handler = async (event, context, callback) => {
     return callback(null, response);
   }
   async function doRestore(idqras_owner) {
+    console.log("RESTORE");
+
     var current_record = await getIAP();
 
     if (!current_record) return doBuy(idqras_owner);
@@ -70,10 +75,16 @@ exports.handler = async (event, context, callback) => {
       var end_date = new Date(current_record.end_date);
 
       if (end_date < now) {
-        conn.destroy();
-        response.body.error = 2;
-        response.body.message = current_record;
-        return callback(null, response);
+        console.log("Verify new receipt since current is expired");
+        await doBuy(current_record.idqra);
+        current_record = await getIAP();
+        end_date = new Date(current_record.end_date);
+        if (end_date < now) {
+          conn.destroy();
+          response.body.error = 2;
+          response.body.message = current_record;
+          return callback(null, response);
+        } else return doRestore(idqras_owner);
       }
       await downgradeQRA(current_record.idqra);
       current_record.idqra = idqras_owner;
@@ -84,6 +95,7 @@ exports.handler = async (event, context, callback) => {
       response.body.message = current_record;
       return callback(null, response);
     } else {
+      console.log("Nothing to Do");
       conn.destroy();
       response.body.error = 1;
       response.body.message = current_record;
@@ -107,18 +119,18 @@ exports.handler = async (event, context, callback) => {
     if (not_exp.length > 0) {
       await insertIAP(idqras_owner, not_exp[0], res.latest_receipt);
       await upgradeQRA(idqras_owner);
-      conn.destroy();
       response.body.error = 0;
       response.body.message = not_exp;
-      return callback(null, response);
+      return response;
     } else {
-      conn.destroy();
+      console.log("Nothing to do");
       response.body.error = 1;
       response.body.message = not_exp;
-      return callback(null, response);
+      return response;
     }
   }
   function downgradeQRA(idqras) {
+    console.log("DowngradeQRA");
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
@@ -138,6 +150,7 @@ exports.handler = async (event, context, callback) => {
     });
   }
   function upgradeQRA(idqras) {
+    console.log("UpgradeQRA");
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
@@ -156,6 +169,7 @@ exports.handler = async (event, context, callback) => {
     });
   }
   function updateIAP(iap) {
+    console.log("updateIAP");
     return new Promise(function(resolve, reject) {
       // The Promise constructor should catch any errors thrown on this tick.
       // Alternately, try/catch and reject(err) on catch.
