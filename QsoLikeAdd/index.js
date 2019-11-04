@@ -22,7 +22,7 @@ exports.handler = async(event, context, callback) => {
             message: null
         }
     };
-    console.log(event);
+    console.log(event.body);
     var idqso = event.body.qso;
     var sub = event.context.sub;
     var datetime = new Date();
@@ -469,13 +469,16 @@ exports.handler = async(event, context, callback) => {
             LogType: "None",
             Payload: JSON.stringify(payload)
         };
-        console.log("invoke Lambda");
+       
 
         lambda.invoke(paramslambda, function(err, data) {
+             console.log("invoke Lambda");
+             
             if (err) {
                 console.log("lambda error");
                 console.log(err);
             }
+            return null;
         });
     }
 };
