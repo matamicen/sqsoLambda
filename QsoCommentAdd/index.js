@@ -6,7 +6,7 @@ const warmer = require("lambda-warmer");
 
 exports.handler = async(event, context, callback) => {
   // if a warming event
-  console.log(event);
+  console.log(event.body);
   if (await warmer(event)) return "warmed";
 
   context.callbackWaitsForEmptyEventLoop = false;
@@ -245,7 +245,7 @@ exports.handler = async(event, context, callback) => {
       console.log("getComments " + qso);
       conn.query(
         "SELECT qsos_comments.*, qras.qra FROM qsos_comments inner join qras on qsos_comm" +
-        "ents.idqra = qras.idqras where  idqso=? order by idqsos_comments",
+        "ents.idqra = qras.idqras where  idqso=? and deleted=0 order by idqsos_comments",
         qso,
         function(err, info) {
           // Call reject on error states, call resolve with results
@@ -522,6 +522,7 @@ exports.handler = async(event, context, callback) => {
         addresses = {};
       }
     }
+    return null;
   }
 
   async function sendMessages(qra_owner, idActivity, qso, comment) {
@@ -593,12 +594,13 @@ exports.handler = async(event, context, callback) => {
     };
     console.log("invoke Lambda");
     lambda.invoke(paramslambda, function(err, data) {
-      console.log(data);
-      console.log(err);
+      
+      
       if (err) {
         console.log("lambda error");
         console.log(err);
       }
+      return null;
     });
   }
 };
