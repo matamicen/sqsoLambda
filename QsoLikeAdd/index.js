@@ -400,6 +400,7 @@ exports.handler = async(event, context, callback) => {
                 addresses = {};
             }
         }
+        return  null;
     }
 
     function sendMessages(qra_owner, qso, idActivity) {
