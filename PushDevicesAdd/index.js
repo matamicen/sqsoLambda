@@ -51,13 +51,13 @@ exports.handler = async (event, context, callback) => {
       return callback(null, response);
     }
     let idqra = await getQraInfo(qra);
-    if (!idqra) {
-      console.log("User does not exist");
-      conn.destroy();
-      response.body.error = 1;
-      response.body.message = "User does not exist";
-      return callback(null, response);
-    }
+    // if (!idqra) {
+    //   console.log("User does not exist");
+    //   conn.destroy();
+    //   response.body.error = 1;
+    //   response.body.message = "User does not exist";
+    //   return callback(null, response);
+    // }
     let info = await insertDevice(idqra, token, device_type);
 
     console.log("Push_Devices Add Done");
