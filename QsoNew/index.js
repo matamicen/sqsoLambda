@@ -22,7 +22,7 @@ exports.handler = async(event, context, callback) => {
             message: null
         }
     };
-    console.log(event);
+    console.log(event.body);
 
     console.log("QSOnew");
     let mode = event.body.mode;
@@ -74,7 +74,7 @@ exports.handler = async(event, context, callback) => {
         let followers = await getFollowingMe(qra_owner.idqras);
 
         let idActivity = await saveActivity(qra_owner, newqso, datetime);
-        if (idActivity) {
+        if (idActivity && followers.length > 0) {
             await createNotifications(
                 idActivity,
                 qra_owner,
@@ -105,6 +105,7 @@ exports.handler = async(event, context, callback) => {
         console.log("Error executing QsoNew");
         console.log(e);
         conn.destroy();
+        response.statusCode= 400;
         response.body.error = 1;
         response.body.message = e.message;
         return callback(null, response);
