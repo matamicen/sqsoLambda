@@ -205,7 +205,7 @@ exports.handler = async (event, context, callback) => {
         50
       ]);
     }
-    await insertNotifications(notif);
+    if (notif.length > 0) await insertNotifications(notif);
   }
 
   function insertNotifications(notifs) {

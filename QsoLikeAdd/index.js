@@ -90,7 +90,7 @@ exports.handler = async(event, context, callback) => {
                     qso,
                     datetime
                 );
-                await insertNotifications(notifs);
+             if (notifs.length > 0)   await insertNotifications(notifs);
             }
             await UpdateLikesCounterInQso(idqso);
 

@@ -74,7 +74,7 @@ exports.handler = async(event, context, callback) => {
         let followers = await getFollowingMe(qra_owner.idqras);
 
         let idActivity = await saveActivity(qra_owner, newqso, datetime);
-        if (idActivity && followers.length > 0) {
+        if (idActivity) {
             await createNotifications(
                 idActivity,
                 qra_owner,
@@ -305,7 +305,7 @@ exports.handler = async(event, context, callback) => {
                 }
             }
         }
-        await insertNotifications(notif);
+        if (notif.length > 0 ) await insertNotifications(notif);
         if (Object.keys(addresses).length > 0) {
             await sendPushNotification(
                 qra_owner,

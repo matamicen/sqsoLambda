@@ -383,7 +383,7 @@ exports.handler = async(event, context, callback) => {
       }
     }
     
-    await insertNotifications(notif);
+    if (notif.length > 0) await insertNotifications(notif);
     if (Object.keys(addresses).length > 0) {
       await sendMessages(qra_owner, idActivity, qso, comment);
       addresses = {};

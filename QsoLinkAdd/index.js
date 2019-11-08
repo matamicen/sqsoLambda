@@ -264,7 +264,7 @@ exports.handler = async(event, context, callback) => {
                 datetime,
                 qso
             );
-            await insertNotifications(notif);
+            if (notif.length > 0) await insertNotifications(notif);
             return info;
         }
     }

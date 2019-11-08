@@ -114,7 +114,7 @@ exports.handler = async(event, context, callback) => {
                                         final_url, //url
                                         1 //activity_type
                                 ]);
-                                await insertNotifications(notif);
+                                if (notif.length > 0) await insertNotifications(notif);
                                 let qra_devices = await getDeviceInfo(qra_follower.idqras);
                                 if (qra_devices)
                                         await sendPushNotification(
@@ -495,7 +495,7 @@ exports.handler = async(event, context, callback) => {
                 console.log("invoke Lambda");
 
                 lambda.invoke(paramslambda, function(err, data) {
-
+  
                         if (err) {
                                 console.log("lambda error");
                                 console.log(err);
