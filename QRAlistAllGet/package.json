@@ -1,0 +1,10 @@
+{
+  "name": "QRAlistAllGet",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "lambda-warmer": "^1.2.1",
+    "mysql": "^2.17.1"
+  }
+}
