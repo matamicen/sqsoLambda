@@ -84,8 +84,10 @@ exports.handler = async (event, context, callback) => {
       "exclude-old-transactions": false
     });
 
-    if (env === "QA") var res = await sandbox(body);
-    else if (env === "PRD") res = await prd(body);
+    // if (env === "QA") var res = await sandbox(body);
+    // else if (env === "PRD") res = await prd(body);
+    var res = await prd(body);
+    if (res.status === 21007) res = await sandbox(body);
     console.log("Verifying ID: " + iap.idiap);
     console.log("Transactions " + res.latest_receipt_info.length);
     var not_exp = await validateReceipt(res, iap.original_transaction_id);

@@ -20,7 +20,7 @@ exports.handler = async (event, context, callback) => {
   };
   //***********************************************************
   let qra = event.body.qra;
-  let env = event.body.env;
+  
   let transactionReceipt = event.body.transactionReceipt;
   let transactionId = event.body.transactionId;
   let originalTransactionId = event.body.originalTransactionId;
@@ -110,9 +110,10 @@ exports.handler = async (event, context, callback) => {
       password: event["stage-variables"].iapAppleSecret,
       "exclude-old-transactions": false
     });
-    if (env === "QA") var res = await sandbox(body);
-    else if (env === "PRD") res = await prd(body);
-
+    // if (env === "QA") var res = await sandbox(body);
+    // else if (env === "PRD") res = await prd(body);
+    var res = await prd(body);
+    if (res.status === 21007) res = await sandbox(body);
     console.log("Transactions " + res.latest_receipt_info.length);
     var not_exp = await validateReceipt(res);
 
