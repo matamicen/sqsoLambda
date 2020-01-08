@@ -29,7 +29,8 @@ exports.handler = async(event, context, callback) => {
     var idcomment = event.body.idcomment;
     var idmedia = event.body.idmedia;
     var detail = event.body.detail;
-    var sub = event.context.sub;
+    var email = event.body.email;
+    // var sub = event.context.sub;
 
     //***********************************************************
     if (!event['stage-variables']) {
@@ -48,18 +49,18 @@ exports.handler = async(event, context, callback) => {
     });
     let addresses = {};
     try {
-        let qra_owner = await checkQraCognito(sub);
-        if (!qra_owner) {
-            console.log("User does not exist");
-            conn.destroy();
-            response.body.error = 1;
-            response.body.message = "User does not exist";
-            return callback(null, response);
-        }
+        // let qra_owner = await checkQraCognito(sub);
+        // if (!qra_owner) {
+        //     console.log("User does not exist");
+        //     conn.destroy();
+        //     response.body.error = 1;
+        //     response.body.message = "User does not exist";
+        //     return callback(null, response);
+        // }
  
-        let info = await insertReportedContent(qra_owner.idqras, idqso, idcomment, idmedia, detail, datetime);
+        let info = await insertReportedContent( idqso, idcomment, idmedia, detail, datetime);
         if (info.insertId) {
-           await push2Admin(qra_owner);
+           await push2Admin();
             console.log("Reported Content Added");
             conn.destroy();
             response.body.error = 0;
@@ -85,10 +86,10 @@ exports.handler = async(event, context, callback) => {
         callback(null, response);
         return context.fail(response);
     }
-    async function push2Admin(qra_owner) {
+    async function push2Admin() {
         console.log("push2Admin");
         let devices = await getDeviceInfo();
-        await sendPushNotification(devices, qra_owner);
+        await sendPushNotification(devices);
 
     }
 
@@ -108,7 +109,7 @@ exports.handler = async(event, context, callback) => {
         });
     }
 
-    function insertReportedContent(idqra, idqso, idcomment, idmedia, detail, datetime) {
+    function insertReportedContent(idqso, idcomment, idmedia, detail, datetime) {
         return new Promise(function(resolve, reject) {
             // The Promise constructor should catch any errors thrown on this tick.
             // Alternately, try/catch and reject(err) on catch.
@@ -124,12 +125,13 @@ exports.handler = async(event, context, callback) => {
                 content_type = 'QSO';
             let post = {
                 "content_type": content_type,
-                "idqra": idqra,
+                // "idqra": idqra,
                 "idqso": idqso,
                 "idcomment": idcomment,
                 "idmedia": idmedia,
                 "detail": detail,
-                "datetime": datetime
+                "datetime": datetime,
+                "email": email
             };
             conn.query('INSERT INTO sqso.content_reported SET ?', post, function(err, info) {
                 // Call reject on error states, call resolve with results
@@ -200,7 +202,7 @@ exports.handler = async(event, context, callback) => {
         console.log("sendMessages");
                 context.callbackWaitsForEmptyEventLoop = true;
 
-        let title = qra_owner.qra + " reported content";
+        let title = " New reported content";
         let appId = event["stage-variables"].pinpointAppId;
         let params = {
             ApplicationId: appId,
